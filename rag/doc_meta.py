@@ -1,0 +1,50 @@
+DOC_META = {
+    "gov_2025_strategy.pdf": {
+        "doc_id": "gov_2025_strategy",
+        "title": "AI반도체 산업 도약 전략(안)(요약본)",
+        "source": "관계부처 합동",
+        "date": "2025-12-18",
+        "url": "https://nsp.nanet.go.kr/plan/subject/detail.do?nationalPlanControlNo=PLAN0000058703",
+        "document_type": "gov_policy",
+        "domain": "ai_semiconductor",
+        "language": "ko",
+        "mentioned_companies": ["퓨리오사AI", "리벨리온", "하이퍼엑셀", "딥엑스", "모빌린트"],
+    },
+    "deloitte_2026_outlook.pdf": {
+        "doc_id": "deloitte_2026_outlook",
+        "title": "2026 Global Semiconductor Industry Outlook",
+        "source": "Deloitte",
+        "date": "2026-02-05",
+        "url": "https://www.deloitte.com/us/en/insights/industry/technology/technology-media-telecom-outlooks/semiconductor-industry-outlook.html",
+        "document_type": "market_report",
+        "domain": "ai_semiconductor",
+        "language": "en",
+        "mentioned_companies": ["NVIDIA", "AMD"],
+    },
+    "kisdi_2024_perspectives.pdf": {
+        "doc_id": "kisdi_2024_perspectives",
+        "title": "새로운 기회의 창으로 AI반도체 시장 현황과 전망",
+        "source": "정보통신정책연구원",
+        "date": "2024-07-25",
+        "url": "https://www.kisdi.re.kr/report/view.do?key=m2102058837181&masterId=4334696&arrMasterId=4334696&artId=1776660",
+        "document_type": "research_report",
+        "domain": "ai_semiconductor",
+        "language": "ko",
+        "mentioned_companies": [],
+    },
+    "kisdi_2024_research.pdf": {
+        "doc_id": "kisdi_2024_research",
+        "title": "AI반도체 글로벌 첨단 기술·산업 동향 조사 및 대응방향 연구(1~2장)",
+        "source": "정보통신정책연구원",
+        "date": "2024-02",
+        "url": "https://library.kisdi.re.kr/main.do/10210/contents/3934580?checkinId=3711250&articleId=1875096",
+        "document_type": "research_report",
+        "domain": "ai_semiconductor",
+        "language": "ko",
+        "mentioned_companies": ["NVIDIA", "AMD", "Intel", "SambaNova"],
+    },
+}
+
+PDF_PAGE_STARTS = {
+    "kisdi_2024_research.pdf": 27,
+}
