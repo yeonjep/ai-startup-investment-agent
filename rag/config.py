@@ -1,3 +1,5 @@
+# 설계 확정 후 교체할 부분: 임베딩 모델과 검색 설정은 조 최종 결정에 맞춰 변경합니다.
+
 import os
 from pathlib import Path
 
