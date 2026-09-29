@@ -10,3 +10,7 @@ CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 100
 DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL)
+
+
+def vectorstore_path_for_model(model_name: str) -> Path:
+	return VECTORSTORE_DIR / model_name.replace("/", "--")

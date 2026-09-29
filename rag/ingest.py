@@ -10,7 +10,7 @@ from rag.config import (
     CHUNK_SIZE,
     DOCS_DIR,
     EMBEDDING_MODEL,
-    VECTORSTORE_DIR,
+    vectorstore_path_for_model,
 )
 from rag.doc_meta import DOC_META, PDF_PAGE_STARTS
 
@@ -53,8 +53,7 @@ def load_and_split_documents() -> tuple[list, list[tuple[str, int]]]:
 
 def ingest(embedding_model: str = EMBEDDING_MODEL) -> FAISS:
     chunks, chunk_counts = load_and_split_documents()
-    model_directory = embedding_model.replace("/", "--")
-    vectorstore_path = VECTORSTORE_DIR / model_directory
+    vectorstore_path = vectorstore_path_for_model(embedding_model)
     embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
 
     index_file = vectorstore_path / "index.faiss"

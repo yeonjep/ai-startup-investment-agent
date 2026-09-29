@@ -1,0 +1,4 @@
+﻿model,hit_rate_at_1,hit_rate_at_3,hit_rate_at_5,mrr,indexing_seconds,embedding_dimension
+BAAI/bge-m3,0.75,0.95,0.95,0.8416666666666668,48.3712587080081,1024
+intfloat/multilingual-e5-large,0.7,0.95,0.95,0.8166666666666668,43.67395783300162,1024
+Qwen/Qwen3-Embedding-0.6B,0.85,1.0,1.0,0.925,110.44440716700046,1024
