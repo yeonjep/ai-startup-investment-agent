@@ -10,18 +10,18 @@ DOCS_DIR = ROOT / "data" / "docs"
 MAX_TOTAL_PAGES = 200
 
 DOCUMENTS = (
-    ("semiconductor_outlook_2026", "2026 Semiconductor Industry Outlook _ Deloitte Insights.pdf", None),
-    ("ai_chip_strategy", "251219+(별첨)+AI반도체+산업+도약+전략(안)+요약본.pdf", None),
-    ("global_ai_chip_trends", "AI반도체 글로벌 첨단 기술·산업 동향 조사 및 대응방향 연구.pdf", (27, 81)),
-    ("ai_chip_market_outlook", "[초점] 새로운 기회의 창으로 AI반도체 시장 현황과 전망.pdf", None),
+    ("gov_2025_strategy", "251219+(별첨)+AI반도체+산업+도약+전략(안)+요약본.pdf", 10, None),
+    ("deloitte_2026_outlook", "2026 Semiconductor Industry Outlook _ Deloitte Insights.pdf", 13, None),
+    ("kisdi_2024_perspectives", "[초점] 새로운 기회의 창으로 AI반도체 시장 현황과 전망.pdf", 24, None),
+    ("kisdi_2024_research", "AI반도체 글로벌 첨단 기술·산업 동향 조사 및 대응방향 연구.pdf", 55, (27, 81)),
 )
 
 
 def prepare_docs() -> None:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    output_pages = []
+    page_comparison = []
 
-    for doc_id, source_name, page_range in DOCUMENTS:
+    for doc_id, source_name, designed_pages, page_range in DOCUMENTS:
         source_path = RAW_DIR / source_name
         output_path = DOCS_DIR / f"{doc_id}.pdf"
         if not source_path.is_file():
@@ -45,16 +45,18 @@ def prepare_docs() -> None:
                 excerpt.save(output_path)
 
         with pymupdf.open(output_path) as prepared:
-            output_pages.append((output_path.name, prepared.page_count))
+            page_comparison.append((doc_id, designed_pages, prepared.page_count))
 
-    total_pages = sum(page_count for _, page_count in output_pages)
-    for filename, page_count in output_pages:
-        print(f"{filename}: {page_count} pages")
-    print(f"Total: {total_pages} pages")
+    designed_total = sum(designed for _, designed, _ in page_comparison)
+    actual_total = sum(actual for _, _, actual in page_comparison)
+    print(f"{'doc_id':<28} {'설계(쪽)':>8} {'실제(쪽)':>8} {'차이(쪽)':>8}")
+    for doc_id, designed, actual in page_comparison:
+        print(f"{doc_id:<28} {designed:>8} {actual:>8} {actual - designed:>+8}")
+    print(f"{'합계':<28} {designed_total:>8} {actual_total:>8} {actual_total - designed_total:>+8}")
 
-    if total_pages > MAX_TOTAL_PAGES:
+    if actual_total > MAX_TOTAL_PAGES:
         raise SystemExit(
-            f"Page limit exceeded: {total_pages} pages (maximum {MAX_TOTAL_PAGES})"
+            f"Page limit exceeded: {actual_total} pages (maximum {MAX_TOTAL_PAGES})"
         )
     print(f"Page limit check: OK (maximum {MAX_TOTAL_PAGES})")
 
