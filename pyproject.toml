@@ -1,7 +1,7 @@
 [project]
 name = "ai-startup-investment-agent"
 version = "0.1.0"
-description = "Add your description here"
+description = "LangGraph 기반 Multi-Agent + Agentic RAG로 AI 반도체 스타트업 투자 가능성을 평가하고 보고서를 생성"
 readme = "README.md"
 authors = [
     { name = "Yeonje Park", email = "yeonje1004@naver.com" }
@@ -21,10 +21,3 @@ dependencies = [
     "python-dotenv>=1.2.3",
     "sentence-transformers>=6.1.0",
 ]
-
-[project.scripts]
-ai-startup-investment-agent = "ai_startup_investment_agent:main"
-
-[build-system]
-requires = ["uv_build>=0.12.19,<0.13.0"]
-build-backend = "uv_build"
