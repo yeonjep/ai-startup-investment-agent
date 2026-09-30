@@ -1,0 +1,95 @@
+{
+  "bm25_top_k": 5,
+  "bm25_weight": 0.5,
+  "chunk_overlap": 100,
+  "chunk_size": 1000,
+  "cleaning_version": "whitespace-lines-v2",
+  "dense_top_k": 5,
+  "dense_weight": 0.5,
+  "documents": [
+    {
+      "filename": "gov_2025_strategy.pdf",
+      "metadata": {
+        "date": "2025-12",
+        "doc_id": "gov_2025_strategy",
+        "document_type": "gov_policy",
+        "domain": "ai_semiconductor",
+        "language": "ko",
+        "mentioned_companies": [
+          "퓨리오사AI",
+          "리벨리온",
+          "하이퍼엑셀",
+          "딥엑스",
+          "모빌린트"
+        ],
+        "source": "관계부처 합동",
+        "title": "AI반도체 산업 도약 전략(안)(요약본)",
+        "url": "https://nsp.nanet.go.kr/plan/subject/detail.do?nationalPlanControlNo=PLAN0000058703"
+      },
+      "original_page_start": 1,
+      "sha256": "4a84965e584c025f7cb76c2262d267c150ea8d2bd85d952a2acfa158264d977d"
+    },
+    {
+      "filename": "deloitte_2026_outlook.pdf",
+      "metadata": {
+        "date": "2026",
+        "doc_id": "deloitte_2026_outlook",
+        "document_type": "market_report",
+        "domain": "ai_semiconductor",
+        "language": "en",
+        "mentioned_companies": [
+          "NVIDIA",
+          "AMD"
+        ],
+        "source": "Deloitte",
+        "title": "2026 Semiconductor Industry Outlook",
+        "url": "https://www.deloitte.com/us/en/insights/industry/technology/technology-media-telecom-outlooks/semiconductor-industry-outlook.html"
+      },
+      "original_page_start": 1,
+      "sha256": "e8d6f6a46702b30677ac0f3078a5b9070eae73e93ff83b88ee7fff68e2bd55d8"
+    },
+    {
+      "filename": "kisdi_2024_perspectives.pdf",
+      "metadata": {
+        "date": "2024-07",
+        "doc_id": "kisdi_2024_perspectives",
+        "document_type": "research_report",
+        "domain": "ai_semiconductor",
+        "language": "ko",
+        "mentioned_companies": [],
+        "source": "정보통신정책연구원",
+        "title": "새로운 기회의 창으로 AI반도체 시장 현황과 전망",
+        "url": "https://www.kisdi.re.kr/report/view.do?key=m2102058837181&masterId=4334696&arrMasterId=4334696&artId=1776660"
+      },
+      "original_page_start": 1,
+      "sha256": "df7cff7ed77d3eb1c2886cb551db7caeba1b6714ef909c32e2d9d149d060641b"
+    },
+    {
+      "filename": "kisdi_2024_research.pdf",
+      "metadata": {
+        "date": "2024-02",
+        "doc_id": "kisdi_2024_research",
+        "document_type": "research_report",
+        "domain": "ai_semiconductor",
+        "language": "ko",
+        "mentioned_companies": [
+          "NVIDIA",
+          "AMD",
+          "Intel",
+          "SambaNova"
+        ],
+        "source": "정보통신정책연구원",
+        "title": "AI반도체 글로벌 첨단 기술·산업 동향 조사 및 대응방향 연구(1~2장)",
+        "url": "https://library.kisdi.re.kr/main.do/10210/contents/3934580?checkinId=3711250&articleId=1875096"
+      },
+      "original_page_start": 27,
+      "sha256": "0c83606b8e6100ab2caf44fcfa308a255b63982b96f65c00bd567b3a639c7c5b"
+    }
+  ],
+  "embedding_model": "Qwen/Qwen3-Embedding-0.6B",
+  "hybrid_top_k": 5,
+  "manifest_version": 2,
+  "min_meaningless_fragment_chars": 20,
+  "query_instruction": "Given a question, retrieve relevant passages that answer the question",
+  "rrf_constant": 60
+}

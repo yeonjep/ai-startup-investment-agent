@@ -1,166 +1,266 @@
-# DESIGN.md D-2 nodes; internal agent logic remains deterministic demo stubs.
+# Node internals are deterministic branch-test stubs; replace agent logic only.
 
 from typing import Any
 
 from langchain_core.runnables import RunnableConfig
 
 from agents.config import (
-    MAX_CANDIDATES,
+    INVESTMENT_SCORE_THRESHOLD,
     MAX_CANDIDATE_POOL,
     MAX_EVIDENCE_RETRIES,
     MAX_RAG_RETRIES,
     MAX_SELECTION_RETRIES,
+    MAX_MISSING_EVIDENCE_FOR_INVESTMENT,
+    get_as_of_date,
+    validate_max_candidates,
 )
-from agents.state import InvestmentState
+from agents.state import EvaluationRecord, Evidence, InvestmentState
+
+TOPICS = ("market_size", "market_growth", "demand_risk")
 
 
 def _scenario(config: RunnableConfig) -> str:
     return config.get("configurable", {}).get("scenario", "all_hold")
 
 
-def _consume_evidence_retry(state: InvestmentState) -> dict[str, int]:
-    retry_count = state.get("evidence_retry", 0)
-    if state.get("missing_evidence") and retry_count < MAX_EVIDENCE_RETRIES:
-        return {"evidence_retry": retry_count + 1}
-    return {}
-
-
-def initialize_state(state: InvestmentState) -> dict[str, Any]:
+def initialize_state(
+    state: InvestmentState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
+    configurable = config.get("configurable", {})
+    max_candidates = validate_max_candidates(
+        configurable.get("max_candidates", state.get("max_candidates"))
+    )
     return {
         "domain": state.get("domain", "AI 반도체"),
-        "max_candidates": MAX_CANDIDATES,
-        "candidates": [],
-        "current_idx": 0,
-        "current_startup": {},
-        "selection_status": "",
-        "selection_retry": 0,
-        "uncertain": False,
-        "tech_summary": "",
-        "market_analysis": "",
-        "rag_retry": 0,
-        "competitor_analysis": "",
-        "evidence": [],
-        "evidence_retry": 0,
-        "scores": {},
-        "total_score": 0.0,
-        "missing_evidence": [],
-        "decision": "",
-        "evaluated": [],
-        "final_report": "",
+        "as_of_date": configurable.get("as_of_date", get_as_of_date()),
+        "max_candidates": max_candidates,
+        "candidates": list(state.get("candidates", [])),
+        "discovery_done": state.get("discovery_done", False),
+        "current_idx": state.get("current_idx", 0),
+        "current_startup": state.get("current_startup"),
+        "selection_status": state.get("selection_status"),
+        "selection_retry": state.get("selection_retry", 0),
+        "uncertain": state.get("uncertain", False),
+        "tech_summary": state.get("tech_summary", {}),
+        "market_analysis": state.get("market_analysis", {}),
+        "competitor_analysis": state.get("competitor_analysis", {}),
+        "tech_evidence": state.get("tech_evidence", []),
+        "market_evidence": state.get("market_evidence", []),
+        "competitor_evidence": state.get("competitor_evidence", []),
+        "rag_retry": state.get("rag_retry", {topic: 0 for topic in TOPICS}),
+        "evidence_retry": state.get("evidence_retry", 0),
+        "scores": state.get("scores", {}),
+        "total_score": state.get("total_score"),
+        "missing_evidence": state.get("missing_evidence", []),
+        "decision": state.get("decision"),
+        "evaluated": state.get("evaluated", []),
+        "final_report": state.get("final_report", ""),
     }
 
 
-def startup_agent(state: InvestmentState, config: RunnableConfig) -> dict[str, Any]:
+def startup_agent(
+    state: InvestmentState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
     scenario = _scenario(config)
     candidates = list(state.get("candidates", []))
-    if not candidates:
-        configured = config.get("configurable", {}).get("demo_candidates")
-        candidates = list(configured or [{"name": "[샘플 후보 A]"}, {"name": "[샘플 후보 B]"}])
-    candidates = candidates[:MAX_CANDIDATE_POOL]
+    discovery_done = state.get("discovery_done", False)
+
+    if not discovery_done:
+        configured_candidates = config.get("configurable", {}).get("demo_candidates")
+        if configured_candidates is None:
+            configured_candidates = candidates or [
+                {"name": "[샘플 후보 A]"},
+                {"name": "[샘플 후보 B]"},
+            ]
+        candidates = list(configured_candidates)[:MAX_CANDIDATE_POOL]
+        discovery_done = True
 
     current_idx = state.get("current_idx", 0)
-    if current_idx >= len(candidates):
+    if not candidates or current_idx >= len(candidates):
         return {
             "candidates": candidates,
-            "current_startup": {},
-            "selection_status": "FAIL",
-            "selection_retry": 0,
-            "uncertain": False,
+            "discovery_done": discovery_done,
+            "current_startup": None,
+            "selection_status": None,
         }
 
     candidate = candidates[current_idx]
-    selection_status = (
-        "FAIL" if scenario == "zero_pass" else candidate.get("selection_status", "PASS")
-    )
+    if scenario == "zero_pass":
+        status = "FAIL"
+    elif scenario == "uncertain":
+        status = "REVIEW"
+    else:
+        status = candidate.get("selection_status", "PASS")
+
     selection_retry = state.get("selection_retry", 0)
-    if selection_status == "REVIEW" and selection_retry < MAX_SELECTION_RETRIES:
+    if status == "REVIEW" and selection_retry < MAX_SELECTION_RETRIES:
+        selection_retry += 1
         return {
             "candidates": candidates,
-            "current_startup": {},
+            "discovery_done": discovery_done,
+            "current_startup": None,
             "selection_status": "REVIEW",
-            "selection_retry": selection_retry + 1,
+            "selection_retry": selection_retry,
             "uncertain": False,
         }
 
+    uncertain = status == "REVIEW"
+    selected_startup = dict(candidate)
+    selected_startup.setdefault("country", "KR")
+    selected_startup.setdefault("company_type", "CHIP")
+    selected_startup.setdefault("evaluation_product", selected_startup.get("name", ""))
     return {
         "candidates": candidates,
-        "current_startup": candidate if selection_status != "FAIL" else {},
-        "selection_status": selection_status,
+        "discovery_done": discovery_done,
+        "current_startup": selected_startup if status != "FAIL" else None,
+        "selection_status": status,
         "selection_retry": selection_retry,
-        "uncertain": selection_status == "REVIEW",
+        "uncertain": uncertain,
     }
 
 
-def technology_agent(state: InvestmentState, config: RunnableConfig) -> dict[str, Any]:
-    startup = state.get("current_startup", {})
-    evidence = [item for item in state.get("evidence", []) if item.get("category") != "tech"]
+def technology_agent(
+    state: InvestmentState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
+    startup = state.get("current_startup") or {}
     return {
-        "tech_summary": f"[stub] {startup.get('name', '후보')} 기술 분석 결과",
-        "evidence": evidence,
-        **_consume_evidence_retry(state),
+        "tech_summary": {"summary": f"[stub] {startup.get('name', '기업')} 기술 분석"},
+        "tech_evidence": list(state.get("tech_evidence", [])),
     }
 
 
-def market_agent(state: InvestmentState, config: RunnableConfig) -> dict[str, Any]:
-    startup = state.get("current_startup", {})
-    evidence = [item for item in state.get("evidence", []) if item.get("category") != "market"]
-    rag_retry = state.get("rag_retry", 0)
-    if _scenario(config) == "evidence_retry" and rag_retry < MAX_RAG_RETRIES:
-        return {
-            "market_analysis": "[stub] 관련 청크 부족, RAG 재검색 필요",
-            "rag_retry": rag_retry + 1,
-            "evidence": evidence,
-        }
+def market_agent(
+    state: InvestmentState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
+    startup = state.get("current_startup") or {}
+    retries = dict(state.get("rag_retry", {topic: 0 for topic in TOPICS}))
+    insufficient_topics: list[str] = []
+
+    previous_analysis = state.get("market_analysis", {})
+    initial_search_done = previous_analysis.get("initial_search_done", False)
+    if _scenario(config) == "evidence_retry":
+        topic = "market_growth"
+        if not initial_search_done:
+            insufficient_topics = [topic]
+        elif retries[topic] < MAX_RAG_RETRIES:
+            retries[topic] += 1
+            insufficient_topics = [topic]
+
     return {
-        "market_analysis": f"[stub] {startup.get('name', '후보')} 시장 분석 결과",
-        "evidence": evidence,
-        **_consume_evidence_retry(state),
+        "market_analysis": {
+            "summary": f"[stub] {startup.get('name', '기업')} 시장 분석",
+            "initial_search_done": True,
+            "insufficient_topics": insufficient_topics,
+        },
+        "rag_retry": retries,
+        "market_evidence": list(state.get("market_evidence", [])),
     }
 
 
-def competitor_agent(state: InvestmentState, config: RunnableConfig) -> dict[str, Any]:
-    startup = state.get("current_startup", {})
-    evidence = [item for item in state.get("evidence", []) if item.get("category") != "competitor"]
+def competitor_agent(
+    state: InvestmentState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
+    startup = state.get("current_startup") or {}
     return {
-        "competitor_analysis": f"[stub] {startup.get('name', '후보')} 경쟁사 비교 결과",
-        "evidence": evidence,
-        **_consume_evidence_retry(state),
+        "competitor_analysis": {"summary": f"[stub] {startup.get('name', '기업')} 경쟁 분석"},
+        "competitor_evidence": list(state.get("competitor_evidence", [])),
     }
 
 
-def evaluator_agent(state: InvestmentState, config: RunnableConfig) -> dict[str, Any]:
+def evaluator_agent(
+    state: InvestmentState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
     scenario = _scenario(config)
-    if (
-        scenario == "evidence_retry"
-        and MAX_EVIDENCE_RETRIES > 0
-        and state.get("evidence_retry", 0) == 0
-    ):
+    if scenario == "evidence_retry" and state.get("evidence_retry", 0) == 0:
         return {
-            "scores": {"market": 3.0},
+            "scores": {},
             "total_score": 65.0,
             "missing_evidence": ["market_cagr"],
-            "evidence_retry": 0,
         }
 
-    total_score = 75.0 if scenario in {"invest", "evidence_retry"} else 60.0
+    total_score = 75.0 if scenario in {"invest", "uncertain", "evidence_retry"} else 60.0
     return {
-        "scores": {"stub_score": total_score},
+        "scores": {},
         "total_score": total_score,
         "missing_evidence": [],
     }
 
 
-def decision_agent(state: InvestmentState, config: RunnableConfig) -> dict[str, Any]:
-    total_score = state.get("total_score", 0.0)
-    missing_evidence = state.get("missing_evidence", [])
-    decision = "투자" if total_score >= 70 and len(missing_evidence) < 5 else "보류"
-    startup = state.get("current_startup", {})
-    record = {
-        "company": startup.get("name", "후보"),
-        "scores": state.get("scores", {}),
+def _refresh_area_for_metric(metric: str) -> set[str]:
+    mapping = {
+        "development_stage": {"tech"},
+        "technical_originality": {"tech"},
+        "market_tam": {"market"},
+        "market_cagr": {"market"},
+        "demand_clarity": {"market"},
+        "competitive_difference": {"competitor"},
+        "entry_barrier": {"competitor"},
+        "risk_mitigation": {"tech", "market"},
+    }
+    return mapping.get(metric, set())
+
+
+def evidence_refresh(
+    state: InvestmentState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
+    missing = state.get("missing_evidence", [])
+    needed_areas = set().union(*(_refresh_area_for_metric(metric) for metric in missing))
+    refresh_state = {**state, "evidence_retry": min(MAX_EVIDENCE_RETRIES, state.get("evidence_retry", 0) + 1)}
+    update: dict[str, Any] = {"evidence_retry": refresh_state["evidence_retry"]}
+
+    if "tech" in needed_areas:
+        update.update(technology_agent(refresh_state, config))
+    if "market" in needed_areas:
+        update.update(market_agent(refresh_state, config))
+    if "competitor" in needed_areas:
+        update.update(competitor_agent(refresh_state, config))
+
+        # update["missing_evidence"] = []  # This line is removed to preserve D-3 missing evidence rule
+    return update
+
+
+def decision_agent(
+    state: InvestmentState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
+    from agents.config import INVESTMENT_SCORE_THRESHOLD, MAX_MISSING_EVIDENCE_FOR_INVESTMENT
+
+    total_score = state.get("total_score")
+    missing_evidence = list(state.get("missing_evidence", []))
+    decision = (
+        "투자"
+        if total_score is not None
+        and total_score >= INVESTMENT_SCORE_THRESHOLD
+        and len(missing_evidence) < MAX_MISSING_EVIDENCE_FOR_INVESTMENT
+        and not state.get("uncertain", False)
+        else "보류"
+    )
+    startup = state.get("current_startup") or {}
+    evidence = [
+        *state.get("tech_evidence", []),
+        *state.get("market_evidence", []),
+        *state.get("competitor_evidence", []),
+        *startup.get("profile_evidence", []),
+    ]
+    record: EvaluationRecord = {
+        "company_profile": dict(startup),
+        "selection_uncertain": state.get("uncertain", False),
+        "tech_summary": dict(state.get("tech_summary", {})),
+        "market_analysis": dict(state.get("market_analysis", {})),
+        "competitor_analysis": dict(state.get("competitor_analysis", {})),
+        "evidence": evidence,
+        "scores": dict(state.get("scores", {})),
         "total_score": total_score,
+        "missing_evidence": missing_evidence,
         "decision": decision,
-        "reason": "[stub] 분기 검증용 점수이며 C-1 점수 산출은 아직 미구현",
+        "reason": "[stub] D-1/C-3 deterministic decision path",
     }
     return {"decision": decision, "evaluated": [record]}
 
@@ -168,42 +268,48 @@ def decision_agent(state: InvestmentState, config: RunnableConfig) -> dict[str, 
 def next_candidate(state: InvestmentState) -> dict[str, Any]:
     return {
         "current_idx": state.get("current_idx", 0) + 1,
-        "current_startup": {},
-        "selection_status": "",
+        "current_startup": None,
+        "selection_status": None,
         "selection_retry": 0,
         "uncertain": False,
-        "tech_summary": "",
-        "market_analysis": "",
-        "rag_retry": 0,
-        "competitor_analysis": "",
-        "evidence": [],
+        "tech_summary": {},
+        "market_analysis": {},
+        "competitor_analysis": {},
+        "tech_evidence": [],
+        "market_evidence": [],
+        "competitor_evidence": [],
+        "rag_retry": {topic: 0 for topic in TOPICS},
         "evidence_retry": 0,
         "scores": {},
-        "total_score": 0.0,
+        "total_score": None,
         "missing_evidence": [],
-        "decision": "",
+        "decision": None,
     }
 
 
-def report_agent(state: InvestmentState, config: RunnableConfig) -> dict[str, str]:
+def report_agent(
+    state: InvestmentState,
+    config: RunnableConfig,
+) -> dict[str, str]:
     evaluated = state.get("evaluated", [])
-    candidate_lines = [
-        f"- {item.get('company', '후보')}: {item.get('decision', '미정')} "
-        f"({item.get('total_score', 0):.1f}점)"
-        for item in evaluated
-    ] or ["- 분석 대상으로 확정된 후보가 없습니다."]
-    report = "\n".join(
-        [
-            "# SUMMARY",
-            "",
-            "그래프 분기 확인용 더미 보고서입니다. 에이전트 분석은 구현 후 교체합니다.",
-            "",
-            "## 후보 처리 결과",
-            *candidate_lines,
-            "",
-            "# REFERENCE",
-            "",
-            "실제 활용 자료 없음 (stub).",
-        ]
-    )
-    return {"final_report": report}
+    records = [
+        f"- {record['company_profile'].get('name', '기업')}: {record['decision']} "
+        f"(점수: {record['total_score']})"
+        for record in evaluated
+    ] or ["- 분석 대상 기업이 없습니다."]
+    return {
+        "final_report": "\n".join(
+            [
+                "# SUMMARY",
+                "",
+                "D-4 graph 분기 확인용 더미 보고서입니다.",
+                f"평가 기준일: {state.get('as_of_date', '미설정')}",
+                "",
+                *records,
+                "",
+                "# REFERENCE",
+                "",
+                "실제 활용 자료 없음 (stub).",
+            ]
+        )
+    }

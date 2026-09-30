@@ -1,6 +1,7 @@
 # 설계 기준: docs/DESIGN.md B-1 2장, B-3, B-4.
 
 from functools import lru_cache
+import pickle
 from typing import Any, Literal
 
 from langchain_classic.retrievers import EnsembleRetriever
@@ -16,9 +17,13 @@ from agents.common import configure_runtime, create_llm
 from agents.config import LLM_JUDGE_MODEL
 from rag.config import (
     BM25_RETRIEVAL_WEIGHT,
+    BM25_INDEX_FILENAME,
+    BM25_TOP_K,
     DENSE_RETRIEVAL_WEIGHT,
+    DENSE_TOP_K,
     EMBEDDING_MODEL,
     ENSEMBLE_RRF_C,
+    HYBRID_TOP_K,
     QWEN_QUERY_INSTRUCTION,
     vectorstore_path_for_model,
 )
@@ -63,6 +68,18 @@ def _load_chunks() -> tuple[Document, ...]:
     return tuple(chunks)
 
 
+@lru_cache(maxsize=2)
+def _load_bm25_retriever(embedding_model: str) -> BM25Retriever:
+    index_path = vectorstore_path_for_model(embedding_model) / BM25_INDEX_FILENAME
+    if not index_path.is_file():
+        raise FileNotFoundError(
+            f"BM25 index was not found at {index_path}. "
+            "Build or update indexes with: uv run python -m rag.ingest"
+        )
+    with index_path.open("rb") as index_file:
+        return pickle.load(index_file)
+
+
 def _matches_filters(metadata: dict[str, Any], filters: dict[str, Any] | None) -> bool:
     if not filters:
         return True
@@ -91,14 +108,18 @@ def search(
     if not corpus:
         return []
 
-    dense_search_kwargs: dict[str, Any] = {"k": k, "fetch_k": max(20, k * 4)}
+    dense_search_kwargs: dict[str, Any] = {"k": DENSE_TOP_K, "fetch_k": len(corpus)}
     if filters:
         dense_search_kwargs["filter"] = filters
     dense_retriever = vectorstore.as_retriever(
         search_type="similarity",
         search_kwargs=dense_search_kwargs,
     )
-    bm25_retriever = BM25Retriever.from_documents(corpus, k=k)
+    if filters:
+        bm25_retriever = BM25Retriever.from_documents(corpus, k=BM25_TOP_K)
+    else:
+        bm25_retriever = _load_bm25_retriever(EMBEDDING_MODEL)
+        bm25_retriever.k = BM25_TOP_K
     hybrid_retriever = EnsembleRetriever(
         retrievers=[dense_retriever, bm25_retriever],
         weights=[DENSE_RETRIEVAL_WEIGHT, BM25_RETRIEVAL_WEIGHT],
@@ -106,7 +127,9 @@ def search(
         id_key="chunk_id",
     )
     component_results = [dense_retriever.invoke(query), bm25_retriever.invoke(query)]
-    documents = hybrid_retriever.invoke(query)[:k]
+    documents = hybrid_retriever.weighted_reciprocal_rank(component_results)[
+        : min(k, HYBRID_TOP_K)
+    ]
     weights = (DENSE_RETRIEVAL_WEIGHT, BM25_RETRIEVAL_WEIGHT)
     scores_by_chunk_id: dict[str, float] = {}
     for weight, component_documents in zip(weights, component_results, strict=True):
@@ -117,6 +140,7 @@ def search(
             )
     return [
         {
+            "rank": rank,
             "content": document.page_content,
             "doc_id": document.metadata.get("doc_id"),
             "title": document.metadata.get("title"),
@@ -124,7 +148,7 @@ def search(
             "chunk_id": document.metadata.get("chunk_id"),
             "score": scores_by_chunk_id.get(str(document.metadata.get("chunk_id")), 0.0),
         }
-        for document in documents
+        for rank, document in enumerate(documents, start=1)
     ]
 
 
@@ -142,6 +166,10 @@ class ChunkGrade(BaseModel):
     chunk_id: str = Field(description="ID of the chunk being evaluated")
     relevance: Literal["yes", "no"] = Field(
         description="Whether the chunk contains evidence relevant to the query"
+    )
+    reason: str = Field(description="Brief reason for the relevance decision")
+    answerable_metrics: list[str] = Field(
+        description="Metric IDs or market topics that this chunk can answer"
     )
 
 
@@ -173,18 +201,24 @@ def grade_relevance(query: str, chunks: list[dict[str, Any]]) -> list[dict[str, 
             (
                 "system",
                 "Assess each chunk independently. Answer yes only if it contains useful "
-                "evidence for answering the query. Return one result for every chunk, "
-                "preserving its chunk_id exactly.",
+                "evidence for answering the query. For every chunk return yes/no, a brief "
+                "reason, and the metric IDs or topics it can answer. Return one result for "
+                "every chunk, preserving its chunk_id exactly.",
             ),
             ("human", f"Query: {query}\nChunks: {chunk_inputs}"),
         ]
     )
-    grades_by_id = {grade.chunk_id: grade.relevance for grade in response.results}
+    grades_by_id = {grade.chunk_id: grade for grade in response.results}
     expected_ids = [item["chunk_id"] for item in chunk_inputs]
     if set(grades_by_id) != set(expected_ids):
         raise ValueError("Structured relevance output did not grade every supplied chunk")
 
     return [
-        {"chunk_id": chunk.get("chunk_id", index), "relevance": grades_by_id[item["chunk_id"]]}
+        {
+            "chunk_id": chunk.get("chunk_id", index),
+            "relevance": grades_by_id[item["chunk_id"]].relevance,
+            "reason": grades_by_id[item["chunk_id"]].reason,
+            "answerable_metrics": grades_by_id[item["chunk_id"]].answerable_metrics,
+        }
         for index, (chunk, item) in enumerate(zip(chunks, chunk_inputs, strict=True))
     ]

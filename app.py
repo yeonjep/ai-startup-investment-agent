@@ -6,38 +6,53 @@ from typing import Any, Literal
 
 from agents.common import configure_runtime
 from agents.config import (
-    MAX_CANDIDATES,
     MAX_CANDIDATE_POOL,
     MAX_EVIDENCE_RETRIES,
     MAX_RAG_RETRIES,
     MAX_SELECTION_RETRIES,
+    get_as_of_date,
+    validate_max_candidates,
 )
 from agents.graph import build_graph
 from agents.state import InvestmentState
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-Scenario = Literal["invest", "all_hold", "zero_pass", "evidence_retry"]
-DEMO_CANDIDATES = [
-    {"name": "[샘플 후보 A]"},
-    {"name": "[샘플 후보 B]"},
+Scenario = Literal[
+    "invest",
+    "all_hold",
+    "zero_pass",
+    "evidence_retry",
+    "no_candidates",
+    "uncertain",
 ]
+DEMO_SCENARIOS = {
+    "invest": [{"name": "[샘플 투자 후보]"}],
+    "all_hold": [{"name": "[샘플 후보 A]"}, {"name": "[샘플 후보 B]"}],
+    "zero_pass": [{"name": "[부적합 후보 A]"}, {"name": "[부적합 후보 B]"}],
+    "evidence_retry": [{"name": "[근거 보완 후보]"}],
+    "no_candidates": [],
+    "uncertain": [{"name": "[불확실 후보]"}],
+}
 
 
 def main(scenario: Scenario = "all_hold") -> dict[str, Any]:
     configure_runtime()
-    initial_state: InvestmentState = {"domain": "AI 반도체"}
+    initial_state: InvestmentState = {"domain": "AI 반도체"}  # This line is unchanged
+    max_candidates = validate_max_candidates()
     graph = build_graph()
     max_steps = (
         MAX_CANDIDATE_POOL * (MAX_SELECTION_RETRIES + 2)
-        + MAX_CANDIDATES * (10 + MAX_RAG_RETRIES + MAX_EVIDENCE_RETRIES)
+        + max_candidates * (12 + MAX_RAG_RETRIES * len(("market_size", "market_growth", "demand_risk")) + MAX_EVIDENCE_RETRIES * 2)
         + 10
     )
     graph_config = {
         "recursion_limit": max(25, max_steps),
         "configurable": {
             "scenario": scenario,
-            "demo_candidates": DEMO_CANDIDATES,
+            "demo_candidates": DEMO_SCENARIOS[scenario],
+            "max_candidates": max_candidates,
+            "as_of_date": get_as_of_date(),
         },
     }
 
@@ -50,11 +65,12 @@ def main(scenario: Scenario = "all_hold") -> dict[str, Any]:
     ):
         for node_name, node_update in update.items():
             node_visits.append(node_name)
-            for key, value in node_update.items():
-                if key == "evaluated":
-                    result[key] = [*result.get(key, []), *value]
-                else:
-                    result[key] = value
+            if "evaluated" in node_update:
+                result["evaluated"] = [
+                    *result.get("evaluated", []),
+                    *node_update["evaluated"],
+                ]
+            result.update({key: value for key, value in node_update.items() if key != "evaluated"})
 
     report_path = PROJECT_ROOT / "outputs" / f"placeholder_report_{scenario}.md"
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -69,10 +85,10 @@ def main(scenario: Scenario = "all_hold") -> dict[str, Any]:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the DESIGNED investment graph with stubs.")
+    parser = argparse.ArgumentParser(description="Run the DESIGN-aligned investment graph with stubs.")
     parser.add_argument(
         "--scenario",
-        choices=("invest", "all_hold", "zero_pass", "evidence_retry"),
+        choices=("invest", "all_hold", "zero_pass", "evidence_retry", "no_candidates", "uncertain"),
         default="all_hold",
         help="Stub branch to exercise.",
     )

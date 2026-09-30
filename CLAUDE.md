@@ -235,11 +235,11 @@ python {app.py}
 | 도메인, 문제 정의, 스타트업 선정 기준 | A. Domain 선정 > 3. 스타트업 선정 기준 |
 | 에이전트 역할·입출력·도구·에이전트별 동작 | B-1. Agent 설계 |
 | 에이전트별 RAG 적용 | B-2. Agent별 RAG 적용 대상 |
-| RAG 문서, 메타데이터 스키마, 문서 처리 | B-3. RAG 데이터 설계 |
-| 임베딩 후보·선택, 검색 구조·평가 | B-4. Embedding · Retrieval 설계 |
-| RAG 파이프라인 비용·호출 상한 | B-5. RAG 비용 설계 |
-| 평가 항목, 가중치, 루브릭, 계산식, 결측 처리, 판정 임계값 | C. 투자판단 기준, 특히 C-1 평가표 |
-| 그래프 노드·순서·분기·루프·State·Evidence·Edge | D. 그래프 설계 |
+| RAG 문서, 원본 물리 페이지, Cleaning·청킹·Metadata·manifest | B-4. RAG 문서 및 전처리 |
+| 임베딩, query instruction, Dense/BM25 Hybrid·Weighted RRF, Corrective RAG | B-5. Embedding 및 Retrieval 설계 |
+| 투자/보류의 결정 조건 | C-3. 투자/보류 판정 |
+| State 필드·초기값·Reducer, Evidence·ScoreEntry·EvaluationRecord | D-1, D-2 |
+| 10개 노드, Branch·Loop·Evidence refresh·Graph edge | D-3, D-4 |
 | 보고서 목차·작성 규칙·REFERENCE | E. 투자 보고서 |
 | 확정 기술 스택 및 구현 범위 | F. Tech Stack 및 구현 범위 |
 

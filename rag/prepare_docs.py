@@ -11,8 +11,8 @@ MAX_TOTAL_PAGES = 200
 
 DOCUMENTS = (
     ("gov_2025_strategy", "251219+(별첨)+AI반도체+산업+도약+전략(안)+요약본.pdf", 10, None),
-    ("deloitte_2026_outlook", "2026 Semiconductor Industry Outlook _ Deloitte Insights.pdf", 13, None),
-    ("kisdi_2024_perspectives", "[초점] 새로운 기회의 창으로 AI반도체 시장 현황과 전망.pdf", 24, None),
+        ("deloitte_2026_outlook", "2026 Semiconductor Industry Outlook _ Deloitte Insights.pdf", 12, None),
+        ("kisdi_2024_perspectives", "[초점] 새로운 기회의 창으로 AI반도체 시장 현황과 전망.pdf", 23, None),
     ("kisdi_2024_research", "AI반도체 글로벌 첨단 기술·산업 동향 조사 및 대응방향 연구.pdf", 55, (27, 81)),
 )
 
