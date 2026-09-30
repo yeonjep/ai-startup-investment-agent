@@ -55,6 +55,7 @@ class DiscoveredStartup(BaseModel):
     recent_round: str = Field(default="", description="최근 투자 라운드 (Seed, Series A, Series B 등)")
     total_funding: str = Field(default="", description="누적 투자 유치액")
     description: str = Field(default="", description="기업 및 주력 제품/솔루션 개요")
+    latest_source_date: str = Field(default="", description="이 기업을 언급한 자료의 최신 공개일 YYYY-MM-DD. 자료에 표시된 공개일만 사용하고 없으면 빈 문자열")
 
 
 class DiscoveryResult(BaseModel):
@@ -122,13 +123,13 @@ def discover_candidates(domain: str = "AI 반도체") -> list[dict[str, Any]]:
     structured_llm = llm.with_structured_output(DiscoveryResult)
 
     docs_text = "\n\n".join(
-        f"[{i+1}] {r.get('title', '')} ({r.get('url', '')})\n{r.get('content', '')}"
-        for i, r in enumerate(all_search_results[:12])
+        f"[{i+1}] {r.get('title', '')} ({r.get('url', '')}) 공개일: {r.get('date') or '미확인'}\n{r.get('content', '')}"
+        for i, r in enumerate(all_search_results[:20])
     )
 
     prompt = (
         f"다음 검색 결과를 바탕으로 {domain} 분야의 비상장 스타트업 후보 목록을 추출하세요.\n"
-        "상장사(예: 대기업, 코스닥 상장사)는 제외하고, Seed ~ Series C 단계의 비상장 스타트업만 추출하세요.\n\n"
+        "상장사(예: 대기업, 코스닥 상장사)는 제외하고, Seed ~ Series C 단계의 비상장 스타트업만 추출하세요. 국내·해외 기업을 모두 포함하고 국적으로 가점·감점하지 않습니다.\n\n"
         f"{docs_text}"
     )
 
@@ -159,8 +160,15 @@ def discover_candidates(domain: str = "AI 반도체") -> list[dict[str, Any]]:
             candidate_dict["discovery_done"] = True
             unique_candidates.append(candidate_dict)
 
-    # A-3: 국적에 따른 가점·감점 없음. 최신 공개일 정보가 없으므로 투자 단계가 확인된 후보를 앞에 두고 검색 순서를 유지한다.
-    unique_candidates.sort(key=lambda c: 0 if c.get("recent_round") else 1)
+    # A-3 정렬: 최신 공개일 내림차순, 동률이면 공식 도메인 오름차순, 공개일 미확인은 후순위
+    def _domain(c: dict[str, Any]) -> str:
+        return re.sub(r"^https?://(www\.)?", "", str(c.get("domain_url") or "")).lower() or "~"
+
+    unique_candidates.sort(key=_domain)  # 안정 정렬: 도메인 오름차순을 먼저 적용
+    unique_candidates.sort(key=lambda c: c.get("latest_source_date") or "", reverse=True)
+    dated = [c for c in unique_candidates if c.get("latest_source_date")]
+    undated = [c for c in unique_candidates if not c.get("latest_source_date")]
+    unique_candidates = dated + undated
     return unique_candidates[:MAX_CANDIDATE_POOL]
 
 
@@ -259,6 +267,8 @@ def collect_profile_evidence(company_name: str, search_docs: list[dict[str, Any]
     sources = source_lookup(search_docs)
     evidence: list[Evidence] = []
     for metric in metrics:
+        if metric.metric == "revenue_stage" and metric.text not in {"반복 매출", "초기 매출", "매출 없음"}:
+            continue  # 확인된 범주가 아니면 근거로 쓰지 않는다 (정보 부족은 결측, 확인된 부재와 구분)
         numeric = metric.metric in {"technical_headcount", "funding_total", "customer_traction"}
         value: Any = metric.number if numeric else metric.text
         item = make_evidence(

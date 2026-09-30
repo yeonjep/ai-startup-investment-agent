@@ -1,6 +1,7 @@
 # 설계 확정 후 교체할 부분: Tavily 검색 범위와 결과 수는 최종 Agent 설계에 맞춰 조정합니다.
 
 import os
+import re
 from datetime import date
 from functools import lru_cache
 from typing import Any
@@ -22,6 +23,32 @@ def _get_tavily_search(max_results: int = 5) -> TavilySearch:
         include_answer=False,
         include_raw_content=False,
     )
+
+
+_DATE_PATTERNS = (
+    (r"(?<!\d)(20\d{2})[-./](\d{1,2})[-./](\d{1,2})(?!\d)", (1, 2, 3)),
+    (r"(20\d{2})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일", (1, 2, 3)),
+    (r"/(20\d{2})/(\d{2})/(\d{2})(?:/|$|\?)", (1, 2, 3)),
+    (r"(?<!\d)(20\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])(?!\d)", (1, 2, 3)),
+    (r"(?<!\d)(20\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{4,}", (1, 2, 3)),  # 기사 ID 접두 YYYYMMDDhhmm...
+)
+
+
+def _infer_date(url: str, title: str, content: str) -> str | None:
+    """Tavily가 공개일을 주지 않을 때 URL·제목·본문에 명시된 날짜를 찾는다. 찾지 못하면 None."""
+    for text in (url or "", title or "", (content or "")[:600]):
+        for pattern, groups in _DATE_PATTERNS:
+            match = re.search(pattern, text)
+            if not match:
+                continue
+            year, month, day = (int(match.group(g)) for g in groups)
+            try:
+                found = date(year, month, day)
+            except ValueError:
+                continue
+            if found <= date.today():
+                return found.isoformat()
+    return None
 
 
 @tool("web_search")
@@ -49,7 +76,11 @@ def web_search(query: str, max_results: int = 5) -> list[dict[str, Any]]:
                 "title": result.get("title", ""),
                 "url": result.get("url", ""),
                 "content": result.get("content", ""),
-                "date": str(published)[:10] if published else None,
+                "date": (
+                    str(published)[:10]
+                    if published
+                    else _infer_date(result.get("url", ""), result.get("title", ""), result.get("content", ""))
+                ),
                 "accessed_at": date.today().isoformat(),
                 "score": result.get("score"),
             }

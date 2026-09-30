@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from agents.common import create_llm, load_prompt
 from tools.charts import group_score_chart, total_score_chart
 from tools.pdf_export import render_markdown_pdf
+from tools.web_meta import fetch_published_date
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = PROJECT_ROOT / "outputs"
@@ -182,6 +183,9 @@ def _finalize_citations(markdown_text: str, catalog: Catalog) -> str:
         return f"[{ref_keys[key_of(item)]}]"
 
     body = re.sub(r"\[E\d+\]", replace, markdown_text)
+    for item in cited:  # 인용한 웹 출처만 페이지 메타데이터에서 발행일 보완
+        if item["source_type"] == "web" and not item.get("date") and item.get("url"):
+            item["date"] = fetch_published_date(item["url"])
     # 연속된 인용은 중복을 없애고 번호순으로 정렬한다: [3][1][3] -> [1][3]
     body = re.sub(
         r"(?:\[\d+\])+",
@@ -440,4 +444,5 @@ def generate_report(state: dict[str, Any], output_dir: Path = OUTPUT_DIR, basena
 
 def report_agent(state: dict[str, Any], config: RunnableConfig) -> dict[str, str]:
     """그래프 노드 인터페이스: final_report(markdown)만 State에 쓰고 파일은 outputs/에 저장한다."""
-    return {"final_report": generate_report(state)["markdown"]}
+    basename = (config or {}).get("configurable", {}).get("report_basename", REPORT_BASENAME)
+    return {"final_report": generate_report(state, basename=basename)["markdown"]}

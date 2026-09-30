@@ -104,7 +104,7 @@ def _market_scope(state: InvestmentState) -> str:
         "DESIGN_AI": "AI 반도체 설계 자동화 EDA",
         "PROCESS_AI": "반도체 공정 AI 수율 불량 예측",
     }.get(company_type, state.get("domain", "AI 반도체"))
-    return str(startup.get("target_market") or startup.get("evaluation_product") or type_scope)
+    return str(startup.get("target_market") or type_scope)
 
 
 def _market_query(state: InvestmentState, topic: str, attempt: int) -> str:
@@ -269,8 +269,8 @@ def _market_findings(
                 (
                     "system",
                     "You extract investment-market facts only from supplied evidence. "
-                    "Return one finding per supplied topic. For market_size, keep the numeric "
-                    "value and its original currency/scale unit. For market_growth, return CAGR "
+                    "Return one finding per supplied topic. Write summary in Korean. For market_size, keep the numeric "
+                    "value exactly as written in the evidence and its original currency/scale unit. For market_growth, return CAGR "
                     "as a percentage number. For demand_risk, summarize concrete target customers, "
                     "demand drivers, and market/regulatory risks; value may be text. Include scope "
                     "(region, base year/forecast period, product definition). Cite only exact supplied "
@@ -303,13 +303,32 @@ def _market_findings(
             continue
         item = finding.model_dump()
         item["evidence_ids"] = valid_ids
+        quotes = " ".join(
+            str(e.get("quote") or "") for e in evidence_by_topic[finding.topic] if e["evidence_id"] in valid_ids
+        )
+        numeric_topic = finding.topic in {"market_size", "market_growth"}
+        if numeric_topic and finding.value is not None:
+            if not _number_in_text(finding.value, quotes):
+                item["conflict"] = True  # 인용 원문에 없는 수치는 채택하지 않는다
+                item["validation"] = "수치가 인용 원문에 없음"
+            elif not finding.scope or (finding.topic == "market_size" and not finding.unit):
+                item["validation"] = "시장 범위·기준연도·단위 미확인"
         item["sufficient"] = bool(
             topic_results[finding.topic].get("sufficient")
-            and not finding.conflict
+            and not item["conflict"]
             and finding.value is not None
+            and not item.get("validation")
         )
         findings[finding.topic] = item
     return findings, None
+
+
+def _number_in_text(value: Any, text: str) -> bool:
+    number = _number(value)
+    if number is None:
+        return False
+    found = {float(x.replace(",", "")) for x in re.findall(r"\d[\d,]*(?:\.\d+)?", text)}
+    return any(abs(number - n) <= 1e-9 * max(1.0, abs(n)) for n in found)
 
 
 def _all_evidence(state: InvestmentState) -> list[Evidence]:
@@ -341,7 +360,9 @@ def _scaled_money(value: Any, unit: Any, target_currency: Literal["USD", "KRW"])
     amount = _number(value)
     if amount is None:
         return None
-    unit_text = str(unit or "").lower().replace(" ", "")
+    # 값에 "1,228억"처럼 배율이 붙어 오는 경우도 있으므로 값 문자열과 단위를 함께 본다
+    scale_source = str(value) if isinstance(value, str) else ""
+    unit_text = f"{scale_source}{unit or ''}".lower().replace(" ", "")
     multiplier = 1.0
     if any(token in unit_text for token in ("trillion", "조달러")):
         multiplier = 1_000_000_000_000.0
@@ -583,7 +604,8 @@ def _score_qualitative_metrics(
                     "only=3, confirmed none=1; entry_barrier: all three type-specific IP/product-data/"
                     "integration-partnership categories=5, one or two=3, confirmed none=1; "
                     "risk_mitigation: major risks mitigated=5, partially mitigated=3, fatal unresolved "
-                    "risk=1. Missing information is not negative evidence. Do not invent facts.",
+                    "risk=1. Missing information is not negative evidence. Do not invent facts. "
+                    "Write every reason in Korean, one or two sentences.",
                 ),
                 (
                     "human",
@@ -637,7 +659,7 @@ def _web_evidence(
                 "unit": None,
                 "source_type": "web",
                 "title": result.get("title"),
-                "source": result.get("source") or result.get("title"),
+                "source": re.sub(r"^https?://(?:www\.)?([^/]+).*$", r"\1", url) if url else result.get("title"),
                 "date": result.get("published_at") or result.get("date"),
                 "accessed_at": result.get("accessed_at") or accessed_at,
                 "url": url or None,
@@ -784,6 +806,11 @@ def market_agent(
 
     market_evidence = list(evidence_by_id.values())
     findings, analysis_error = _market_findings(state, topic_results, market_evidence)
+    for finding in findings.values():  # D-2: 근거의 scope에 시장 범위·기준연도·기간을 기록
+        if finding.get("scope"):
+            for item in market_evidence:
+                if item["evidence_id"] in finding.get("evidence_ids", []):
+                    item["scope"] = finding["scope"]
     for topic in TOPICS:
         finding = findings.get(topic)
         topic_results[topic]["finding"] = finding
