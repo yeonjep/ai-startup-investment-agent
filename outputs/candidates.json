@@ -1,163 +1,318 @@
 [
   {
-    "name": "딥엑스",
+    "name": "세카",
     "aliases": [
-      "DeepX"
+      "SECA"
     ],
-    "country": "한국",
-    "domain_url": "https://www.deepx.com",
-    "founded_year": "2018",
-    "ceo": "김녹원",
-    "recent_round": "Series D",
-    "total_funding": "약 3,700억 원 이상",
-    "description": "한국의 AI용 NPU 개발 팹리스 스타트업으로, 온디바이스 AI 반도체 시장에서 활동 중이며, 2세대 AI 칩 DX-M2 개발 중. 2026년 상반기 출시 목표를 갖고 있음.",
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "2026",
+    "ceo": "",
+    "recent_round": "Seed",
+    "total_funding": "비공개",
+    "description": "AI 기반 전자설계자동화(EDA) 플랫폼을 개발하는 스타트업으로, LG전자와 블루포인트파트너스로부터 시드 투자 유치.",
+    "latest_source_date": "2026-08-22",
+    "discovery_done": true,
+    "company_type": "DESIGN_AI",
+    "criteria_results": [
+      {
+        "criterion_name": "domain_relevance",
+        "status": "PASS",
+        "reason": "세카는 AI 기반 전자설계자동화 플랫폼을 개발하여 AI 반도체 설계 관련 도메인에 명확히 해당됨.",
+        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
+      },
+      {
+        "criterion_name": "ai_core",
+        "status": "PASS",
+        "reason": "AI가 설계 자동화의 핵심 가치로, 자체 LLM, VLM 등 AI 모델을 활용해 설계 데이터를 분석함.",
+        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
+      },
+      {
+        "criterion_name": "unlisted",
+        "status": "PASS",
+        "reason": "최근 라운드가 Seed이며 비상장 상태임.",
+        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
+      },
+      {
+        "criterion_name": "funding_stage",
+        "status": "PASS",
+        "reason": "최근 투자 라운드가 Seed 단계에 해당됨.",
+        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
+      },
+      {
+        "criterion_name": "no_exit",
+        "status": "PASS",
+        "reason": "피인수·합병 등 Exit 이력이 없으며 합병 또는 매각 진행 중이라는 언급도 없음.",
+        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
+      },
+      {
+        "criterion_name": "info_sufficiency",
+        "status": "PASS",
+        "reason": "홈페이지는 명시되어 있지 않으나 투자 소식 및 기술 관련 기사 2건 이상 존재함.",
+        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
+      }
+    ],
+    "evaluation_product": "AI 기반 전자설계자동화(EDA) 플랫폼을 개발하는 스타트업으로, LG전자와 블루포인트파트너스로부터 시드 투자 유치.",
+    "selection_status": "PASS",
+    "uncertain": false,
+    "profile_evidence": [
+      {
+        "evidence_id": "세카:profile:team_experience:d1db11b2",
+        "company": "세카",
+        "category": "profile",
+        "metric": "team_experience",
+        "value": "세카 창업팀/사진제공=세카",
+        "unit": null,
+        "source_type": "web",
+        "title": "8월 셋째주, AI 반도체에 520억 '뭉칫돈'…딥테크 투자 열기 지속",
+        "source": "v.daum.net",
+        "date": null,
+        "accessed_at": "2026-09-30",
+        "url": "https://v.daum.net/v/Wpp6eQSrXn",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "세카 창업팀/사진제공=세카",
+        "scope": null
+      }
+    ]
+  },
+  {
+    "name": "iHW",
+    "aliases": [],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "2024",
+    "ceo": "",
+    "recent_round": "Series A",
+    "total_funding": "640억원",
+    "description": "초저전력 AI 반도체 팹리스 스타트업으로, 520억원 규모 시리즈A 투자 유치 완료, 엣지 AI 칩 양산 및 LLM 칩 개발을 추진 중.",
+    "latest_source_date": "2026-08-19",
     "discovery_done": true,
     "company_type": "CHIP",
     "criteria_results": [
       {
         "criterion_name": "domain_relevance",
         "status": "PASS",
-        "reason": "딥엑스는 AI 반도체 및 AI 컴퓨팅 솔루션에 대한 원천기술을 보유하며, NPU 및 온디바이스 AI 반도체를 주요 제품으로 개발하는 AI 반도체 전문 기업임이 명확하다.",
-        "source_url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html"
+        "reason": "iHW는 AI 반도체 팹리스 기업으로, 초저전력 AI 반도체 칩을 개발하여 뉴로모픽 컴퓨팅, ACiM(Analog Compute-in-Memory) 기술을 적용하는 AI 반도체 제품을 주력으로 하기 때문",
+        "source_url": "https://wowtale.net/2026/08/19/263123"
       },
       {
         "criterion_name": "ai_core",
         "status": "PASS",
-        "reason": "AI 반도체 제품이 딥엑스의 핵심 기술 및 제품으로 AI가 제품의 본질적 가치임이 명확히 드러나고 있다.",
-        "source_url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html"
+        "reason": "AI가 iHW 제품 핵심가치이며, 칩 설계가 AI 연산을 위한 것으로 AI 핵심성이 명확함",
+        "source_url": "https://wowtale.net/2026/08/19/263123"
       },
       {
         "criterion_name": "unlisted",
         "status": "PASS",
-        "reason": "딥엑스는 비상장 기업임이 투자정보 및 기업 정보에서 확인된다.",
-        "source_url": "https://thevc.kr/deepx"
+        "reason": "비상장 상태로 상장 관련 정보 없음",
+        "source_url": "https://wowtale.net/2026/08/19/263123"
       },
       {
         "criterion_name": "funding_stage",
         "status": "PASS",
-        "reason": "최근 투자 라운드가 Series C 단계이며, 시리즈 D 이상 또는 Pre-IPO 단계는 아님이 확인된다.",
-        "source_url": "https://thevc.kr/deepx"
+        "reason": "최근 투자 라운드가 Series A(시리즈 A)로 기준에 부합함",
+        "source_url": "https://wowtale.net/2026/08/19/263123"
       },
       {
         "criterion_name": "no_exit",
         "status": "PASS",
-        "reason": "딥엑스는 피인수, 합병, 상장 이력이 없으며 운영 중인 비상장 스타트업이다.",
-        "source_url": "https://thevc.kr/deepx"
+        "reason": "피인수, 합병, 상장 이력 없으며 회사가 최근 설립되어 Exit 사례 없음",
+        "source_url": "https://wowtale.net/2026/08/19/263123"
       },
       {
         "criterion_name": "info_sufficiency",
         "status": "PASS",
-        "reason": "딥엑스 관련 뉴스 기사 및 공식 홈페이지 등 복수(2건 이상)의 충분한 정보가 제공되고 있다.",
-        "source_url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html"
+        "reason": "홈페이지 및 2건 이상의 기사와 보도자료가 존재하여 정보가 충분함",
+        "source_url": "https://wowtale.net/2026/08/19/263123"
       }
     ],
+    "evaluation_product": "초저전력 AI 반도체 팹리스 스타트업으로, 520억원 규모 시리즈A 투자 유치 완료, 엣지 AI 칩 양산 및 LLM 칩 개발을 추진 중.",
     "selection_status": "PASS",
     "uncertain": false,
     "profile_evidence": [
       {
-        "evidence_id": "EV-PROF-001",
-        "company": "딥엑스",
+        "evidence_id": "ihw:profile:team_experience:5b917f4b",
+        "company": "iHW",
         "category": "profile",
-        "metric": "founder_career",
-        "value": "김녹원 대표가 창업자로, 사모펀드 투자사 스카이레이크의 진대제 전 정보통신부 장관과 BNW인베스트먼트 김재욱 회장 등 반도체 전문가들이 주요 투자자로 참여함. 진대제 회장은 삼성전자 메모리 반도체 개발 선도 경험, 김재욱 회장 역시 삼성전자 메모리 제조 기술 담당 경력 보유.",
-        "unit": "",
+        "metric": "team_experience",
+        "value": "iHW는 삼성전자, SK하이닉스, Intel 등 글로벌 반도체 기업 출신 베테랑 임원과 엔지니어들이 주축이 되어 2024년 6월 설립된 AI 반도체 팹리스 기업이다.",
+        "unit": null,
         "source_type": "web",
-        "title": "딥엑스 founder_career 정보",
-        "source": "Web Search",
-        "date": "2026-09-30",
-        "url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html",
-        "doc_id": "",
-        "location": ""
+        "title": "iHW, 520억원 시리즈A 투자 유치…초저전력 AI 반도체 사업 가속화 - 와우테일",
+        "source": "wowtale.net",
+        "date": "2026-08-19",
+        "accessed_at": "2026-09-30",
+        "url": "https://wowtale.net/2026/08/19/263123",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "iHW는 삼성전자, SK하이닉스, Intel 등 글로벌 반도체 기업 출신 베테랑 임원과 엔지니어들이 주축이 되어 2024년 6월 설립된 AI 반도체 팹리스 기업이다.",
+        "scope": null
       },
       {
-        "evidence_id": "EV-PROF-002",
-        "company": "딥엑스",
+        "evidence_id": "ihw:profile:team_experience:560034c0",
+        "company": "iHW",
         "category": "profile",
-        "metric": "tech_personnel",
-        "value": "2026년 기준 임직원 수 135명(출처: THE VC)",
-        "unit": "명",
+        "metric": "team_experience",
+        "value": "김태훈 대표는 삼성전자, SK하이닉스, 미국의 마이크론 테크놀로지 등 세계 3대 메모리 반도체 업체를 모두 거친 전문가로, SK하이닉스에서 10년간 부사장을 지내며 AI 메모리 반도체 부문을 이끌었다.",
+        "unit": null,
         "source_type": "web",
-        "title": "딥엑스 tech_personnel 정보",
-        "source": "Web Search",
-        "date": "2026-09-30",
-        "url": "https://thevc.kr/deepx",
-        "doc_id": "",
-        "location": ""
+        "title": "저전력 AI 반도체 만드는 iHW, 520억 원 투자 유치-경제ㅣ한국일보",
+        "source": "hankookilbo.com",
+        "date": "2026-08-19",
+        "accessed_at": "2026-09-30",
+        "url": "https://www.hankookilbo.com/news/article/A2026081915440002141",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "삼성전자, SK하이닉스, 인텔 등 반도체 기업 출신들이 모여 2024년 설립한 이 업체는 전력을 적게 소모하는 AI 반도체 설계 전문(팹리스) 업체다. 미국 애리조나주립대학에서 공학박사를 받은 김태훈 대표는 삼성전자, SK하이닉스, 미국의 마이크론 테크놀로지 등 세계 3대 메모리 반도체 업체를 모두 거친 전문가로, SK하이닉스에서 10년간 부사장을 지내며 AI 메모리 반도체 부문을 이끌었다.",
+        "scope": null
       },
       {
-        "evidence_id": "EV-PROF-003",
-        "company": "딥엑스",
+        "evidence_id": "ihw:profile:funding_total:2de51b84",
+        "company": "iHW",
         "category": "profile",
-        "metric": "cumulative_funding",
-        "value": "누적 투자 유치금액 약 1,100억원 (사모펀드 중심 신규 투자 완료)",
-        "unit": "원",
+        "metric": "funding_total",
+        "value": 64000000000.0,
+        "unit": "KRW",
         "source_type": "web",
-        "title": "딥엑스 cumulative_funding 정보",
-        "source": "Web Search",
-        "date": "2026-09-30",
-        "url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html",
-        "doc_id": "",
-        "location": ""
+        "title": "iHW, 520억 규모 시리즈A 투자 유치…'초저전력 AI 반도체' 상용화 가속 < 보도자료 < AI 기업 < AI산업 < 기사본문 - AI타임스",
+        "source": "aitimes.com",
+        "date": "2026-09-23",
+        "accessed_at": "2026-09-30",
+        "url": "https://www.aitimes.com/news/articleView.html?idxno=214115",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "iHW, 520억 원 시리즈A 투자 유치…누적 투자액은 640억 원 규모다.",
+        "scope": null
       },
       {
-        "evidence_id": "EV-PROF-004",
-        "company": "딥엑스",
+        "evidence_id": "ihw:profile:risk_mitigation:d281e34e",
+        "company": "iHW",
         "category": "profile",
-        "metric": "customer_poc",
-        "value": "글로벌 기업 100여 곳에 AI 반도체 및 소프트웨어 제공 중으로 양산 전 사전 검증 완료, 연내 대단위 양산 예정. 북미 및 중화권 시장 집중 공략, 포스코DX와 스마트 팩토리 협업 등 PoC 및 상용 계약 진행 중.",
-        "unit": "건",
+        "metric": "risk_mitigation",
+        "value": "핵심 코어 블록의 실리콘 동작 검증과 고차원 비전 AI 모델 시연에 성공하여 발열과 배터리 한계 문제를 해결할 가능성을 보여줬다.",
+        "unit": null,
         "source_type": "web",
-        "title": "딥엑스 customer_poc 정보",
-        "source": "Web Search",
-        "date": "2026-09-30",
-        "url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html",
-        "doc_id": "",
-        "location": ""
-      },
-      {
-        "evidence_id": "EV-PROF-005",
-        "company": "딥엑스",
-        "category": "profile",
-        "metric": "revenue_stage",
-        "value": "2025년 매출 데이터 비공개, 2026년 1세대 제품 양산 예정으로 초기 매출 생성 단계 추정",
-        "unit": "",
-        "source_type": "web",
-        "title": "딥엑스 revenue_stage 정보",
-        "source": "Web Search",
-        "date": "2026-09-30",
-        "url": "https://thevc.kr/deepx",
-        "doc_id": "",
-        "location": ""
-      },
-      {
-        "evidence_id": "EV-PROF-006",
-        "company": "딥엑스",
-        "category": "profile",
-        "metric": "risk_factors",
-        "value": "AI 반도체 시장 내 경쟁 심화 가능성 및 글로벌 시장 수출 규제, 양산 전 검증 단계의 기술 리스크, 고성능·저전력 AI 반도체 개발의 기술 난이도 높은 점 포함됨.",
-        "unit": "",
-        "source_type": "web",
-        "title": "딥엑스 risk_factors 정보",
-        "source": "Web Search",
-        "date": "2026-09-30",
-        "url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html",
-        "doc_id": "",
-        "location": ""
+        "title": "iHW, 520억원 시리즈A 투자 유치…초저전력 AI 반도체 사업 가속화 - 와우테일",
+        "source": "wowtale.net",
+        "date": "2026-08-19",
+        "accessed_at": "2026-09-30",
+        "url": "https://wowtale.net/2026/08/19/263123",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "가장 큰 불확실성이었던 핵심 코어 블록의 실리콘 동작 검증과 고차원 비전 AI 모델 시연에 성공하면서 발열과 배터리의 한계로 디지털 NPU가 풀지 못했던 스마트시티·산업용 비전·로봇 관절 등 엣지 시장을 선점할 가능성을 보여줬다.",
+        "scope": null
       }
     ]
   },
   {
+    "name": "아티크론",
+    "aliases": [
+      "Aticron"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "2023",
+    "ceo": "",
+    "recent_round": "Pre-A",
+    "total_funding": "33억원",
+    "description": "메모리 중심 AI 반도체 시스템 IP 설계 스타트업으로, SRAM-CIM 기반 NPU IP와 설계 자동화 플랫폼을 개발 중이며, 2026년 Pre-A 투자 유치.",
+    "latest_source_date": "2026-05-07",
+    "discovery_done": true
+  },
+  {
+    "name": "하이퍼엑셀",
+    "aliases": [
+      "HyperExcel"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "",
+    "ceo": "",
+    "recent_round": "Series B",
+    "total_funding": "약 2000억원",
+    "description": "AI 반도체 팹리스 스타트업으로, 2026년 시리즈B 투자에서 약 2000억원 규모 투자 유치, 게임사 크래프톤 등이 참여.",
+    "latest_source_date": "2026-05",
+    "discovery_done": true
+  },
+  {
     "name": "리벨리온",
     "aliases": [
-      "Rebellion"
+      "Rebellions"
     ],
-    "country": "한국",
-    "domain_url": "https://rebellion.co.kr",
+    "country": "대한민국",
+    "domain_url": "",
     "founded_year": "2020",
-    "ceo": "비공개",
+    "ceo": "",
     "recent_round": "Pre-IPO",
-    "total_funding": "약 1조 3,000억 원 이상",
-    "description": "AI 추론 연산 특화 NPU 설계 및 소프트웨어 개발 스타트업. SK텔레콤 사피온코리아와 합병 완료. 2027년 코스닥 상장을 목표로 하고 있으나 현재 비상장 스타트업이며 대규모 프리IPO 투자 유치 중.",
+    "total_funding": "약 1조3,000억원",
+    "description": "AI 추론 연산에 특화된 NPU를 설계·개발하는 팹리스 스타트업으로, 2026년 정부 및 전략적 투자자들로부터 대규모 투자 유치 후 프리IPO 단계에 있음.",
+    "latest_source_date": "2026-03-26",
+    "discovery_done": true
+  },
+  {
+    "name": "퓨리오사AI",
+    "aliases": [
+      "FuriosaAI"
+    ],
+    "country": "대한민국",
+    "domain_url": "https://furiosa.ai",
+    "founded_year": "2017",
+    "ceo": "백준호",
+    "recent_round": "Series B",
+    "total_funding": "약 1,500억원 이상",
+    "description": "AI 추론용 고성능 AI 반도체 설계 및 개발 스타트업으로, 2세대 칩 ‘레니게이드’ 양산 및 3세대 칩 ‘스토크’ 개발 계획 중이며, 나스닥 상장 예정.",
+    "latest_source_date": "2026-01-02",
+    "discovery_done": true
+  },
+  {
+    "name": "딥엑스",
+    "aliases": [
+      "DeepX"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "2017",
+    "ceo": "김녹원",
+    "recent_round": "Series D",
+    "total_funding": "3700억원 이상",
+    "description": "AI용 NPU를 개발하는 국내 AI 반도체 팹리스 스타트업으로, 2026년 기준 2세대 칩 DX-M2를 개발 중이며, 시리즈 D 투자에서 약 3조 1350억원의 기업가치를 인정받았다.",
+    "latest_source_date": "2026-01-02",
+    "discovery_done": true
+  },
+  {
+    "name": "페블스퀘어",
+    "aliases": [
+      "PebbleSquare"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "",
+    "ceo": "",
+    "recent_round": "Pre-A",
+    "total_funding": "125억원",
+    "description": "뉴로모픽 AI 반도체 설계 스타트업으로, 프리-A 투자 유치 경력 보유.",
+    "latest_source_date": "2026",
+    "discovery_done": true
+  },
+  {
+    "name": "하이퍼비주얼에이아이",
+    "aliases": [
+      "HyperVisual AI"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "",
+    "ceo": "",
+    "recent_round": "Pre-A",
+    "total_funding": "비공개",
+    "description": "AI 최적화 NPU 개발 스타트업으로, 프리-A 투자 단계에 있음.",
+    "latest_source_date": "2026",
     "discovery_done": true
   }
 ]
