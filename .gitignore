@@ -12,3 +12,4 @@ outputs/*.zip
 data/vectorstore/
 vectorstore/
 faiss_index/
+.DS_Store
