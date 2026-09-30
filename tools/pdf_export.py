@@ -1,5 +1,6 @@
 # 설계 기준: docs/DESIGN.md B-3 export_report_pdf (markdown, path → 한글 폰트 PDF 경로).
 
+import re
 from pathlib import Path
 
 import markdown
@@ -27,6 +28,8 @@ th { background-color: #e8e8e8; }
 def render_markdown_pdf(markdown_text: str, path: str | Path) -> int:
     """Render markdown to a Korean-font PDF and return the page count (checked with PyMuPDF)."""
     html = markdown.markdown(markdown_text, extensions=["tables", "sane_lists"])
+    # 긴 URL이 페이지 밖으로 잘리지 않도록 줄바꿈 가능 지점을 넣는다
+    html = re.sub(r"[^\s<>]{40,}", lambda m: re.sub(r"(.{24})", r"\1<wbr>", m.group(0)), html)
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     story = pymupdf.Story(html=html, user_css=CSS, archive=pymupdf.Archive(str(FONT_DIR)))

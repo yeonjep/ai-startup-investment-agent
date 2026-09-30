@@ -74,9 +74,27 @@ def _name(record: dict[str, Any]) -> str:
     return record["company_profile"].get("name", "기업")
 
 
+def _fmt_raw(value: Any) -> str:
+    """ScoreEntry.raw_value(스칼라·dict·list)를 표에 넣을 짧은 문자열로 바꾼다."""
+    if isinstance(value, dict):
+        amount, unit = value.get("value"), value.get("unit")
+        if isinstance(amount, (int, float)):
+            if unit == "KRW":
+                return f"약 {amount / 1e8:,.0f}억 원"
+            if unit == "USD":
+                return f"약 ${amount / 1e9:,.1f}B" if amount >= 1e9 else f"약 ${amount / 1e6:,.0f}M"
+            return f"{amount:g}{unit or ''}"
+        value = amount
+    if isinstance(value, (list, tuple)):
+        value = next((v for v in value if v not in (None, "")), None)
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    return "-" if value in (None, "") else str(value)
+
+
 def _raw(record: dict[str, Any], metric: str) -> Any:
     entry = record.get("scores", {}).get(metric)
-    return None if not entry or entry.get("status") == "missing" else entry.get("raw_value")
+    return None if not entry or entry.get("status") == "missing" else _fmt_raw(entry.get("raw_value"))
 
 
 class Catalog:
@@ -163,6 +181,7 @@ def _finalize_citations(markdown_text: str, catalog: Catalog) -> str:
         return f"[{ref_keys[key_of(item)]}]"
 
     body = re.sub(r"\[E\d+\]", replace, markdown_text)
+    body = re.sub(r"(\[\d+\])(?:\1)+", r"\1", body)  # [3][3][3] -> [3]
     lines = _format_references(cited)
     reference = "\n".join(f"{i}. {line}" for i, line in enumerate(lines, start=1)) or "인용한 외부 자료 없음."
     return f"{body}\n\n# REFERENCE\n\n{reference}\n"
@@ -231,8 +250,11 @@ def _scorecard(record: dict[str, Any], catalog: Catalog, reason_limit: int) -> s
             continue
         missing = entry["status"] == "missing"
         score = f"{entry['score']:g} ({NEUTRAL})" if missing else f"{entry['score']:g}"
-        reason = _cell(entry["reason"], reason_limit)
-        rows.append([group, label, _cell(entry["raw_value"], 24), score, f"{reason} {catalog.tag(entry['evidence_ids'])}".strip()])
+        reason = entry["reason"]
+        if reason.startswith("설계된 정량·범주 구간을 코드로 적용"):
+            reason = "정량·범주 구간 규칙 적용"
+        reason = _cell(reason, reason_limit)
+        rows.append([group, label, _cell(_fmt_raw(entry["raw_value"]), 28), score, f"{reason} {catalog.tag(entry['evidence_ids'])}".strip()])
     return _table(["항목", "지표", "원값", "점수", "판단 근거"], rows)
 
 
@@ -261,8 +283,10 @@ def _missing_text(record: dict[str, Any]) -> str:
 def _limitations(state: dict[str, Any]) -> str:
     total = len(state.get("candidates", []))
     done = len(state.get("evaluated", []))
+    excluded = sum(1 for c in state.get("candidates", []) if c.get("selection_status") == "FAIL")
     return (
-        f"- 후보 {total}개를 수집해 {done}개를 평가했다. 검색 순서·후보 상한에 따라 일부 기업은 평가되지 않았을 수 있다.\n"
+        f"- 후보 {total}개를 수집해 선정 기준(A-3)에서 {excluded}개를 제외하고 {done}개를 평가했다. "
+        "조사 순서상 최초 투자 판정에서 종료했으므로 나머지 후보는 평가되지 않았으며, 검색 순서·후보 상한에 따라 일부 기업이 평가되지 않았을 수 있다.\n"
         "- 정량 구간은 공식 VC 표준이 아닌 프로젝트 초기 설계값이며, 누적 투자액은 조달 이력의 대리 지표(현재 자금 여력 아님)다.\n"
         "- Valuation·지분율이 비공개이므로 ROI는 산출하지 않았고, 기대 성장 여력은 시장·사업화 단계로 정성 평가했다.\n"
         "- 서로 다른 기업 유형의 원수치는 직접 비교하지 않는다."
@@ -301,7 +325,10 @@ def _assemble(state: dict[str, Any], rtype: str, level: int) -> str:
     parts = [f"# SUMMARY\n\n{head}\n\n{sec.summary}", f"## 1. 기업 및 사업 개요\n\n{sec.overview}",
              f"## 2. 팀·기술 및 제품 경쟁력\n\n{sec.team_tech}"]
     market = f"## 3. 시장성 및 경쟁 환경\n\n{sec.market_competition}"
-    comps = [c for r in focus for c in r.get("competitor_analysis", {}).get("competitors", [])]
+    comps = [
+        c for r in focus for c in r.get("competitor_analysis", {}).get("competitors", [])
+        if str(c.get("name", "")).strip() != _name(r)
+    ]
     if comps:
         market += "\n\n" + _table(["경쟁사", "국가", "비교"], [[c.get("name"), c.get("country"), _cell(c.get("comparison"), 60)] for c in comps[:5]])
     parts.append(market)

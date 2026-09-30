@@ -14,6 +14,8 @@ from agents.config import (
     validate_max_candidates,
 )
 from agents.graph import build_graph
+from agents.report import REPORT_BASENAME
+from agents.report import REPORT_BASENAME
 from agents.state import InvestmentState
 
 
@@ -80,7 +82,8 @@ def main(scenario: Scenario = "real") -> dict[str, Any]:
     print(f"Scenario: {scenario}")
     print(f"Node visits: {' -> '.join(node_visits)}")
     print(f"Candidates processed: {len(result.get('evaluated', []))}")
-    print(f"Dummy report written: {report_path}")
+    print(f"Report markdown copy: {report_path}")
+    print(f"Report PDF: {PROJECT_ROOT / 'outputs' / (REPORT_BASENAME + '.pdf')}")
     result["node_visits"] = node_visits
     result["report_path"] = str(report_path)
     return result

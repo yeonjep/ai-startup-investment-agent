@@ -12,6 +12,8 @@ from agents.config import (
     MAX_RAG_RETRIES,
 )
 from agents.state import InvestmentState
+from agents.report import report_agent
+from agents.report import report_agent
 from agents.stubs import (
     competitor_agent,
     decision_agent,
@@ -20,7 +22,6 @@ from agents.stubs import (
     initialize_state,
     market_agent,
     next_candidate,
-    report_agent,
     startup_agent,
     technology_agent,
 )
