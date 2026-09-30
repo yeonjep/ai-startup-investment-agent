@@ -10,6 +10,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel
 
 from agents.common import create_llm, load_prompt
+from tools.charts import group_score_chart, total_score_chart
 from tools.pdf_export import render_markdown_pdf
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +20,7 @@ MAX_PAGES = 5
 MAX_REGENERATIONS = 2
 # 재생성 회차별 서술 분량 배율 (최초, 재생성 1회, 재생성 2회)
 LENGTH_SCALES = (1.0, 0.7, 0.5)
-BASE_LIMITS = {"summary": 450, "overview": 450, "team_tech": 850, "market_competition": 850, "risk": 130}
+BASE_LIMITS = {"summary": 600, "overview": 700, "team_tech": 1500, "market_competition": 1500, "risk": 260}
 
 METRIC_INFO = {
     "team_experience": ("창업자/팀", "핵심 인력 반도체 경력"),
@@ -181,7 +182,12 @@ def _finalize_citations(markdown_text: str, catalog: Catalog) -> str:
         return f"[{ref_keys[key_of(item)]}]"
 
     body = re.sub(r"\[E\d+\]", replace, markdown_text)
-    body = re.sub(r"(\[\d+\])(?:\1)+", r"\1", body)  # [3][3][3] -> [3]
+    # 연속된 인용은 중복을 없애고 번호순으로 정렬한다: [3][1][3] -> [1][3]
+    body = re.sub(
+        r"(?:\[\d+\])+",
+        lambda m: "".join(f"[{n}]" for n in sorted({int(x) for x in re.findall(r"\d+", m.group(0))})),
+        body,
+    )
     lines = _format_references(cited)
     reference = "\n".join(f"{i}. {line}" for i, line in enumerate(lines, start=1)) or "인용한 외부 자료 없음."
     return f"{body}\n\n# REFERENCE\n\n{reference}\n"
@@ -258,6 +264,37 @@ def _scorecard(record: dict[str, Any], catalog: Catalog, reason_limit: int) -> s
     return _table(["항목", "지표", "원값", "점수", "판단 근거"], rows)
 
 
+def _overview_table(records: list[dict[str, Any]]) -> str:
+    rows = []
+    for r in records:
+        p = r["company_profile"]
+        rows.append([
+            _name(r), p.get("country"), TYPE_LABEL.get(p.get("company_type"), "미확정"),
+            _cell(p.get("evaluation_product"), 40),
+            p.get("latest_round") or p.get("recent_round"),
+            _raw(r, "funding_total") or NEUTRAL, _raw(r, "development_stage") or NEUTRAL,
+            _raw(r, "technical_headcount") or NEUTRAL,
+        ])
+    return _table(["기업", "국가", "유형", "평가 제품", "투자 단계", "누적 투자액", "개발 단계", "기술 인력"], rows)
+
+
+def _market_table(records: list[dict[str, Any]], catalog: "Catalog") -> str:
+    rows = []
+    for r in records:
+        row: list[Any] = [_name(r)]
+        for metric in ("market_tam", "market_cagr"):
+            entry = r.get("scores", {}).get(metric) or {}
+            if entry.get("status") == "observed":
+                by_id = {e["evidence_id"]: e for e in r.get("evidence", [])}
+                first = next((by_id[i] for i in entry.get("evidence_ids", []) if i in by_id), {})
+                row += [f"{_fmt_raw(entry.get('raw_value'))} {catalog.tag(entry.get('evidence_ids', []))}".strip(),
+                        _cell(first.get("scope"), 45)]
+            else:
+                row += [NEUTRAL, "-"]
+        rows.append(row)
+    return _table(["기업", "목표 시장 규모", "규모 범위·기준", "목표 시장 CAGR", "CAGR 범위·기간"], rows)
+
+
 def _comparison_table(records: list[dict[str, Any]]) -> str:
     rows = [
         [
@@ -300,7 +337,7 @@ def _hold_summary(records: list[dict[str, Any]], reason_limit: int) -> str:
 
 
 # ---------------------------------------------------------------- 조립
-def _assemble(state: dict[str, Any], rtype: str, level: int) -> str:
+def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) -> str:
     as_of = state.get("as_of_date", "미설정")
     scale = LENGTH_SCALES[level]
     reason_limit = (60, 40, 25)[level]
@@ -324,20 +361,22 @@ def _assemble(state: dict[str, Any], rtype: str, level: int) -> str:
 
     parts = [f"# SUMMARY\n\n{head}\n\n{sec.summary}", f"## 1. 기업 및 사업 개요\n\n{sec.overview}",
              f"## 2. 팀·기술 및 제품 경쟁력\n\n{sec.team_tech}"]
-    market = f"## 3. 시장성 및 경쟁 환경\n\n{sec.market_competition}"
+    market = f"## 3. 시장성 및 경쟁 환경\n\n{sec.market_competition}\n\n**시장 지표**\n\n{_market_table(focus, catalog)}"
     comps = [
         c for r in focus for c in r.get("competitor_analysis", {}).get("competitors", [])
         if str(c.get("name", "")).strip() != _name(r)
     ]
     if comps:
-        market += "\n\n" + _table(["경쟁사", "국가", "비교"], [[c.get("name"), c.get("country"), _cell(c.get("comparison"), 60)] for c in comps[:5]])
+        market += "\n\n**경쟁사 비교**\n\n" + _table(["경쟁사", "국가", "비교"], [[c.get("name"), c.get("country"), _cell(c.get("comparison"), 60)] for c in comps[:5]])
     parts.append(market)
 
     if rtype == "invest":
-        body4 = (f"### Scorecard\n\n{_scorecard(main, catalog, reason_limit)}\n\n**판단 사유**: {main.get('reason')}\n\n"
+        group_score_chart(main, chart_dir / "group_scores.png")
+        body4 = (f"### Scorecard\n\n![항목별 점수 구성](group_scores.png)\n\n{_scorecard(main, catalog, reason_limit)}\n\n**판단 사유**: {main.get('reason')}\n\n"
                  f"**결측·선정 불확실성**: {_missing_text(main)}")
     else:
-        body4 = (f"### 후보 비교\n\n{_comparison_table(evaluated)}\n\n" +
+        total_score_chart(evaluated, chart_dir / "total_scores.png")
+        body4 = (f"### 후보 비교\n\n![후보별 총점 비교](total_scores.png)\n\n{_comparison_table(evaluated)}\n\n" +
                  "\n".join(f"- **{_name(r)}**: {_missing_text(r)}" for r in evaluated))
     body4 += (f"\n\n### 주요 리스크\n\n- **시장**: {sec.risk_market}\n- **기술**: {sec.risk_tech}\n"
               f"- **규제**: {sec.risk_regulation}\n- **경쟁**: {sec.risk_competition}")
@@ -387,8 +426,9 @@ def generate_report(state: dict[str, Any], output_dir: Path = OUTPUT_DIR, basena
     attempts = 1 if rtype == "none" else 1 + MAX_REGENERATIONS
     markdown_text, pages = "", 0
     for level in range(attempts):
-        markdown_text = _assemble_none(state) if rtype == "none" else _assemble(state, rtype, level)
-        pages = render_markdown_pdf(markdown_text, pdf_path)
+        chart_dir = output_dir / "charts"
+        markdown_text = _assemble_none(state) if rtype == "none" else _assemble(state, rtype, level, chart_dir)
+        pages = render_markdown_pdf(markdown_text, pdf_path, asset_dir=chart_dir if chart_dir.is_dir() else None)
         if pages <= MAX_PAGES:
             break
         print(f"[report] {pages} pages > {MAX_PAGES}; regenerating shorter (attempt {level + 1}/{MAX_REGENERATIONS})")

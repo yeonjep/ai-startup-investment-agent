@@ -17,6 +17,7 @@ dependencies = [
     "langchain-text-splitters>=1.1.2",
     "langgraph>=1.2.12",
     "markdown>=3.11",
+    "matplotlib>=3.11.2",
     "pydantic>=2.13.5",
     "pymupdf>=1.28.2",
     "python-dotenv>=1.2.3",
