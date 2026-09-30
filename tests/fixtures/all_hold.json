@@ -1,0 +1,891 @@
+{
+  "as_of_date": "2026-09-30",
+  "max_candidates": 5,
+  "candidates": [
+    {
+      "name": "[가상]오로라실리콘",
+      "selection_status": "PASS"
+    },
+    {
+      "name": "[가상]팹옵스AI",
+      "selection_status": "PASS"
+    },
+    {
+      "name": "[가상]리소메트릭스",
+      "selection_status": "PASS"
+    }
+  ],
+  "evaluated": [
+    {
+      "company_profile": {
+        "name": "[가상]오로라실리콘",
+        "country": "US",
+        "company_type": "DESIGN_AI",
+        "evaluation_product": "Aurora Place-AI",
+        "official_domain": "aurora-silicon.test",
+        "latest_round": "Series A (2026-01)",
+        "profile_evidence": []
+      },
+      "selection_uncertain": false,
+      "tech_summary": {
+        "summary": "AI 기반 배치 최적화 EDA. 작동 프로토타입 검증 단계.",
+        "development_stage": "프로토타입(3점)"
+      },
+      "market_analysis": {
+        "summary": "EDA 시장 근거를 확보하지 못해 시장 지표 결측."
+      },
+      "competitor_analysis": {
+        "summary": "기존 EDA 도구 대비 비교 근거 부족.",
+        "competitors": []
+      },
+      "evidence": [
+        {
+          "evidence_id": "[가상]오로라실리콘:profile:team_experience:team",
+          "company": "[가상]오로라실리콘",
+          "category": "profile",
+          "metric": "team_experience",
+          "value": null,
+          "unit": null,
+          "source_type": "web",
+          "title": "오로라실리콘 창업팀 소개",
+          "source": "aurora-silicon.test",
+          "date": "2026-03-12",
+          "accessed_at": "2026-09-30",
+          "url": "https://aurora-silicon.test/about",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "CEO는 글로벌 반도체 기업에서 NPU 개발을 15년간 리드했다.",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]오로라실리콘:profile:technical_headcount:head",
+          "company": "[가상]오로라실리콘",
+          "category": "profile",
+          "metric": "technical_headcount",
+          "value": 85,
+          "unit": "명",
+          "source_type": "web",
+          "title": "오로라실리콘 채용 페이지",
+          "source": "aurora-silicon.test",
+          "date": "2026-05-02",
+          "accessed_at": "2026-09-30",
+          "url": "https://aurora-silicon.test/careers",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "R&D 인력 85명",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]오로라실리콘:profile:funding_total:fund",
+          "company": "[가상]오로라실리콘",
+          "category": "profile",
+          "metric": "funding_total",
+          "value": 120000000000,
+          "unit": "KRW",
+          "source_type": "web",
+          "title": "오로라실리콘 시리즈 B 유치",
+          "source": "aurora-silicon.test",
+          "date": "2026-06-20",
+          "accessed_at": "2026-09-30",
+          "url": "https://aurora-silicon.test/news/series-b",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "누적 투자 유치액 1,200억 원",
+          "scope": "원값 1,200억 원(KRW)"
+        },
+        {
+          "evidence_id": "[가상]오로라실리콘:profile:customer_traction:cust",
+          "company": "[가상]오로라실리콘",
+          "category": "profile",
+          "metric": "customer_traction",
+          "value": 3,
+          "unit": "건",
+          "source_type": "web",
+          "title": "오로라실리콘 고객 PoC 발표",
+          "source": "aurora-silicon.test",
+          "date": "2026-07-08",
+          "accessed_at": "2026-09-30",
+          "url": "https://aurora-silicon.test/news/poc",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "국내 3개 고객사와 PoC 진행",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]오로라실리콘:tech:technical_originality:tech",
+          "company": "[가상]오로라실리콘",
+          "category": "tech",
+          "metric": "technical_originality",
+          "value": null,
+          "unit": null,
+          "source_type": "web",
+          "title": "오로라실리콘 기술 백서",
+          "source": "aurora-silicon.test",
+          "date": "2026-04-15",
+          "accessed_at": "2026-09-30",
+          "url": "https://aurora-silicon.test/tech",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "독자 데이터플로 구조로 동일 워크로드 대비 전성비 개선을 보고했다.",
+          "scope": "INT8, batch 1, 동일 전력 조건 (자체 측정)"
+        },
+        {
+          "evidence_id": "[가상]오로라실리콘:tech:development_stage:stage",
+          "company": "[가상]오로라실리콘",
+          "category": "tech",
+          "metric": "development_stage",
+          "value": 4,
+          "unit": "단계",
+          "source_type": "web",
+          "title": "오로라실리콘 테이프아웃 완료",
+          "source": "aurora-silicon.test",
+          "date": "2026-02-10",
+          "accessed_at": "2026-09-30",
+          "url": "https://aurora-silicon.test/news/tapeout",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "2세대 칩 테이프아웃 완료",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]오로라실리콘:competitor:competitive_difference:comp",
+          "company": "[가상]오로라실리콘",
+          "category": "competitor",
+          "metric": "competitive_difference",
+          "value": null,
+          "unit": null,
+          "source_type": "web",
+          "title": "오로라실리콘 벤치마크",
+          "source": "aurora-silicon.test",
+          "date": "2026-08-01",
+          "accessed_at": "2026-09-30",
+          "url": "https://aurora-silicon.test/blog/benchmark",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "동일 조건에서 경쟁 GPU 대비 처리량 우위를 주장했다.",
+          "scope": null
+        }
+      ],
+      "scores": {
+        "team_experience": {
+          "metric": "team_experience",
+          "raw_value": "관련 경력",
+          "score": 3.0,
+          "status": "observed",
+          "reason": "관련 경력 있음",
+          "evidence_ids": [
+            "[가상]오로라실리콘:profile:team_experience:team"
+          ]
+        },
+        "technical_headcount": {
+          "metric": "technical_headcount",
+          "raw_value": "12명",
+          "score": 2.0,
+          "status": "observed",
+          "reason": "10~19명",
+          "evidence_ids": [
+            "[가상]오로라실리콘:profile:technical_headcount:head"
+          ]
+        },
+        "market_tam": {
+          "metric": "market_tam",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "EDA 시장 근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "market_cagr": {
+          "metric": "market_cagr",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "demand_clarity": {
+          "metric": "demand_clarity",
+          "raw_value": "고객사 타깃",
+          "score": 3.0,
+          "status": "observed",
+          "reason": "타깃만 제시",
+          "evidence_ids": [
+            "[가상]오로라실리콘:profile:customer_traction:cust"
+          ]
+        },
+        "development_stage": {
+          "metric": "development_stage",
+          "raw_value": "프로토타입",
+          "score": 3.0,
+          "status": "observed",
+          "reason": "DESIGN_AI 3점",
+          "evidence_ids": [
+            "[가상]오로라실리콘:tech:development_stage:stage"
+          ]
+        },
+        "technical_originality": {
+          "metric": "technical_originality",
+          "raw_value": "주장",
+          "score": 3.0,
+          "status": "observed",
+          "reason": "주장만 있음",
+          "evidence_ids": [
+            "[가상]오로라실리콘:tech:technical_originality:tech"
+          ]
+        },
+        "competitive_difference": {
+          "metric": "competitive_difference",
+          "raw_value": "주장",
+          "score": 3.0,
+          "status": "observed",
+          "reason": "주장만 있음",
+          "evidence_ids": [
+            "[가상]오로라실리콘:competitor:competitive_difference:comp"
+          ]
+        },
+        "entry_barrier": {
+          "metric": "entry_barrier",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "자료 없음 — 중립 대입",
+          "evidence_ids": []
+        },
+        "customer_traction": {
+          "metric": "customer_traction",
+          "raw_value": "1건",
+          "score": 2.0,
+          "status": "observed",
+          "reason": "PoC 1건",
+          "evidence_ids": [
+            "[가상]오로라실리콘:profile:customer_traction:cust"
+          ]
+        },
+        "revenue_stage": {
+          "metric": "revenue_stage",
+          "raw_value": "매출 없음 확인",
+          "score": 1.0,
+          "status": "observed",
+          "reason": "매출 없음 확인",
+          "evidence_ids": [
+            "[가상]오로라실리콘:profile:customer_traction:cust"
+          ]
+        },
+        "funding_total": {
+          "metric": "funding_total",
+          "raw_value": "USD 12M → 약 163억 원",
+          "score": 2.0,
+          "status": "observed",
+          "reason": "100억~300억",
+          "evidence_ids": [
+            "[가상]오로라실리콘:profile:funding_total:fund"
+          ]
+        },
+        "risk_mitigation": {
+          "metric": "risk_mitigation",
+          "raw_value": "일부 완화",
+          "score": 3.0,
+          "status": "observed",
+          "reason": "일부",
+          "evidence_ids": [
+            "[가상]오로라실리콘:tech:technical_originality:tech"
+          ]
+        }
+      },
+      "total_score": 53.5,
+      "missing_evidence": [
+        "market_tam",
+        "market_cagr",
+        "entry_barrier"
+      ],
+      "decision": "보류",
+      "reason": "총점 70 미만."
+    },
+    {
+      "company_profile": {
+        "name": "[가상]팹옵스AI",
+        "country": "KR",
+        "company_type": "PROCESS_AI",
+        "evaluation_product": "수율 예측 AI",
+        "official_domain": "fabops-ai.test",
+        "latest_round": "Seed (2025-11)",
+        "profile_evidence": [],
+        "uncertain_criteria": [
+          "exit_not_completed"
+        ]
+      },
+      "selection_uncertain": true,
+      "tech_summary": {
+        "summary": "공정 수율 예측 모델. 고객 현장 검증 근거 미확인."
+      },
+      "market_analysis": {
+        "summary": "시장 근거 미확보."
+      },
+      "competitor_analysis": {
+        "summary": "경쟁사 비교 근거 미확보.",
+        "competitors": []
+      },
+      "evidence": [
+        {
+          "evidence_id": "[가상]팹옵스AI:profile:team_experience:team",
+          "company": "[가상]팹옵스AI",
+          "category": "profile",
+          "metric": "team_experience",
+          "value": null,
+          "unit": null,
+          "source_type": "web",
+          "title": "팹옵스AI 창업팀 소개",
+          "source": "fabops-ai.test",
+          "date": "2026-03-12",
+          "accessed_at": "2026-09-30",
+          "url": "https://fabops-ai.test/about",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "CEO는 글로벌 반도체 기업에서 NPU 개발을 15년간 리드했다.",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]팹옵스AI:profile:technical_headcount:head",
+          "company": "[가상]팹옵스AI",
+          "category": "profile",
+          "metric": "technical_headcount",
+          "value": 85,
+          "unit": "명",
+          "source_type": "web",
+          "title": "팹옵스AI 채용 페이지",
+          "source": "fabops-ai.test",
+          "date": "2026-05-02",
+          "accessed_at": "2026-09-30",
+          "url": "https://fabops-ai.test/careers",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "R&D 인력 85명",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]팹옵스AI:profile:funding_total:fund",
+          "company": "[가상]팹옵스AI",
+          "category": "profile",
+          "metric": "funding_total",
+          "value": 120000000000,
+          "unit": "KRW",
+          "source_type": "web",
+          "title": "팹옵스AI 시리즈 B 유치",
+          "source": "fabops-ai.test",
+          "date": "2026-06-20",
+          "accessed_at": "2026-09-30",
+          "url": "https://fabops-ai.test/news/series-b",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "누적 투자 유치액 1,200억 원",
+          "scope": "원값 1,200억 원(KRW)"
+        },
+        {
+          "evidence_id": "[가상]팹옵스AI:profile:customer_traction:cust",
+          "company": "[가상]팹옵스AI",
+          "category": "profile",
+          "metric": "customer_traction",
+          "value": 3,
+          "unit": "건",
+          "source_type": "web",
+          "title": "팹옵스AI 고객 PoC 발표",
+          "source": "fabops-ai.test",
+          "date": "2026-07-08",
+          "accessed_at": "2026-09-30",
+          "url": "https://fabops-ai.test/news/poc",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "국내 3개 고객사와 PoC 진행",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]팹옵스AI:tech:technical_originality:tech",
+          "company": "[가상]팹옵스AI",
+          "category": "tech",
+          "metric": "technical_originality",
+          "value": null,
+          "unit": null,
+          "source_type": "web",
+          "title": "팹옵스AI 기술 백서",
+          "source": "fabops-ai.test",
+          "date": "2026-04-15",
+          "accessed_at": "2026-09-30",
+          "url": "https://fabops-ai.test/tech",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "독자 데이터플로 구조로 동일 워크로드 대비 전성비 개선을 보고했다.",
+          "scope": "INT8, batch 1, 동일 전력 조건 (자체 측정)"
+        },
+        {
+          "evidence_id": "[가상]팹옵스AI:tech:development_stage:stage",
+          "company": "[가상]팹옵스AI",
+          "category": "tech",
+          "metric": "development_stage",
+          "value": 4,
+          "unit": "단계",
+          "source_type": "web",
+          "title": "팹옵스AI 테이프아웃 완료",
+          "source": "fabops-ai.test",
+          "date": "2026-02-10",
+          "accessed_at": "2026-09-30",
+          "url": "https://fabops-ai.test/news/tapeout",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "2세대 칩 테이프아웃 완료",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]팹옵스AI:competitor:competitive_difference:comp",
+          "company": "[가상]팹옵스AI",
+          "category": "competitor",
+          "metric": "competitive_difference",
+          "value": null,
+          "unit": null,
+          "source_type": "web",
+          "title": "팹옵스AI 벤치마크",
+          "source": "fabops-ai.test",
+          "date": "2026-08-01",
+          "accessed_at": "2026-09-30",
+          "url": "https://fabops-ai.test/blog/benchmark",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "동일 조건에서 경쟁 GPU 대비 처리량 우위를 주장했다.",
+          "scope": null
+        }
+      ],
+      "scores": {
+        "team_experience": {
+          "metric": "team_experience",
+          "raw_value": "관련 경력",
+          "score": 3.0,
+          "status": "observed",
+          "reason": "관련 경력 있음",
+          "evidence_ids": [
+            "[가상]팹옵스AI:profile:team_experience:team"
+          ]
+        },
+        "technical_headcount": {
+          "metric": "technical_headcount",
+          "raw_value": "8명",
+          "score": 1.0,
+          "status": "observed",
+          "reason": "10명 미만",
+          "evidence_ids": [
+            "[가상]팹옵스AI:profile:technical_headcount:head"
+          ]
+        },
+        "market_tam": {
+          "metric": "market_tam",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "market_cagr": {
+          "metric": "market_cagr",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "demand_clarity": {
+          "metric": "demand_clarity",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "development_stage": {
+          "metric": "development_stage",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "technical_originality": {
+          "metric": "technical_originality",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "competitive_difference": {
+          "metric": "competitive_difference",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "entry_barrier": {
+          "metric": "entry_barrier",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "customer_traction": {
+          "metric": "customer_traction",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "revenue_stage": {
+          "metric": "revenue_stage",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "funding_total": {
+          "metric": "funding_total",
+          "raw_value": "약 40억 원",
+          "score": 1.0,
+          "status": "observed",
+          "reason": "100억 미만",
+          "evidence_ids": [
+            "[가상]팹옵스AI:profile:funding_total:fund"
+          ]
+        },
+        "risk_mitigation": {
+          "metric": "risk_mitigation",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        }
+      },
+      "total_score": 53.0,
+      "missing_evidence": [
+        "market_tam",
+        "market_cagr",
+        "demand_clarity",
+        "development_stage",
+        "technical_originality",
+        "competitive_difference",
+        "entry_barrier",
+        "customer_traction",
+        "revenue_stage",
+        "risk_mitigation"
+      ],
+      "decision": "보류",
+      "reason": "결측 5개 이상, 선정 불확실성 존재."
+    },
+    {
+      "company_profile": {
+        "name": "[가상]리소메트릭스",
+        "country": "KR",
+        "company_type": "PROCESS_AI",
+        "evaluation_product": "웨이퍼 결함 검사 AI",
+        "official_domain": "lithometrix.test",
+        "latest_round": "Series A (2026-04)",
+        "profile_evidence": []
+      },
+      "selection_uncertain": false,
+      "tech_summary": {
+        "summary": "AI 결함 검사. 고객 PoC 완료, 수율 효과의 대조 조건 불명확.",
+        "development_stage": "현장 PoC(4점)"
+      },
+      "market_analysis": {
+        "summary": "공정 AI 세부 시장 근거 미확보로 시장 지표 결측."
+      },
+      "competitor_analysis": {
+        "summary": "기존 검사 장비 대비 비교 근거 부족.",
+        "competitors": [
+          {
+            "name": "[가상]기존 광학 검사",
+            "country": "JP",
+            "comparison": "비AI 기준, 오탐률 비교 자료 없음"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "evidence_id": "[가상]리소메트릭스:profile:team_experience:team",
+          "company": "[가상]리소메트릭스",
+          "category": "profile",
+          "metric": "team_experience",
+          "value": null,
+          "unit": null,
+          "source_type": "web",
+          "title": "리소메트릭스 창업팀 소개",
+          "source": "lithometrix.test",
+          "date": "2026-03-12",
+          "accessed_at": "2026-09-30",
+          "url": "https://lithometrix.test/about",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "CEO는 글로벌 반도체 기업에서 NPU 개발을 15년간 리드했다.",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]리소메트릭스:profile:technical_headcount:head",
+          "company": "[가상]리소메트릭스",
+          "category": "profile",
+          "metric": "technical_headcount",
+          "value": 85,
+          "unit": "명",
+          "source_type": "web",
+          "title": "리소메트릭스 채용 페이지",
+          "source": "lithometrix.test",
+          "date": "2026-05-02",
+          "accessed_at": "2026-09-30",
+          "url": "https://lithometrix.test/careers",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "R&D 인력 85명",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]리소메트릭스:profile:funding_total:fund",
+          "company": "[가상]리소메트릭스",
+          "category": "profile",
+          "metric": "funding_total",
+          "value": 120000000000,
+          "unit": "KRW",
+          "source_type": "web",
+          "title": "리소메트릭스 시리즈 B 유치",
+          "source": "lithometrix.test",
+          "date": "2026-06-20",
+          "accessed_at": "2026-09-30",
+          "url": "https://lithometrix.test/news/series-b",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "누적 투자 유치액 1,200억 원",
+          "scope": "원값 1,200억 원(KRW)"
+        },
+        {
+          "evidence_id": "[가상]리소메트릭스:profile:customer_traction:cust",
+          "company": "[가상]리소메트릭스",
+          "category": "profile",
+          "metric": "customer_traction",
+          "value": 3,
+          "unit": "건",
+          "source_type": "web",
+          "title": "리소메트릭스 고객 PoC 발표",
+          "source": "lithometrix.test",
+          "date": "2026-07-08",
+          "accessed_at": "2026-09-30",
+          "url": "https://lithometrix.test/news/poc",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "국내 3개 고객사와 PoC 진행",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]리소메트릭스:tech:technical_originality:tech",
+          "company": "[가상]리소메트릭스",
+          "category": "tech",
+          "metric": "technical_originality",
+          "value": null,
+          "unit": null,
+          "source_type": "web",
+          "title": "리소메트릭스 기술 백서",
+          "source": "lithometrix.test",
+          "date": "2026-04-15",
+          "accessed_at": "2026-09-30",
+          "url": "https://lithometrix.test/tech",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "독자 데이터플로 구조로 동일 워크로드 대비 전성비 개선을 보고했다.",
+          "scope": "INT8, batch 1, 동일 전력 조건 (자체 측정)"
+        },
+        {
+          "evidence_id": "[가상]리소메트릭스:tech:development_stage:stage",
+          "company": "[가상]리소메트릭스",
+          "category": "tech",
+          "metric": "development_stage",
+          "value": 4,
+          "unit": "단계",
+          "source_type": "web",
+          "title": "리소메트릭스 테이프아웃 완료",
+          "source": "lithometrix.test",
+          "date": "2026-02-10",
+          "accessed_at": "2026-09-30",
+          "url": "https://lithometrix.test/news/tapeout",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "2세대 칩 테이프아웃 완료",
+          "scope": null
+        },
+        {
+          "evidence_id": "[가상]리소메트릭스:competitor:competitive_difference:comp",
+          "company": "[가상]리소메트릭스",
+          "category": "competitor",
+          "metric": "competitive_difference",
+          "value": null,
+          "unit": null,
+          "source_type": "web",
+          "title": "리소메트릭스 벤치마크",
+          "source": "lithometrix.test",
+          "date": "2026-08-01",
+          "accessed_at": "2026-09-30",
+          "url": "https://lithometrix.test/blog/benchmark",
+          "doc_id": null,
+          "page": null,
+          "chunk_id": null,
+          "quote": "동일 조건에서 경쟁 GPU 대비 처리량 우위를 주장했다.",
+          "scope": null
+        }
+      ],
+      "scores": {
+        "team_experience": {
+          "metric": "team_experience",
+          "raw_value": "장비사 출신",
+          "score": 5.0,
+          "status": "observed",
+          "reason": "공정 현장 적용 리드",
+          "evidence_ids": [
+            "[가상]리소메트릭스:profile:team_experience:team"
+          ]
+        },
+        "technical_headcount": {
+          "metric": "technical_headcount",
+          "raw_value": "25명",
+          "score": 3.0,
+          "status": "observed",
+          "reason": "20~49명",
+          "evidence_ids": [
+            "[가상]리소메트릭스:profile:technical_headcount:head"
+          ]
+        },
+        "market_tam": {
+          "metric": "market_tam",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "market_cagr": {
+          "metric": "market_cagr",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "demand_clarity": {
+          "metric": "demand_clarity",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "development_stage": {
+          "metric": "development_stage",
+          "raw_value": "고객 현장 PoC 완료",
+          "score": 4.0,
+          "status": "observed",
+          "reason": "PROCESS_AI 4점",
+          "evidence_ids": [
+            "[가상]리소메트릭스:tech:development_stage:stage"
+          ]
+        },
+        "technical_originality": {
+          "metric": "technical_originality",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "competitive_difference": {
+          "metric": "competitive_difference",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "entry_barrier": {
+          "metric": "entry_barrier",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "customer_traction": {
+          "metric": "customer_traction",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "revenue_stage": {
+          "metric": "revenue_stage",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        },
+        "funding_total": {
+          "metric": "funding_total",
+          "raw_value": "USD 9M → 약 122억 원",
+          "score": 2.0,
+          "status": "observed",
+          "reason": "100억~300억",
+          "evidence_ids": [
+            "[가상]리소메트릭스:profile:funding_total:fund"
+          ]
+        },
+        "risk_mitigation": {
+          "metric": "risk_mitigation",
+          "raw_value": null,
+          "score": 3.0,
+          "status": "missing",
+          "reason": "근거 미확보 — 중립 대입",
+          "evidence_ids": []
+        }
+      },
+      "total_score": 66.0,
+      "missing_evidence": [
+        "market_tam",
+        "market_cagr",
+        "demand_clarity",
+        "technical_originality",
+        "competitive_difference",
+        "entry_barrier",
+        "customer_traction",
+        "revenue_stage",
+        "risk_mitigation"
+      ],
+      "decision": "보류",
+      "reason": "결측 5개 이상."
+    }
+  ]
+}

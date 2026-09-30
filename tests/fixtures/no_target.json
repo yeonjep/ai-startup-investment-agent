@@ -1,0 +1,49 @@
+{
+  "as_of_date": "2026-09-30",
+  "max_candidates": 5,
+  "candidates": [
+    {
+      "name": "[가상]퓨처로직",
+      "selection_status": "FAIL",
+      "country": "KR",
+      "failed_criterion": "unlisted",
+      "exclusion_reason": "코스닥 상장 완료로 확인",
+      "sources": [
+        {
+          "title": "[가상]퓨처로직 기업 소개",
+          "url": "https://0-fake.test/about",
+          "date": "2026-05-01"
+        }
+      ]
+    },
+    {
+      "name": "[가상]클라우드칩스",
+      "selection_status": "FAIL",
+      "country": "KR",
+      "failed_criterion": "funding_stage",
+      "exclusion_reason": "최근 라운드가 Series D로 확인",
+      "sources": [
+        {
+          "title": "[가상]클라우드칩스 기업 소개",
+          "url": "https://1-fake.test/about",
+          "date": "2026-05-01"
+        }
+      ]
+    },
+    {
+      "name": "[가상]범용메모리랩",
+      "selection_status": "FAIL",
+      "country": "KR",
+      "failed_criterion": "ai_core",
+      "exclusion_reason": "AI가 부수 기능·마케팅 문구에 그침",
+      "sources": [
+        {
+          "title": "[가상]범용메모리랩 기업 소개",
+          "url": "https://2-fake.test/about",
+          "date": "2026-05-01"
+        }
+      ]
+    }
+  ],
+  "evaluated": []
+}
