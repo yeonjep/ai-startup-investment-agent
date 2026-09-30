@@ -59,77 +59,9 @@ def initialize_state(
     }
 
 
-def startup_agent(
-    state: InvestmentState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    scenario = _scenario(config)
-    candidates = list(state.get("candidates", []))
-    discovery_done = state.get("discovery_done", False)
-
-    if not discovery_done:
-        configured_candidates = config.get("configurable", {}).get("demo_candidates")
-        if configured_candidates is None:
-            configured_candidates = candidates or [
-                {"name": "[샘플 후보 A]"},
-                {"name": "[샘플 후보 B]"},
-            ]
-        candidates = list(configured_candidates)[:MAX_CANDIDATE_POOL]
-        discovery_done = True
-
-    current_idx = state.get("current_idx", 0)
-    if not candidates or current_idx >= len(candidates):
-        return {
-            "candidates": candidates,
-            "discovery_done": discovery_done,
-            "current_startup": None,
-            "selection_status": None,
-        }
-
-    candidate = candidates[current_idx]
-    if scenario == "zero_pass":
-        status = "FAIL"
-    elif scenario == "uncertain":
-        status = "REVIEW"
-    else:
-        status = candidate.get("selection_status", "PASS")
-
-    selection_retry = state.get("selection_retry", 0)
-    if status == "REVIEW" and selection_retry < MAX_SELECTION_RETRIES:
-        selection_retry += 1
-        return {
-            "candidates": candidates,
-            "discovery_done": discovery_done,
-            "current_startup": None,
-            "selection_status": "REVIEW",
-            "selection_retry": selection_retry,
-            "uncertain": False,
-        }
-
-    uncertain = status == "REVIEW"
-    selected_startup = dict(candidate)
-    selected_startup.setdefault("country", "KR")
-    selected_startup.setdefault("company_type", "CHIP")
-    selected_startup.setdefault("evaluation_product", selected_startup.get("name", ""))
-    return {
-        "candidates": candidates,
-        "discovery_done": discovery_done,
-        "current_startup": selected_startup if status != "FAIL" else None,
-        "selection_status": status,
-        "selection_retry": selection_retry,
-        "uncertain": uncertain,
-    }
-
-
-def technology_agent(
-    state: InvestmentState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    startup = state.get("current_startup") or {}
-    return {
-        "tech_summary": {"summary": f"[stub] {startup.get('name', '기업')} 기술 분석"},
-        "tech_evidence": list(state.get("tech_evidence", [])),
-    }
+from agents.startup import startup_agent
+from agents.technology import technology_agent
+from agents.competitor import competitor_agent
 
 
 def market_agent(
@@ -158,17 +90,6 @@ def market_agent(
         },
         "rag_retry": retries,
         "market_evidence": list(state.get("market_evidence", [])),
-    }
-
-
-def competitor_agent(
-    state: InvestmentState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    startup = state.get("current_startup") or {}
-    return {
-        "competitor_analysis": {"summary": f"[stub] {startup.get('name', '기업')} 경쟁 분석"},
-        "competitor_evidence": list(state.get("competitor_evidence", [])),
     }
 
 

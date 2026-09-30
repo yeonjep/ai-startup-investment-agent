@@ -1,0 +1,163 @@
+[
+  {
+    "name": "딥엑스",
+    "aliases": [
+      "DeepX"
+    ],
+    "country": "한국",
+    "domain_url": "https://www.deepx.com",
+    "founded_year": "2018",
+    "ceo": "김녹원",
+    "recent_round": "Series D",
+    "total_funding": "약 3,700억 원 이상",
+    "description": "한국의 AI용 NPU 개발 팹리스 스타트업으로, 온디바이스 AI 반도체 시장에서 활동 중이며, 2세대 AI 칩 DX-M2 개발 중. 2026년 상반기 출시 목표를 갖고 있음.",
+    "discovery_done": true,
+    "company_type": "CHIP",
+    "criteria_results": [
+      {
+        "criterion_name": "domain_relevance",
+        "status": "PASS",
+        "reason": "딥엑스는 AI 반도체 및 AI 컴퓨팅 솔루션에 대한 원천기술을 보유하며, NPU 및 온디바이스 AI 반도체를 주요 제품으로 개발하는 AI 반도체 전문 기업임이 명확하다.",
+        "source_url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html"
+      },
+      {
+        "criterion_name": "ai_core",
+        "status": "PASS",
+        "reason": "AI 반도체 제품이 딥엑스의 핵심 기술 및 제품으로 AI가 제품의 본질적 가치임이 명확히 드러나고 있다.",
+        "source_url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html"
+      },
+      {
+        "criterion_name": "unlisted",
+        "status": "PASS",
+        "reason": "딥엑스는 비상장 기업임이 투자정보 및 기업 정보에서 확인된다.",
+        "source_url": "https://thevc.kr/deepx"
+      },
+      {
+        "criterion_name": "funding_stage",
+        "status": "PASS",
+        "reason": "최근 투자 라운드가 Series C 단계이며, 시리즈 D 이상 또는 Pre-IPO 단계는 아님이 확인된다.",
+        "source_url": "https://thevc.kr/deepx"
+      },
+      {
+        "criterion_name": "no_exit",
+        "status": "PASS",
+        "reason": "딥엑스는 피인수, 합병, 상장 이력이 없으며 운영 중인 비상장 스타트업이다.",
+        "source_url": "https://thevc.kr/deepx"
+      },
+      {
+        "criterion_name": "info_sufficiency",
+        "status": "PASS",
+        "reason": "딥엑스 관련 뉴스 기사 및 공식 홈페이지 등 복수(2건 이상)의 충분한 정보가 제공되고 있다.",
+        "source_url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html"
+      }
+    ],
+    "selection_status": "PASS",
+    "uncertain": false,
+    "profile_evidence": [
+      {
+        "evidence_id": "EV-PROF-001",
+        "company": "딥엑스",
+        "category": "profile",
+        "metric": "founder_career",
+        "value": "김녹원 대표가 창업자로, 사모펀드 투자사 스카이레이크의 진대제 전 정보통신부 장관과 BNW인베스트먼트 김재욱 회장 등 반도체 전문가들이 주요 투자자로 참여함. 진대제 회장은 삼성전자 메모리 반도체 개발 선도 경험, 김재욱 회장 역시 삼성전자 메모리 제조 기술 담당 경력 보유.",
+        "unit": "",
+        "source_type": "web",
+        "title": "딥엑스 founder_career 정보",
+        "source": "Web Search",
+        "date": "2026-09-30",
+        "url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html",
+        "doc_id": "",
+        "location": ""
+      },
+      {
+        "evidence_id": "EV-PROF-002",
+        "company": "딥엑스",
+        "category": "profile",
+        "metric": "tech_personnel",
+        "value": "2026년 기준 임직원 수 135명(출처: THE VC)",
+        "unit": "명",
+        "source_type": "web",
+        "title": "딥엑스 tech_personnel 정보",
+        "source": "Web Search",
+        "date": "2026-09-30",
+        "url": "https://thevc.kr/deepx",
+        "doc_id": "",
+        "location": ""
+      },
+      {
+        "evidence_id": "EV-PROF-003",
+        "company": "딥엑스",
+        "category": "profile",
+        "metric": "cumulative_funding",
+        "value": "누적 투자 유치금액 약 1,100억원 (사모펀드 중심 신규 투자 완료)",
+        "unit": "원",
+        "source_type": "web",
+        "title": "딥엑스 cumulative_funding 정보",
+        "source": "Web Search",
+        "date": "2026-09-30",
+        "url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html",
+        "doc_id": "",
+        "location": ""
+      },
+      {
+        "evidence_id": "EV-PROF-004",
+        "company": "딥엑스",
+        "category": "profile",
+        "metric": "customer_poc",
+        "value": "글로벌 기업 100여 곳에 AI 반도체 및 소프트웨어 제공 중으로 양산 전 사전 검증 완료, 연내 대단위 양산 예정. 북미 및 중화권 시장 집중 공략, 포스코DX와 스마트 팩토리 협업 등 PoC 및 상용 계약 진행 중.",
+        "unit": "건",
+        "source_type": "web",
+        "title": "딥엑스 customer_poc 정보",
+        "source": "Web Search",
+        "date": "2026-09-30",
+        "url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html",
+        "doc_id": "",
+        "location": ""
+      },
+      {
+        "evidence_id": "EV-PROF-005",
+        "company": "딥엑스",
+        "category": "profile",
+        "metric": "revenue_stage",
+        "value": "2025년 매출 데이터 비공개, 2026년 1세대 제품 양산 예정으로 초기 매출 생성 단계 추정",
+        "unit": "",
+        "source_type": "web",
+        "title": "딥엑스 revenue_stage 정보",
+        "source": "Web Search",
+        "date": "2026-09-30",
+        "url": "https://thevc.kr/deepx",
+        "doc_id": "",
+        "location": ""
+      },
+      {
+        "evidence_id": "EV-PROF-006",
+        "company": "딥엑스",
+        "category": "profile",
+        "metric": "risk_factors",
+        "value": "AI 반도체 시장 내 경쟁 심화 가능성 및 글로벌 시장 수출 규제, 양산 전 검증 단계의 기술 리스크, 고성능·저전력 AI 반도체 개발의 기술 난이도 높은 점 포함됨.",
+        "unit": "",
+        "source_type": "web",
+        "title": "딥엑스 risk_factors 정보",
+        "source": "Web Search",
+        "date": "2026-09-30",
+        "url": "https://www.cio.com/article/3521259/ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EA%B8%B0%EC%97%85-%EB%94%A5%EC%97%91%EC%8A%A4-1100%EC%96%B5%EC%9B%90-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98%C2%B7%C2%B7%C2%B7-%EC%A7%84%EB%8C%80%EC%A0%9C-%EC%A0%84.html",
+        "doc_id": "",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "name": "리벨리온",
+    "aliases": [
+      "Rebellion"
+    ],
+    "country": "한국",
+    "domain_url": "https://rebellion.co.kr",
+    "founded_year": "2020",
+    "ceo": "비공개",
+    "recent_round": "Pre-IPO",
+    "total_funding": "약 1조 3,000억 원 이상",
+    "description": "AI 추론 연산 특화 NPU 설계 및 소프트웨어 개발 스타트업. SK텔레콤 사피온코리아와 합병 완료. 2027년 코스닥 상장을 목표로 하고 있으나 현재 비상장 스타트업이며 대규모 프리IPO 투자 유치 중.",
+    "discovery_done": true
+  }
+]
