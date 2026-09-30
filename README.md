@@ -48,11 +48,11 @@
 
 BAAI/bge-m3, intfloat/multilingual-e5-large, Qwen/Qwen3-Embedding-0.6B 3종을 동일한 청크·질문·정답으로 비교했습니다. 리더보드 순위가 아니라 **본 과제 문서(한·영 혼합 4종)에서의 실측 검색 성능**으로 선택했습니다.
 
-| 모델 | Hit@1 | Hit@3 | Hit@5 | MRR | 인덱싱(초) |
-|---|---:|---:|---:|---:|---:|
-| BAAI/bge-m3 | 0.75 | 0.95 | 0.95 | 0.842 | 48.4 |
-| intfloat/multilingual-e5-large | 0.70 | 0.95 | 0.95 | 0.817 | 43.7 |
-| **Qwen/Qwen3-Embedding-0.6B** | **0.85** | **1.00** | **1.00** | **0.925** | 110.4 |
+| 모델                           |    Hit@1 |    Hit@3 |    Hit@5 |       MRR | 인덱싱(초) |
+| ------------------------------ | -------: | -------: | -------: | --------: | ---------: |
+| BAAI/bge-m3                    |     0.75 |     0.95 |     0.95 |     0.842 |       48.4 |
+| intfloat/multilingual-e5-large |     0.70 |     0.95 |     0.95 |     0.817 |       43.7 |
+| **Qwen/Qwen3-Embedding-0.6B**  | **0.85** | **1.00** | **1.00** | **0.925** |      110.4 |
 
 인덱싱 시간은 최초 1회 비용이며 인덱스를 재사용합니다. 현재 RAG 적재본은 4개 문서, PDF 100페이지, 117청크(chunk_size=1000, overlap=100)입니다. 평가는 파일럿 데이터 기준의 상대 비교이며 Hybrid 적용 효과는 별도로 검증하지 않았습니다.
 
@@ -87,12 +87,12 @@ initialize_state → startup_agent → technology_agent → market_agent ×3(RAG
 → startup_agent → … (두 번째 후보 동일 흐름) → decision_agent → [투자] report_agent
 ```
 
-| 단계 | 결과 |
-|---|---|
-| 후보 수집 | 국내외 검색으로 7개 수집 (세카, 아이에이치더블유, 하이퍼엑셀, 아티크론, 리벨리온, 딥엑스, 퓨리오사AI) |
-| 1번째 평가 | **세카(SECA)** — 총점 70.67이지만 **결측 5개** → 보류 |
-| 2번째 평가 | **아이에이치더블유(iHW)** — 총점 **86.33**, 결측 3개, 선정 불확실성 없음 → **투자** |
-| 종료 | 최초 투자 판정에서 종료 → 나머지 5개 후보는 평가하지 않음 (전체 후보 중 최우수 기업이라는 의미가 아님) |
+| 단계       | 결과                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------ |
+| 후보 수집  | 국내외 검색으로 7개 수집 (세카, 아이에이치더블유, 하이퍼엑셀, 아티크론, 리벨리온, 딥엑스, 퓨리오사AI)  |
+| 1번째 평가 | **세카(SECA)** — 총점 70.67이지만 **결측 5개** → 보류                                                  |
+| 2번째 평가 | **아이에이치더블유(iHW)** — 총점 **86.33**, 결측 3개, 선정 불확실성 없음 → **투자**                    |
+| 종료       | 최초 투자 판정에서 종료 → 나머지 5개 후보는 평가하지 않음 (전체 후보 중 최우수 기업이라는 의미가 아님) |
 
 ### 투자 보고서 핵심 포인트
 
@@ -106,8 +106,8 @@ initialize_state → startup_agent → technology_agent → market_agent ×3(RAG
 
 ### 투자 보고서 미리보기
 
-| 1페이지: SUMMARY ~ 3장 | 2페이지: 4장 Scorecard·차트 | 4페이지: 한계·REFERENCE |
-|---|---|---|
+| 1페이지: SUMMARY ~ 3장                | 2페이지: 4장 Scorecard·차트           | 4페이지: 한계·REFERENCE               |
+| ------------------------------------- | ------------------------------------- | ------------------------------------- |
 | ![p1](docs/report_preview/page-1.png) | ![p2](docs/report_preview/page-2.png) | ![p4](docs/report_preview/page-4.png) |
 
 전체 5페이지 미리보기: [1](docs/report_preview/page-1.png) · [2](docs/report_preview/page-2.png) · [3](docs/report_preview/page-3.png) · [4](docs/report_preview/page-4.png) · [5](docs/report_preview/page-5.png)
@@ -178,6 +178,22 @@ uv run python app.py
 
 ## Contributors
 
-- 박연제 : RAG 파이프라인(문서 준비·청킹·메타데이터·Qwen3 임베딩·FAISS/BM25 Hybrid 검색·관련성 평가 도구), 임베딩 3종 비교 평가, State·Graph 설계·구현, Report Agent·PDF 변환, README·통합 테스트
-- 이정인 : 웹검색 도구, Startup Agent(후보 탐색·선정 판정·프로필 근거), Technology Agent, Competitor Agent
-- 정예지 : Market Agent(Agentic RAG·Corrective RAG), Evaluator Agent(13개 지표 채점), Decision Agent(투자/보류 판정), 단위 테스트
+- 박연제 : RAG 인프라 및 그래프 통합
+    - RAG 문서 준비·청킹·메타데이터 스키마, Qwen3 로컬 임베딩
+    - FAISS + BM25 Hybrid 검색(가중 RRF), 인덱스 재사용, 관련성 평가 도구
+    - 임베딩 3종 비교 평가(Hit Rate@1/3/5, MRR, 인덱싱 시간)
+    - State·Evidence 스키마 설계, LangGraph 조립(후보 순회·후보별 초기화·조건부 분기), LangSmith 추적
+    - Report Agent(투자/전원 보류/대상 없음 3종 보고서, REFERENCE 자동 생성), 한글 PDF 변환
+    - 후보 1개 end-to-end 통합 테스트, README 작성
+- 이정인 : 후보 탐색 및 웹 기반 분석
+    - 웹검색·출처 요약 도구
+    - Startup Agent: 국내·해외 후보 탐색·정규화, PASS/FAIL/REVIEW 선정 판정, 기업 유형 분류(CHIP / DESIGN_AI / PROCESS_AI), 팀·투자·고객 프로필 근거 수집
+    - Technology Agent: 기업 유형별 개발 단계·기술 지표·검증 조건 분석
+    - Competitor Agent: 동일 유형 국내외 경쟁사 비교, 진입장벽 3범주 분석
+    - 결측 지표 보완용 기술·경쟁 재조사 함수
+- 정예지 : 시장 분석, 채점 및 투자 판정
+    - Market Agent: topic별 Corrective RAG(시장 규모·성장률·수요/리스크), 근거 충분성 판정, topic별 재검색 2회 상한, 웹 보완
+    - Evaluator Agent: 13개 지표 채점(정량 구간 점수 변환은 코드, 정성 루브릭 채점은 LLM), 결측·부재 구분 처리, 통화 환산, 가중 총점 계산
+    - 결측 영역 근거 보완(evidence_refresh) 흐름
+    - Decision Agent: 투자/보류 규칙 판정(총점·결측 수·선정 불확실성), 후보별 평가 스냅샷 저장
+    - 채점·판정 규칙 단위 테스트
