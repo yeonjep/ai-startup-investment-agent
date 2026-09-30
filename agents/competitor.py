@@ -25,6 +25,19 @@ BARRIER = {
     "PROCESS_AI": "공정·검사 IP / 사용 권리가 확인된 현장 데이터·모델·운영 기술 / 장비·생산 시스템 연동·고객 협력",
 }
 
+KNOWN_COMPETITOR_COUNTRIES = {
+    "퓨리오사ai": "대한민국",
+    "furiosaai": "대한민국",
+    "furiosa": "대한민국",
+    "리벨리온": "대한민국",
+    "rebellions": "대한민국",
+}
+
+
+def _normalized_competitor_country(name: str, country: str) -> str:
+    key = "".join(character.lower() for character in name if character.isalnum())
+    return KNOWN_COMPETITOR_COUNTRIES.get(key, country)
+
 
 class CompetitorProfile(BaseModel):
     name: str = Field(description="경쟁 기업 또는 기존(비AI) 방식 이름")
@@ -126,7 +139,12 @@ def competitor_agent(state: InvestmentState, config: RunnableConfig | None = Non
             "summary": analysis.overall_analysis,
             "peer_group": analysis.peer_group,
             "competitors": [
-                {**peer.model_dump(), "comparison": peer.comparison_summary} for peer in analysis.competitors
+                {
+                    **peer.model_dump(),
+                    "country": _normalized_competitor_country(peer.name, peer.country),
+                    "comparison": peer.comparison_summary,
+                }
+                for peer in analysis.competitors
             ],
             "differentiation_summary": analysis.differentiation_summary,
             "barriers_to_entry": analysis.barriers_to_entry,

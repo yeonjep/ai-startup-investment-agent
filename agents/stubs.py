@@ -107,6 +107,36 @@ def _market_scope(state: InvestmentState) -> str:
     return str(startup.get("target_market") or type_scope)
 
 
+def _scope_matches_target_market(state: InvestmentState, finding_scope: Any) -> bool:
+    """Reject a specialized proxy market that is not the startup's target market.
+
+    Broad AI-semiconductor figures are allowed as contextual evidence, but a component
+    market such as HBM/DRAM must not be scored as the target-market TAM or CAGR unless
+    the startup itself is evaluated in that component market.
+    """
+    scope = str(finding_scope or "").lower()
+    startup = state.get("current_startup") or {}
+    target = " ".join(
+        str(value or "")
+        for value in (
+            _market_scope(state),
+            startup.get("evaluation_product"),
+            startup.get("description"),
+        )
+    ).lower()
+    proxy_markets = (
+        ("hbm", "high bandwidth memory", "고대역폭 메모리"),
+        ("dram", "디램"),
+        ("nand", "낸드"),
+        ("foundry", "파운드리"),
+    )
+    return not any(
+        any(term in scope for term in terms)
+        and not any(term in target for term in terms)
+        for terms in proxy_markets
+    )
+
+
 def _market_query(state: InvestmentState, topic: str, attempt: int) -> str:
     startup = state.get("current_startup") or {}
     company = startup.get("name", "대상 기업")
@@ -313,6 +343,8 @@ def _market_findings(
                 item["validation"] = "수치가 인용 원문에 없음"
             elif not finding.scope or (finding.topic == "market_size" and not finding.unit):
                 item["validation"] = "시장 범위·기준연도·단위 미확인"
+            elif not _scope_matches_target_market(state, finding.scope):
+                item["validation"] = "대상 기업의 타깃 시장과 시장 수치 범위가 일치하지 않음"
         item["sufficient"] = bool(
             topic_results[finding.topic].get("sufficient")
             and not item["conflict"]

@@ -140,6 +140,11 @@ def _year(date: str | None) -> str | None:
     return match.group(1) if match else None
 
 
+def _reference_link(url: str | None) -> str | None:
+    """Keep references clickable without printing renderer-breaking long URLs."""
+    return f"[원문 링크]({url})" if url else None
+
+
 def _format_references(cited: list[dict[str, Any]]) -> list[str]:
     """cited: 인용 순서대로의 Evidence. 같은 문서(RAG)·같은 URL(웹)은 한 항목으로 합친다."""
     groups: dict[tuple, dict[str, Any]] = {}
@@ -152,16 +157,17 @@ def _format_references(cited: list[dict[str, Any]]) -> list[str]:
 
 
 def _reference_line(item: dict[str, Any], pages: list[int]) -> str:
-    source, title, url = item.get("source"), item.get("title"), item.get("url")
+    source, url = item.get("source"), item.get("url")
+    title = _cell(item.get("title"), 90)
     if item["source_type"] == "rag":
         year = _year(item.get("date"))
         head = f"{source or '발행기관 미확인'}({year})" if year else f"{source or '발행기관 미확인'}"
-        tail = url if url else f"문서 ID {item['doc_id']}, 조회일 {item.get('accessed_at') or '미확인'}"
+        tail = _reference_link(url) if url else f"문서 ID {item['doc_id']}, 조회일 {item.get('accessed_at') or '미확인'}"
         page_text = f", 인용 PDF 페이지 {', '.join(str(p) for p in pages)}" if pages else ""
         return f"{head}. *{title}*. {tail}{page_text}."
     date = item.get("date")
     head = f"{source or '작성자 미확인'}({date})" if date else f"{source or '작성자 미확인'}(날짜 미확인, 조회일 {item.get('accessed_at') or '미확인'})"
-    return f"{head}. *{title}*. {source or '사이트명 미확인'}, {url}." if url else f"{head}. *{title}*."
+    return f"{head}. *{title}*. {source or '사이트명 미확인'}, {_reference_link(url)}." if url else f"{head}. *{title}*."
 
 
 def _finalize_citations(markdown_text: str, catalog: Catalog) -> str:
@@ -199,7 +205,39 @@ def _finalize_citations(markdown_text: str, catalog: Catalog) -> str:
 
 # ---------------------------------------------------------------- 서술(LLM)
 def _compact(record: dict[str, Any]) -> dict[str, Any]:
-    profile = {k: v for k, v in record["company_profile"].items() if k != "profile_evidence"}
+    # Discovery fields are hints, not scored facts. Do not let stale round/funding
+    # strings override the Evidence-backed ScoreEntry in the narrative model input.
+    excluded = {
+        "profile_evidence",
+        "description",
+        "evaluation_product",
+        "total_funding",
+        "recent_round",
+        "latest_round",
+    }
+    profile = {k: v for k, v in record["company_profile"].items() if k not in excluded}
+    verified_funding = _raw(record, "funding_total")
+    if verified_funding:
+        profile["verified_funding_total"] = verified_funding
+    funding_evidence = [
+        item
+        for item in record.get("evidence", [])
+        if item.get("metric") == "funding_total"
+    ]
+    funding_text = " ".join(
+        f"{item.get('title') or ''} {item.get('quote') or ''}"
+        for item in funding_evidence
+    )
+    round_match = re.search(
+        r"(?:series|시리즈)\s*[- ]?([a-c])\b|\b(seed|pre[- ]?[a-c])\b|\b(시드)\b",
+        funding_text,
+        flags=re.IGNORECASE,
+    )
+    if round_match:
+        if round_match.group(1):
+            profile["verified_funding_round"] = f"Series {round_match.group(1).upper()}"
+        else:
+            profile["verified_funding_round"] = round_match.group(2) or round_match.group(3)
     return {
         "company_profile": profile,
         "selection_uncertain": record.get("selection_uncertain"),
