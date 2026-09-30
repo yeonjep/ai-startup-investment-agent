@@ -19,6 +19,7 @@ from agents.state import InvestmentState
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 Scenario = Literal[
+    "real",
     "invest",
     "all_hold",
     "zero_pass",
@@ -27,6 +28,7 @@ Scenario = Literal[
     "uncertain",
 ]
 DEMO_SCENARIOS = {
+    "real": None,  # stub 후보 없이 Startup Agent가 직접 후보를 탐색한다
     "invest": [{"name": "[샘플 투자 후보]"}],
     "all_hold": [{"name": "[샘플 후보 A]"}, {"name": "[샘플 후보 B]"}],
     "zero_pass": [{"name": "[부적합 후보 A]"}, {"name": "[부적합 후보 B]"}],
@@ -36,7 +38,7 @@ DEMO_SCENARIOS = {
 }
 
 
-def main(scenario: Scenario = "all_hold") -> dict[str, Any]:
+def main(scenario: Scenario = "real") -> dict[str, Any]:
     configure_runtime()
     initial_state: InvestmentState = {"domain": "AI 반도체"}  # This line is unchanged
     max_candidates = validate_max_candidates()
@@ -88,8 +90,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the DESIGN-aligned investment graph with stubs.")
     parser.add_argument(
         "--scenario",
-        choices=("invest", "all_hold", "zero_pass", "evidence_retry", "no_candidates", "uncertain"),
-        default="all_hold",
+        choices=("real", "invest", "all_hold", "zero_pass", "evidence_retry", "no_candidates", "uncertain"),
+        default="real",
         help="Stub branch to exercise.",
     )
     main(parser.parse_args().scenario)

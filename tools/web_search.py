@@ -1,6 +1,7 @@
 # 설계 확정 후 교체할 부분: Tavily 검색 범위와 결과 수는 최종 Agent 설계에 맞춰 조정합니다.
 
 import os
+from datetime import date
 from functools import lru_cache
 from typing import Any
 
@@ -41,15 +42,15 @@ def web_search(query: str, max_results: int = 5) -> list[dict[str, Any]]:
             result.get("published_date")
             or result.get("date")
             or result.get("publishedDate")
-            or ""
+            or None
         )
         normalized_results.append(
             {
                 "title": result.get("title", ""),
                 "url": result.get("url", ""),
                 "content": result.get("content", ""),
-                "published_date": published,
-                "retrieved_date": "2026-09-30",
+                "date": str(published)[:10] if published else None,
+                "accessed_at": date.today().isoformat(),
                 "score": result.get("score"),
             }
         )
