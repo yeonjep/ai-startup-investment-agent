@@ -1,0 +1,7 @@
+﻿model,mode,hit_rate_at_1,hit_rate_at_3,hit_rate_at_5,mrr,indexing_seconds,embedding_dimension
+BAAI/bge-m3,dense,0.75,0.9,0.95,0.8266666666666668,11.475557290948927,1024
+BAAI/bge-m3,hybrid,0.75,0.95,1.0,0.8625,11.475557290948927,1024
+intfloat/multilingual-e5-large,dense,0.7,0.9,0.95,0.8041666666666666,9.807751667220145,1024
+intfloat/multilingual-e5-large,hybrid,0.75,0.95,1.0,0.8458333333333334,9.807751667220145,1024
+Qwen/Qwen3-Embedding-0.6B,dense,0.65,0.95,0.95,0.8,13.37704679230228,1024
+Qwen/Qwen3-Embedding-0.6B,hybrid,0.7,1.0,1.0,0.825,13.37704679230228,1024

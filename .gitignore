@@ -1,14 +1,41 @@
-.env
-.venv/
+# Python
+.python-version
 __pycache__/
 *.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Generated report artifacts
+# Env & secrets
+.env
+.env.*
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Local environment scaffolding (shared environment: requirements.txt)
+pyproject.toml
+uv.lock
+
+# Generated reports / run logs (may contain retrieved source text)
+outputs/live/
+outputs/demo/
+outputs/runs/
+outputs/report_recheck/
 outputs/*.pdf
 outputs/*.docx
 outputs/*.zip
 
-# Local vector databases and indexes
+# Local vector indexes / model caches
+data/vectorstores/
 data/vectorstore/
 vectorstore/
 faiss_index/
+.cache/
+
+# Temporary rendering / artifacts
+tmp/

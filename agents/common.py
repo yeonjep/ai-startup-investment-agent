@@ -1,4 +1,4 @@
-# 설계 확정 후 교체할 부분: 모델 설정과 프롬프트 내용은 담당 조 확정 후 연결합니다.
+# LLM과 런타임 설정, 프롬프트 로더.
 
 import os
 from pathlib import Path

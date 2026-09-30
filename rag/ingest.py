@@ -1,96 +1,91 @@
+"""안전한 JSON 메타데이터+FAISS 인덱스. 기존 평가용 pickle 인덱스는 보존한다."""
 import argparse
-
-from langchain_community.document_loaders import PyMuPDFLoader
+import hashlib
+import json
+import re
+import faiss
+from langchain_core.documents import Document
+from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-from rag.config import (
-    CHUNK_OVERLAP,
-    CHUNK_SIZE,
-    DOCS_DIR,
-    EMBEDDING_MODEL,
-    vectorstore_path_for_model,
-)
+import pymupdf
+from rag.config import CHUNK_SIZE, CHUNK_OVERLAP, DOCS_DIR, EMBEDDING_MODEL, vectorstore_path_for_model
 from rag.doc_meta import DOC_META, PDF_PAGE_STARTS
+from rag.embeddings import RetrievalEmbeddings
 
 
-def load_and_split_documents() -> tuple[list, list[tuple[str, int]]]:
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP,
-    )
-    chunks = []
-    chunk_counts = []
+INDEX_VERSION = 2
 
-    for filename, doc_meta in DOC_META.items():
-        pdf_path = DOCS_DIR / filename
-        if not pdf_path.is_file():
-            raise FileNotFoundError(f"RAG PDF not found: {pdf_path}")
 
-        page_start = PDF_PAGE_STARTS.get(filename, 1)
-        pages = PyMuPDFLoader(str(pdf_path)).load()
-        for page in pages:
-            page_index = page.metadata.get("page")
-            if not isinstance(page_index, int):
-                raise ValueError(f"PDF page metadata is missing for {pdf_path}")
-            page.metadata["page"] = page_index + page_start
-            page.metadata.update(
-                {
-                    **doc_meta,
-                    "mentioned_companies": list(doc_meta["mentioned_companies"]),
-                }
-            )
-
-        document_chunks = splitter.split_documents(pages)
-        for chunk in document_chunks:
-            chunk.metadata["chunk_id"] = len(chunks)
+def load_and_split_documents():
+    splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+    chunks, counts, total_pages = [], [], 0
+    for filename, metadata in DOC_META.items():
+        path = DOCS_DIR / filename
+        if not path.is_file():
+            raise FileNotFoundError(f'{path}: run python -m rag.prepare_docs first')
+        pages = []
+        with pymupdf.open(path) as pdf:
+            total_pages += len(pdf)
+            for i, page in enumerate(pdf):
+                text = re.sub(r'[ \t]+', ' ', page.get_text())
+                text = re.sub(r'\n{3,}', '\n\n', text).strip()
+                if len(text) < 20:
+                    continue
+                pages.append(Document(page_content=text, metadata={**metadata,
+                    'page': i + PDF_PAGE_STARTS.get(filename, 1)}))
+        doc_chunks = splitter.split_documents(pages)
+        for local_id, chunk in enumerate(doc_chunks):
+            chunk.metadata['chunk_id'] = f"{metadata['doc_id']}:{chunk.metadata['page']}:{local_id}"
             chunks.append(chunk)
-        chunk_counts.append((doc_meta["doc_id"], len(document_chunks)))
+        counts.append((metadata['doc_id'], len(doc_chunks)))
+    if total_pages > 200:
+        raise ValueError(f'RAG page limit exceeded: {total_pages} > 200')
+    if not chunks:
+        raise ValueError('No extractable text found; OCR is required')
+    return chunks, counts
 
-    return chunks, chunk_counts
+
+def fingerprint(chunks, model):
+    payload = {'version': INDEX_VERSION, 'model': model, 'size': CHUNK_SIZE, 'overlap': CHUNK_OVERLAP,
+               'chunks': [{'text': c.page_content, 'metadata': c.metadata} for c in chunks]}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
-def ingest(embedding_model: str = EMBEDDING_MODEL) -> FAISS:
-    chunks, chunk_counts = load_and_split_documents()
-    vectorstore_path = vectorstore_path_for_model(embedding_model)
-    embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
-
-    index_file = vectorstore_path / "index.faiss"
-    metadata_file = vectorstore_path / "index.pkl"
-    if index_file.is_file() and metadata_file.is_file():
-        vectorstore = FAISS.load_local(
-            str(vectorstore_path),
-            embeddings,
-            allow_dangerous_deserialization=True,
-        )
-        action = "Reused"
+def ingest(embedding_model=None, force=False, embeddings=None):
+    from agents.common import configure_runtime
+    import os
+    configure_runtime()
+    model = embedding_model or os.getenv('EMBEDDING_MODEL', EMBEDDING_MODEL)
+    chunks, counts = load_and_split_documents()
+    folder = vectorstore_path_for_model(model) / 'v2'
+    manifest_path = folder / 'manifest.json'
+    digest = fingerprint(chunks, model)
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.is_file() else {}
+    embeddings = embeddings or RetrievalEmbeddings(model)
+    if not force and manifest.get('fingerprint') == digest and (folder / 'index.faiss').is_file():
+        raw = (folder / 'index.faiss').read_bytes()
+        if hashlib.sha256(raw).hexdigest() != manifest.get('index_sha256'):
+            raise ValueError('Index checksum mismatch; rebuild with --force')
+        index = faiss.read_index(str(folder / 'index.faiss'))
+        ids = [str(i) for i in range(len(chunks))]
+        store = FAISS(embeddings, index, InMemoryDocstore(dict(zip(ids, chunks))), dict(enumerate(ids)))
+        action = 'Reused'
     else:
-        vectorstore = FAISS.from_documents(chunks, embeddings)
-        vectorstore_path.mkdir(parents=True, exist_ok=True)
-        vectorstore.save_local(str(vectorstore_path))
-        action = "Created"
-
-    print(f"Vector store {action}: {vectorstore_path}")
-    for doc_id, count in chunk_counts:
-        print(f"{doc_id}: {count} chunks")
-    print(f"Total: {len(chunks)} chunks")
-    if chunks:
-        print(f"Sample chunk metadata: {chunks[0].metadata}")
-
-    return vectorstore
+        store = FAISS.from_documents(chunks, embeddings)
+        folder.mkdir(parents=True, exist_ok=True)
+        faiss.write_index(store.index, str(folder / 'index.faiss'))
+        manifest_path.write_text(json.dumps({'fingerprint': digest, 'model': model, 'version': INDEX_VERSION,
+            'index_sha256': hashlib.sha256((folder / 'index.faiss').read_bytes()).hexdigest(),
+            'chunks': [{'text': c.page_content, 'metadata': c.metadata} for c in chunks]}, ensure_ascii=False, indent=2))
+        action = 'Created'
+    print(f'{action} {folder}: {len(chunks)} chunks')
+    return store
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Load RAG PDFs and build a FAISS index.")
-    parser.add_argument(
-        "--embedding-model",
-        default=EMBEDDING_MODEL,
-        help=f"Hugging Face model ID (default: {EMBEDDING_MODEL})",
-    )
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--embedding-model')
+    parser.add_argument('--force', action='store_true')
     args = parser.parse_args()
-    ingest(args.embedding_model)
-
-
-if __name__ == "__main__":
-    main()
+    ingest(args.embedding_model, args.force)

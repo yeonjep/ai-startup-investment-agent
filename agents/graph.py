@@ -1,68 +1,44 @@
-# 설계 확정 후 교체할 부분: 가이드의 6개 노드만 연결한 그래프 뼈대입니다.
-
+from functools import partial
 from langgraph.graph import END, START, StateGraph
-
-from agents.config import MAX_ITERATIONS
-from agents.state import InvestmentState
-from agents.stubs import (
-    competitor_comparison,
-    investment_decision,
-    market_evaluation,
-    report_generation,
-    startup_search,
-    technology_summary,
-)
+from agents.state import InvestmentState, initialize_state, next_candidate
+from agents import startup, technology, market, competitor, evaluator, decision, report
+from agents.services import LiveServices
 
 
-def route_after_startup(state: InvestmentState) -> str:
-    max_iterations = state.get("max_iterations", MAX_ITERATIONS)
-    evaluated_count = len(state.get("evaluated", []))
-    if evaluated_count >= max_iterations:
-        return "report_generation"
-    return "technology_summary" if state.get("current_startup") else "report_generation"
+def route_startup(state):
+    if not state.get('current_startup'):
+        return 'report_agent'
+    if state['selection_status'] == 'FAIL':
+        return 'next_candidate'
+    if state['selection_status'] == 'REVIEW' and state['selection_retry'] == 0:
+        return 'startup_agent'
+    return 'technology_agent'
 
 
-def route_after_decision(state: InvestmentState) -> str:
-    if state.get("decision") != "보류":
-        return "report_generation"
-
-    candidates = state.get("candidates", [])
-    current_idx = state.get("current_idx", 0)
-    max_iterations = state.get("max_iterations", MAX_ITERATIONS)
-    evaluated_count = len(state.get("evaluated", []))
-    if current_idx < len(candidates) and evaluated_count < max_iterations:
-        return "startup_search"
-    return "report_generation"
+def route_next(state):
+    return ('startup_agent' if state['current_idx'] < len(state['candidates'])
+            and len(state.get('evaluated', [])) < state['max_candidates'] else 'report_agent')
 
 
-def build_graph():
+def build_graph(services=None):
+    services = services or LiveServices()
     builder = StateGraph(InvestmentState)
-    builder.add_node("startup_search", startup_search)
-    builder.add_node("technology_summary", technology_summary)
-    builder.add_node("market_evaluation", market_evaluation)
-    builder.add_node("competitor_comparison", competitor_comparison)
-    builder.add_node("investment_decision", investment_decision)
-    builder.add_node("report_generation", report_generation)
-
-    builder.add_edge(START, "startup_search")
-    builder.add_conditional_edges(
-        "startup_search",
-        route_after_startup,
-        {
-            "technology_summary": "technology_summary",
-            "report_generation": "report_generation",
-        },
-    )
-    builder.add_edge("technology_summary", "market_evaluation")
-    builder.add_edge("market_evaluation", "competitor_comparison")
-    builder.add_edge("competitor_comparison", "investment_decision")
-    builder.add_conditional_edges(
-        "investment_decision",
-        route_after_decision,
-        {
-            "startup_search": "startup_search",
-            "report_generation": "report_generation",
-        },
-    )
-    builder.add_edge("report_generation", END)
+    builder.add_node('initialize_state', initialize_state)
+    builder.add_node('next_candidate', next_candidate)
+    for name, module in [('startup', startup), ('technology', technology), ('market', market),
+                         ('competitor', competitor), ('evaluator', evaluator), ('report', report)]:
+        builder.add_node(name + '_agent', partial(module.run, services=services))
+    builder.add_node('decision_agent', decision.run)
+    builder.add_edge(START, 'initialize_state')
+    builder.add_edge('initialize_state', 'startup_agent')
+    builder.add_conditional_edges('startup_agent', route_startup,
+                                  ['report_agent', 'next_candidate', 'startup_agent', 'technology_agent'])
+    for a, b in [('technology', 'market'), ('market', 'competitor'), ('competitor', 'evaluator')]:
+        builder.add_edge(a + '_agent', b + '_agent')
+    builder.add_conditional_edges('evaluator_agent', lambda s: s.get('retry_target') or 'decision_agent',
+                                  ['technology_agent', 'market_agent', 'competitor_agent', 'decision_agent'])
+    builder.add_conditional_edges('decision_agent', lambda s: 'report_agent' if s['decision'] == '투자' else 'next_candidate',
+                                  ['report_agent', 'next_candidate'])
+    builder.add_conditional_edges('next_candidate', route_next, ['startup_agent', 'report_agent'])
+    builder.add_edge('report_agent', END)
     return builder.compile()

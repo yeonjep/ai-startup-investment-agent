@@ -1,5 +1,9 @@
 # CLAUDE.md — AI 스타트업 투자 평가 에이전트 (프로젝트 컨텍스트)
 
+> **2026-09-30 사용자 지시:** Git에서 환경 스캐폴딩(`pyproject.toml`, `uv.lock`, `.python-version`)을 제외하고 `requirements.txt` 및 `scripts/setup_env.sh`로 공동 환경을 공유한다. 아래 uv 프로젝트 전용 설치 규칙보다 이 지시를 우선한다.
+
+> **2026-09-29 구현 업데이트:** 최신 확정 기준은 `docs/RAG-Design.md`, 실제 구현 및 검증 범위는 `docs/IMPLEMENTATION.md`와 `README.md`를 참고한다. 아래 모델·State·평가 기준의 초안/TODO는 설계 이력이며 최신 확정 설계를 우선한다.
+
 > 이 파일은 AI 코딩 어시스턴트가 작업 전에 **반드시 먼저 읽어야 하는** 프로젝트 컨텍스트 문서다.
 > 과제 가이드(강사 제공)의 요구사항과, 조에서 확정한 설계 결정을 모두 담고 있다.
 > **원칙: 가이드 요구사항과 이 문서의 설계를 벗어나는 구현을 하지 말 것. 불확실하면 구현 전에 질문할 것.**
@@ -225,7 +229,7 @@ python {app.py}
   HUGGINGFACEHUB_API_TOKEN=
   TAVILY_API_KEY=
   ```
-  → 레포에는 값 없는 `.env.example`만 커밋
+  → 레포에는 값 없는 `config/env.sample`만 커밋 (`.env`와 `.env.*`는 Git 제외)
 - LLM 모델: 비용 절감을 위해 **nano / mini 계열** 사용 (과정 가이드 권장). 예: `gpt-4.1-mini`, `gpt-4.1-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`. Generator/Judge 모델 최종 선택은 `[TODO]`
 
 ---

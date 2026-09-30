@@ -1,0 +1,85 @@
+{
+  "fingerprint": "7382705cf61ace73a875baf6b5149e9e7ff56eb81531edde081facccc187f170",
+  "items": [
+    {
+      "question": "AMD와 NVIDIA의 최신 슈퍼칩 아키텍처와 그 특징에 대해 설명하시오.",
+      "chunk_id": "kisdi_2024_research:57:35"
+    },
+    {
+      "question": "한국이 AI 반도체 정책을 통해 추진하는 주요 전략과 그 목표는 무엇인가요?",
+      "chunk_id": "kisdi_2024_perspectives:3:2"
+    },
+    {
+      "question": "국산 NPU의 글로벌 경쟁력을 높이기 위한 전략은 무엇인가요?",
+      "chunk_id": "gov_2025_strategy:4:4"
+    },
+    {
+      "question": "그림 2에 나와 있는 IBM의 NorthPole 제품의 아키텍처와 성능 특징은 무엇인가요?",
+      "chunk_id": "kisdi_2024_research:69:48"
+    },
+    {
+      "question": "AI반도체의 세분화와 맞춤형 제품 생산이 활성화될 것으로 예상되는 이유는 무엇인가요?",
+      "chunk_id": "kisdi_2024_perspectives:16:24"
+    },
+    {
+      "question": "Foundry가 AI반도체 설계 지원을 위해 제공하는 주요 서비스는 무엇인가요?",
+      "chunk_id": "kisdi_2024_perspectives:13:20"
+    },
+    {
+      "question": "AI반도체와 EDA, SIP 분야의 최근 변화와 그 영향은 무엇인가요?",
+      "chunk_id": "kisdi_2024_perspectives:12:17"
+    },
+    {
+      "question": "AI반도체 시장이 기존 반도체 시장에 비해 성장하는 이유는 무엇인가요?",
+      "chunk_id": "kisdi_2024_perspectives:6:5"
+    },
+    {
+      "question": "AI반도체 시장의 성장과 변화에 영향을 미치는 주요 동인들은 무엇인가요?",
+      "chunk_id": "kisdi_2024_perspectives:2:1"
+    },
+    {
+      "question": "Sambanova가 발표한 SN40L 칩의 특징과 차별화된 기술은 무엇인가요?",
+      "chunk_id": "kisdi_2024_research:61:40"
+    },
+    {
+      "question": "현재 데이터 센터 시장에서 가장 높은 시장 점유율을 차지하는 기업은 어디이며, 이 기업이 제공하는 제품군은 어떤 특징이 있나요?",
+      "chunk_id": "kisdi_2024_research:45:23"
+    },
+    {
+      "question": "국산 NPU를 활용한 공공 및 민간 AI 산업 활성화 추진 일정은 어떻게 되나요?",
+      "chunk_id": "gov_2025_strategy:10:12"
+    },
+    {
+      "question": "Intel Xeon Scalable Processor와 AMD EPYC 프로세서의 차이점은 무엇인가요?",
+      "chunk_id": "kisdi_2024_research:51:29"
+    },
+    {
+      "question": "2023년부터 2027년까지 글로벌 파운드리 시장의 연평균 성장률은 얼마로 전망되며, 이는 전체 반도체 시장 성장률과 어떻게 비교되나요?",
+      "chunk_id": "kisdi_2024_research:33:7"
+    },
+    {
+      "question": "국산 AI반도체 상용화와 관련된 K-NPU 프로젝트의 주요 추진 과제는 무엇인가요?",
+      "chunk_id": "gov_2025_strategy:5:5"
+    },
+    {
+      "question": "ARM과 Synopsys는 어떤 역할을 하는 기업인가요?",
+      "chunk_id": "kisdi_2024_perspectives:11:16"
+    },
+    {
+      "question": "AI반도체 개발에 있어 SIP 기업들이 협업과 인수합병을 통해 어떤 전략적 이점을 얻을 수 있나요?",
+      "chunk_id": "kisdi_2024_perspectives:12:18"
+    },
+    {
+      "question": "2023년 Gartner 자료에 따르면 산업 기기와 저장 기기의 매출 규모와 성장률은 각각 어떻게 되나요?",
+      "chunk_id": "kisdi_2024_research:40:17"
+    },
+    {
+      "question": "Apple의 M2 칩과 AMD XDNA AI, NVIDIA GPU의 성능 비교에 대한 최신 벤치마크 결과는 무엇인가요?",
+      "chunk_id": "kisdi_2024_research:53:31"
+    },
+    {
+      "question": "FPGA와 ASIC의 차이점과 각각의 장단점은 무엇인가요?",
+      "chunk_id": "kisdi_2024_research:47:25"
+    }
+  ]
+}
