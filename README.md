@@ -185,22 +185,24 @@ uv run python app.py
 
 ## Contributors
 
-- 박연제 : RAG 인프라 및 그래프 통합
-    - RAG 문서 준비·청킹·메타데이터 스키마, Qwen3 로컬 임베딩
-    - FAISS + BM25 Hybrid 검색(가중 RRF), 인덱스 재사용, 관련성 평가 도구
-    - 임베딩 3종 비교 평가(Hit Rate@1/3/5, MRR, 인덱싱 시간)
-    - State·Evidence 스키마 설계, LangGraph 조립(후보 순회·후보별 초기화·조건부 분기), LangSmith 추적
-    - Report Agent(투자/전원 보류/대상 없음 3종 보고서, REFERENCE 자동 생성), 한글 PDF 변환
-    - 후보 1개 end-to-end 통합 테스트, README 작성
-- 이정인 : 후보 탐색 및 웹 기반 분석
-    - 웹검색·출처 요약 도구
-    - Startup Agent: 국내·해외 후보 탐색·정규화, PASS/FAIL/REVIEW 선정 판정, 기업 유형 분류(CHIP / DESIGN_AI / PROCESS_AI), 팀·투자·고객 프로필 근거 수집
-    - Technology Agent: 기업 유형별 개발 단계·기술 지표·검증 조건 분석
-    - Competitor Agent: 동일 유형 국내외 경쟁사 비교, 진입장벽 3범주 분석
-    - 결측 지표 보완용 기술·경쟁 재조사 함수
-- 정예지 : 시장 분석, 채점 및 투자 판정
-    - Market Agent: topic별 Corrective RAG(시장 규모·성장률·수요/리스크), 근거 충분성 판정, topic별 재검색 2회 상한, 웹 보완
-    - Evaluator Agent: 13개 지표 채점(정량 구간 점수 변환은 코드, 정성 루브릭 채점은 LLM), 결측·부재 구분 처리, 통화 환산, 가중 총점 계산
-    - 결측 영역 근거 보완(evidence_refresh) 흐름
-    - Decision Agent: 투자/보류 규칙 판정(총점·결측 수·선정 불확실성), 후보별 평가 스냅샷 저장
-    - 채점·판정 규칙 단위 테스트
+- **박연제 : RAG 인프라 및 그래프 통합**
+  - RAG 문서 준비·청킹·메타데이터 스키마, Qwen3 로컬 임베딩
+  - FAISS + BM25 Hybrid 검색(가중 RRF), 인덱스 재사용, 관련성 평가 도구
+  - 임베딩 3종 비교 평가(Hit Rate@1/3/5, MRR, 인덱싱 시간)
+  - State·Evidence 스키마 설계, LangGraph 조립(후보 순회·후보별 초기화·조건부 분기), LangSmith 추적
+  - Report Agent(투자/전원 보류/대상 없음 3종 보고서, REFERENCE 자동 생성), 한글 PDF 변환
+  - 후보 1개 end-to-end 통합 테스트, README 작성
+
+- **이정인 : 후보 탐색 및 웹 기반 분석**
+  - 웹검색·출처 요약 도구
+  - Startup Agent: 국내·해외 후보 탐색·정규화, PASS/FAIL/REVIEW 선정 판정, 기업 유형 분류(CHIP / DESIGN_AI / PROCESS_AI), 팀·투자·고객 프로필 근거 수집
+  - Technology Agent: 기업 유형별 개발 단계·기술 지표·검증 조건 분석
+  - Competitor Agent: 동일 유형 국내외 경쟁사 비교, 진입장벽 3범주 분석
+  - 결측 지표 보완용 기술·경쟁 재조사 함수
+
+- **정예지 : 시장 분석, 채점 및 투자 판정**
+  - Market Agent: topic별 Corrective RAG(시장 규모·성장률·수요/리스크), 근거 충분성 판정, topic별 재검색 2회 상한, 웹 보완
+  - Evaluator Agent: 13개 지표 채점(정량 구간 점수 변환은 코드, 정성 루브릭 채점은 LLM), 결측·부재 구분 처리, 통화 환산, 가중 총점 계산
+  - 결측 영역 근거 보완(evidence_refresh) 흐름
+  - Decision Agent: 투자/보류 규칙 판정(총점·결측 수·선정 불확실성), 후보별 평가 스냅샷 저장
+  - 채점·판정 규칙 단위 테스트
