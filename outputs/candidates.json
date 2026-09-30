@@ -1,289 +1,138 @@
 [
   {
-    "name": "세카",
+    "name": "하이퍼엑셀(HyperExcel)",
     "aliases": [
-      "SECA"
+      "HyperExcel"
     ],
     "country": "대한민국",
     "domain_url": "",
-    "founded_year": "2026",
-    "ceo": "",
-    "recent_round": "Seed",
-    "total_funding": "비공개",
-    "description": "AI 기반 전자설계자동화(EDA) 플랫폼을 개발하는 스타트업으로, LG전자와 블루포인트파트너스로부터 시드 투자 유치.",
-    "latest_source_date": "2026-08-22",
-    "discovery_done": true,
-    "company_type": "DESIGN_AI",
-    "criteria_results": [
-      {
-        "criterion_name": "domain_relevance",
-        "status": "PASS",
-        "reason": "세카는 AI 기반 전자설계자동화 플랫폼을 개발하여 AI 반도체 설계 관련 도메인에 명확히 해당됨.",
-        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
-      },
-      {
-        "criterion_name": "ai_core",
-        "status": "PASS",
-        "reason": "AI가 설계 자동화의 핵심 가치로, 자체 LLM, VLM 등 AI 모델을 활용해 설계 데이터를 분석함.",
-        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
-      },
-      {
-        "criterion_name": "unlisted",
-        "status": "PASS",
-        "reason": "최근 라운드가 Seed이며 비상장 상태임.",
-        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
-      },
-      {
-        "criterion_name": "funding_stage",
-        "status": "PASS",
-        "reason": "최근 투자 라운드가 Seed 단계에 해당됨.",
-        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
-      },
-      {
-        "criterion_name": "no_exit",
-        "status": "PASS",
-        "reason": "피인수·합병 등 Exit 이력이 없으며 합병 또는 매각 진행 중이라는 언급도 없음.",
-        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
-      },
-      {
-        "criterion_name": "info_sufficiency",
-        "status": "PASS",
-        "reason": "홈페이지는 명시되어 있지 않으나 투자 소식 및 기술 관련 기사 2건 이상 존재함.",
-        "source_url": "https://v.daum.net/v/Wpp6eQSrXn"
-      }
-    ],
-    "evaluation_product": "AI 기반 전자설계자동화(EDA) 플랫폼을 개발하는 스타트업으로, LG전자와 블루포인트파트너스로부터 시드 투자 유치.",
-    "selection_status": "PASS",
-    "uncertain": false,
-    "profile_evidence": [
-      {
-        "evidence_id": "세카:profile:team_experience:d1db11b2",
-        "company": "세카",
-        "category": "profile",
-        "metric": "team_experience",
-        "value": "세카 창업팀/사진제공=세카",
-        "unit": null,
-        "source_type": "web",
-        "title": "8월 셋째주, AI 반도체에 520억 '뭉칫돈'…딥테크 투자 열기 지속",
-        "source": "v.daum.net",
-        "date": null,
-        "accessed_at": "2026-09-30",
-        "url": "https://v.daum.net/v/Wpp6eQSrXn",
-        "doc_id": null,
-        "page": null,
-        "chunk_id": null,
-        "quote": "세카 창업팀/사진제공=세카",
-        "scope": null
-      }
-    ]
-  },
-  {
-    "name": "iHW",
-    "aliases": [],
-    "country": "대한민국",
-    "domain_url": "",
-    "founded_year": "2024",
-    "ceo": "",
-    "recent_round": "Series A",
-    "total_funding": "640억원",
-    "description": "초저전력 AI 반도체 팹리스 스타트업으로, 520억원 규모 시리즈A 투자 유치 완료, 엣지 AI 칩 양산 및 LLM 칩 개발을 추진 중.",
-    "latest_source_date": "2026-08-19",
+    "founded_year": "미확인",
+    "ceo": "미확인",
+    "recent_round": "Series B",
+    "total_funding": "약 2,060억원",
+    "description": "국내 AI 반도체 스타트업으로, 사모펀드 및 게임사 크래프톤 등의 투자를 유치하며 Series B를 마감했다. 고성능 AI 반도체 개발을 목표로 한다.",
+    "latest_source_date": "미확인",
     "discovery_done": true,
     "company_type": "CHIP",
     "criteria_results": [
       {
         "criterion_name": "domain_relevance",
         "status": "PASS",
-        "reason": "iHW는 AI 반도체 팹리스 기업으로, 초저전력 AI 반도체 칩을 개발하여 뉴로모픽 컴퓨팅, ACiM(Analog Compute-in-Memory) 기술을 적용하는 AI 반도체 제품을 주력으로 하기 때문",
-        "source_url": "https://wowtale.net/2026/08/19/263123"
+        "reason": "하이퍼엑셀은 초거대 AI에 특화된 AI 반도체(LLM Processing Unit)를 개발하는 회사로, AI 반도체 도메인에 명확히 해당됨.",
+        "source_url": "[1],[2],[4]"
       },
       {
         "criterion_name": "ai_core",
         "status": "PASS",
-        "reason": "AI가 iHW 제품 핵심가치이며, 칩 설계가 AI 연산을 위한 것으로 AI 핵심성이 명확함",
-        "source_url": "https://wowtale.net/2026/08/19/263123"
+        "reason": "AI 가속기 칩이 핵심 제품이며, AI 연산 가속, LLM 추론을 위한 전용 반도체인 LPU 개발이 주력임이 명확함.",
+        "source_url": "[1],[2],[4]"
       },
       {
         "criterion_name": "unlisted",
         "status": "PASS",
-        "reason": "비상장 상태로 상장 관련 정보 없음",
-        "source_url": "https://wowtale.net/2026/08/19/263123"
+        "reason": "상장 정보는 비상장으로 확인됨.",
+        "source_url": "[5]"
       },
       {
         "criterion_name": "funding_stage",
         "status": "PASS",
-        "reason": "최근 투자 라운드가 Series A(시리즈 A)로 기준에 부합함",
-        "source_url": "https://wowtale.net/2026/08/19/263123"
+        "reason": "최근 투자 라운드는 Series A로 확인되며, Seed~Series C에 해당함.",
+        "source_url": "[3],[4]"
       },
       {
         "criterion_name": "no_exit",
         "status": "PASS",
-        "reason": "피인수, 합병, 상장 이력 없으며 회사가 최근 설립되어 Exit 사례 없음",
-        "source_url": "https://wowtale.net/2026/08/19/263123"
+        "reason": "합병, 인수, 상장 이력이나 진행 현황이 없어 Exit 미완료로 판단됨.",
+        "source_url": "제공된 정보 내 별도 언급 없음"
       },
       {
         "criterion_name": "info_sufficiency",
         "status": "PASS",
-        "reason": "홈페이지 및 2건 이상의 기사와 보도자료가 존재하여 정보가 충분함",
-        "source_url": "https://wowtale.net/2026/08/19/263123"
+        "reason": "공식 홈페이지, 여러 기사 및 링크드인, 혁신의숲 등 최소 2건 이상의 정보원이 존재함.",
+        "source_url": "[1],[2],[3],[4],[5]"
       }
     ],
-    "evaluation_product": "초저전력 AI 반도체 팹리스 스타트업으로, 520억원 규모 시리즈A 투자 유치 완료, 엣지 AI 칩 양산 및 LLM 칩 개발을 추진 중.",
+    "evaluation_product": "국내 AI 반도체 스타트업으로, 사모펀드 및 게임사 크래프톤 등의 투자를 유치하며 Series B를 마감했다. 고성능 AI 반도체 개발을 목표로 한다.",
     "selection_status": "PASS",
     "uncertain": false,
     "profile_evidence": [
       {
-        "evidence_id": "ihw:profile:team_experience:5b917f4b",
-        "company": "iHW",
+        "evidence_id": "하이퍼엑셀-hyperexcel:profile:team_experience:ca5bbc18",
+        "company": "하이퍼엑셀(HyperExcel)",
         "category": "profile",
         "metric": "team_experience",
-        "value": "iHW는 삼성전자, SK하이닉스, Intel 등 글로벌 반도체 기업 출신 베테랑 임원과 엔지니어들이 주축이 되어 2024년 6월 설립된 AI 반도체 팹리스 기업이다.",
+        "value": "미국 마이크로소프트(MS) 하드웨어 엔지니어 출신인 김주영 하이퍼엑셀 대표는 2023년 창업 전선에 뛰어들었다. 김 대표는 “한국이 메모리 반도체 중심으로 산업을 키웠다 해도 로직 반도체 관련 인력은 여전히 산업현장에 남아 있다”며 “이들이 AI 시대를 맞아 다시 기술개발에 나서고 있다”고 설명했다.",
         "unit": null,
         "source_type": "web",
-        "title": "iHW, 520억원 시리즈A 투자 유치…초저전력 AI 반도체 사업 가속화 - 와우테일",
-        "source": "wowtale.net",
-        "date": "2026-08-19",
+        "title": "김주영 하이퍼엑셀 대표 - ‘AI 반도체’라는 종합예술 < 기업가 < 기사본문 - 포브스코리아(Forbes Korea)",
+        "source": "forbeskorea.co.kr",
+        "date": null,
         "accessed_at": "2026-09-30",
-        "url": "https://wowtale.net/2026/08/19/263123",
+        "url": "https://www.forbeskorea.co.kr/news/articleView.html?idxno=401398",
         "doc_id": null,
         "page": null,
         "chunk_id": null,
-        "quote": "iHW는 삼성전자, SK하이닉스, Intel 등 글로벌 반도체 기업 출신 베테랑 임원과 엔지니어들이 주축이 되어 2024년 6월 설립된 AI 반도체 팹리스 기업이다.",
+        "quote": "미국 마이크로소프트(MS) 하드웨어 엔지니어 출신인 김주영 하이퍼엑셀 대표는 2023년 창업 전선에 뛰어들었다.",
         "scope": null
       },
       {
-        "evidence_id": "ihw:profile:team_experience:560034c0",
-        "company": "iHW",
+        "evidence_id": "하이퍼엑셀-hyperexcel:profile:technical_headcount:7e03ea1b",
+        "company": "하이퍼엑셀(HyperExcel)",
         "category": "profile",
-        "metric": "team_experience",
-        "value": "김태훈 대표는 삼성전자, SK하이닉스, 미국의 마이크론 테크놀로지 등 세계 3대 메모리 반도체 업체를 모두 거친 전문가로, SK하이닉스에서 10년간 부사장을 지내며 AI 메모리 반도체 부문을 이끌었다.",
-        "unit": null,
+        "metric": "technical_headcount",
+        "value": 50.0,
+        "unit": "명",
         "source_type": "web",
-        "title": "저전력 AI 반도체 만드는 iHW, 520억 원 투자 유치-경제ㅣ한국일보",
-        "source": "hankookilbo.com",
-        "date": "2026-08-19",
+        "title": "AI 반도체 스타트업 하이퍼엑셀, 550억원 규모 투자 유치… “내년 삼성 4나노로 제품 양산” | Joo-Young Kim | 14 comments",
+        "source": "linkedin.com",
+        "date": null,
         "accessed_at": "2026-09-30",
-        "url": "https://www.hankookilbo.com/news/article/A2026081915440002141",
+        "url": "https://www.linkedin.com/posts/joo-young-kim-7b227955_ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%95%98%EC%9D%B4%ED%8D%BC%EC%97%91%EC%85%80-550%EC%96%B5%EC%9B%90-%EA%B7%9C%EB%AA%A8-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98-%EB%82%B4%EB%85%84-%EC%82%BC%EC%84%B1-activity-7278367590295461889-plZE",
         "doc_id": null,
         "page": null,
         "chunk_id": null,
-        "quote": "삼성전자, SK하이닉스, 인텔 등 반도체 기업 출신들이 모여 2024년 설립한 이 업체는 전력을 적게 소모하는 AI 반도체 설계 전문(팹리스) 업체다. 미국 애리조나주립대학에서 공학박사를 받은 김태훈 대표는 삼성전자, SK하이닉스, 미국의 마이크론 테크놀로지 등 세계 3대 메모리 반도체 업체를 모두 거친 전문가로, SK하이닉스에서 10년간 부사장을 지내며 AI 메모리 반도체 부문을 이끌었다.",
+        "quote": "지금은 50명 이상의 규모로 성장하게 되었다.",
         "scope": null
       },
       {
-        "evidence_id": "ihw:profile:funding_total:2de51b84",
-        "company": "iHW",
+        "evidence_id": "하이퍼엑셀-hyperexcel:profile:funding_total:0bdba493",
+        "company": "하이퍼엑셀(HyperExcel)",
         "category": "profile",
         "metric": "funding_total",
-        "value": 64000000000.0,
+        "value": 55000000000.0,
         "unit": "KRW",
         "source_type": "web",
-        "title": "iHW, 520억 규모 시리즈A 투자 유치…'초저전력 AI 반도체' 상용화 가속 < 보도자료 < AI 기업 < AI산업 < 기사본문 - AI타임스",
-        "source": "aitimes.com",
-        "date": "2026-09-23",
+        "title": "LLM 특화 AI 반도체 개발 ‘하이퍼엑셀’, 550억원 규모 시리즈A 투자유치 - 와우테일",
+        "source": "wowtale.net",
+        "date": "2024-12-26",
         "accessed_at": "2026-09-30",
-        "url": "https://www.aitimes.com/news/articleView.html?idxno=214115",
+        "url": "https://wowtale.net/2024/12/26/235287",
         "doc_id": null,
         "page": null,
         "chunk_id": null,
-        "quote": "iHW, 520억 원 시리즈A 투자 유치…누적 투자액은 640억 원 규모다.",
+        "quote": "약 550억 규모의 Series A 투자를 성공적으로 마무리했다.",
         "scope": null
       },
       {
-        "evidence_id": "ihw:profile:risk_mitigation:d281e34e",
-        "company": "iHW",
+        "evidence_id": "하이퍼엑셀-hyperexcel:profile:risk_mitigation:4ad3c1cd",
+        "company": "하이퍼엑셀(HyperExcel)",
         "category": "profile",
         "metric": "risk_mitigation",
-        "value": "핵심 코어 블록의 실리콘 동작 검증과 고차원 비전 AI 모델 시연에 성공하여 발열과 배터리 한계 문제를 해결할 가능성을 보여줬다.",
+        "value": "HBM 기반 GPU의 가격과 전력 한계 극복을 위해 저전력 LPDDR 기반 LPU 반도체 개발로 비용과 전력 절감 및 데이터센터 효율화 추진 중.",
         "unit": null,
         "source_type": "web",
-        "title": "iHW, 520억원 시리즈A 투자 유치…초저전력 AI 반도체 사업 가속화 - 와우테일",
+        "title": "LLM 특화 AI 반도체 개발 ‘하이퍼엑셀’, 550억원 규모 시리즈A 투자유치 - 와우테일",
         "source": "wowtale.net",
-        "date": "2026-08-19",
+        "date": "2024-12-26",
         "accessed_at": "2026-09-30",
-        "url": "https://wowtale.net/2026/08/19/263123",
+        "url": "https://wowtale.net/2024/12/26/235287",
         "doc_id": null,
         "page": null,
         "chunk_id": null,
-        "quote": "가장 큰 불확실성이었던 핵심 코어 블록의 실리콘 동작 검증과 고차원 비전 AI 모델 시연에 성공하면서 발열과 배터리의 한계로 디지털 NPU가 풀지 못했던 스마트시티·산업용 비전·로봇 관절 등 엣지 시장을 선점할 가능성을 보여줬다.",
+        "quote": "HBM 기반의 고성능 GPU는 현재 가격과 전력에 있어 한계점에 다다랐다. 하이퍼엑셀은 서버 시장에서는 최초로 저전력 메모리인 LPDDR을 기반으로 한 자체 LPU 반도체를 개발함으로써 LLM 추론에 드는 비용과 전력을 획기적으로 낮추고 데이터센터 효율화를 이루어 내겠다.",
         "scope": null
       }
     ]
-  },
-  {
-    "name": "아티크론",
-    "aliases": [
-      "Aticron"
-    ],
-    "country": "대한민국",
-    "domain_url": "",
-    "founded_year": "2023",
-    "ceo": "",
-    "recent_round": "Pre-A",
-    "total_funding": "33억원",
-    "description": "메모리 중심 AI 반도체 시스템 IP 설계 스타트업으로, SRAM-CIM 기반 NPU IP와 설계 자동화 플랫폼을 개발 중이며, 2026년 Pre-A 투자 유치.",
-    "latest_source_date": "2026-05-07",
-    "discovery_done": true
-  },
-  {
-    "name": "하이퍼엑셀",
-    "aliases": [
-      "HyperExcel"
-    ],
-    "country": "대한민국",
-    "domain_url": "",
-    "founded_year": "",
-    "ceo": "",
-    "recent_round": "Series B",
-    "total_funding": "약 2000억원",
-    "description": "AI 반도체 팹리스 스타트업으로, 2026년 시리즈B 투자에서 약 2000억원 규모 투자 유치, 게임사 크래프톤 등이 참여.",
-    "latest_source_date": "2026-05",
-    "discovery_done": true
-  },
-  {
-    "name": "리벨리온",
-    "aliases": [
-      "Rebellions"
-    ],
-    "country": "대한민국",
-    "domain_url": "",
-    "founded_year": "2020",
-    "ceo": "",
-    "recent_round": "Pre-IPO",
-    "total_funding": "약 1조3,000억원",
-    "description": "AI 추론 연산에 특화된 NPU를 설계·개발하는 팹리스 스타트업으로, 2026년 정부 및 전략적 투자자들로부터 대규모 투자 유치 후 프리IPO 단계에 있음.",
-    "latest_source_date": "2026-03-26",
-    "discovery_done": true
-  },
-  {
-    "name": "퓨리오사AI",
-    "aliases": [
-      "FuriosaAI"
-    ],
-    "country": "대한민국",
-    "domain_url": "https://furiosa.ai",
-    "founded_year": "2017",
-    "ceo": "백준호",
-    "recent_round": "Series B",
-    "total_funding": "약 1,500억원 이상",
-    "description": "AI 추론용 고성능 AI 반도체 설계 및 개발 스타트업으로, 2세대 칩 ‘레니게이드’ 양산 및 3세대 칩 ‘스토크’ 개발 계획 중이며, 나스닥 상장 예정.",
-    "latest_source_date": "2026-01-02",
-    "discovery_done": true
-  },
-  {
-    "name": "딥엑스",
-    "aliases": [
-      "DeepX"
-    ],
-    "country": "대한민국",
-    "domain_url": "",
-    "founded_year": "2017",
-    "ceo": "김녹원",
-    "recent_round": "Series D",
-    "total_funding": "3700억원 이상",
-    "description": "AI용 NPU를 개발하는 국내 AI 반도체 팹리스 스타트업으로, 2026년 기준 2세대 칩 DX-M2를 개발 중이며, 시리즈 D 투자에서 약 3조 1350억원의 기업가치를 인정받았다.",
-    "latest_source_date": "2026-01-02",
-    "discovery_done": true
   },
   {
     "name": "페블스퀘어",
@@ -292,12 +141,12 @@
     ],
     "country": "대한민국",
     "domain_url": "",
-    "founded_year": "",
-    "ceo": "",
+    "founded_year": "미확인",
+    "ceo": "미확인",
     "recent_round": "Pre-A",
-    "total_funding": "125억원",
-    "description": "뉴로모픽 AI 반도체 설계 스타트업으로, 프리-A 투자 유치 경력 보유.",
-    "latest_source_date": "2026",
+    "total_funding": "약 125억원",
+    "description": "뉴로모픽 AI 반도체를 개발하는 스타트업으로, AI 반도체 설계 및 개발에 집중하고 있다.",
+    "latest_source_date": "미확인",
     "discovery_done": true
   },
   {
@@ -307,12 +156,117 @@
     ],
     "country": "대한민국",
     "domain_url": "",
-    "founded_year": "",
-    "ceo": "",
+    "founded_year": "미확인",
+    "ceo": "미확인",
     "recent_round": "Pre-A",
     "total_funding": "비공개",
-    "description": "AI 최적화 NPU 개발 스타트업으로, 프리-A 투자 단계에 있음.",
-    "latest_source_date": "2026",
+    "description": "GPNPU 기반 AI 반도체 설계 스타트업이며 국내 중소기업으로 사업을 운영 중이다.",
+    "latest_source_date": "미확인",
+    "discovery_done": true
+  },
+  {
+    "name": "딥엑스",
+    "aliases": [
+      "DeepX"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "미확인",
+    "ceo": "김녹원 대표",
+    "recent_round": "Series D",
+    "total_funding": "420억원 이상 (총 3700억원 규모 Series D 투자 유치)",
+    "description": "국내 AI 반도체 스타트업으로, AI용 신경망처리장치(NPU)를 개발하며 최근 2조 2000억원(약 3조 1350억원)의 기업 가치를 인정받음. 저전력 AI 반도체 개발에 주력하며, 글로벌 온디바이스 AI 시장을 겨냥해 차세대 칩인 DX-M2를 개발 중이다.",
+    "latest_source_date": "2026-08-22",
+    "discovery_done": true
+  },
+  {
+    "name": "세카(SECA)",
+    "aliases": [
+      "SECA"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "2026년",
+    "ceo": "미확인",
+    "recent_round": "시드",
+    "total_funding": "비공개",
+    "description": "AI 기반 전자설계자동화(AI for EDA) 플랫폼을 개발하는 하드웨어 설계자동화 스타트업으로, LG전자와 블루포인트파트너스의 사내벤처 프로그램 ‘스튜디오341’을 통해 독립법인 출범 후 시드 투자를 유치했다.",
+    "latest_source_date": "2026-08-22",
+    "discovery_done": true
+  },
+  {
+    "name": "아이에이치더블유(iHW)",
+    "aliases": [
+      "iHW"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "2024년 6월",
+    "ceo": "미확인",
+    "recent_round": "Series A",
+    "total_funding": "520억원 시리즈 A 투자, 누적 640억원",
+    "description": "초저전력 AI 반도체 팹리스 기업으로, 데이터센터와 온디바이스 AI를 위한 극저전력 뉴로모픽 기술을 보유하고 있다. 글로벌 반도체 출신 임원진이 주축이며, 엣지 AI 칩 양산 및 LLM 칩 시제품 생산을 추진 중이다.",
+    "latest_source_date": "2026-08-19",
+    "discovery_done": true
+  },
+  {
+    "name": "Velaura AI",
+    "aliases": [
+      "Velaura"
+    ],
+    "country": "미국",
+    "domain_url": "https://velaura.ai",
+    "founded_year": "미확인",
+    "ceo": "Rajiv Khemani",
+    "recent_round": "Series A",
+    "total_funding": "1억 1000만 달러 이상",
+    "description": "실리콘밸리 기반 AI 인프라 스타트업으로, AI 가속기 및 디지털 칩 설계 플랫폼인 Titan Core를 통해 AI 처리의 전력 효율을 획기적으로 개선하는 기술을 개발 중이다.",
+    "latest_source_date": "2026-08-18",
+    "discovery_done": true
+  },
+  {
+    "name": "퓨리오사AI",
+    "aliases": [
+      "FuriosaAI"
+    ],
+    "country": "대한민국",
+    "domain_url": "https://thevc.kr/furiosaai",
+    "founded_year": "2017년",
+    "ceo": "백준호",
+    "recent_round": "Series C",
+    "total_funding": "약 795억원",
+    "description": "AI 반도체 팹리스 기업으로 인공지능 추론용 고성능 서버 NPUs를 개발한다. 뉴로모픽 플랫폼 관련 국가 R&D 수행 이력이 있으며, 2세대 칩 ‘레니게이드’와 3세대 칩 ‘스토크’ 등 명확한 제품 로드맵을 갖고 있다.",
+    "latest_source_date": "2026-08",
+    "discovery_done": true
+  },
+  {
+    "name": "아티크론",
+    "aliases": [
+      "Aticron"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "2023년 7월 시드 투자 이후 운영 중",
+    "ceo": "미확인",
+    "recent_round": "Pre-A",
+    "total_funding": "약 33억원",
+    "description": "메모리 중심 AI 반도체 시스템 IP와 AI 기반 메모리 설계 자동화 플랫폼을 개발하는 스타트업이며, 저전력·저면적 AI 반도체 IP 기술을 중심으로 사업화를 추진 중이다.",
+    "latest_source_date": "2026-05-07",
+    "discovery_done": true
+  },
+  {
+    "name": "리벨리온",
+    "aliases": [
+      "Rebellions"
+    ],
+    "country": "대한민국",
+    "domain_url": "https://namu.wiki/w/%EB%A6%AC%EB%B2%A8%EB%A6%AC%EC%98%A8(%ED%95%9C%EA%B5%AD%20%EA%B8%B0%EC%97%85)",
+    "founded_year": "2020년",
+    "ceo": "미확인",
+    "recent_round": "Pre-IPO (프리IPO)",
+    "total_funding": "약 1조 3,000억원 (6,400억원 규모 프리IPO 투자 포함)",
+    "description": "인공지능 AI 칩과 컴파일러 등 소프트웨어를 설계 및 개발하는 팹리스 스타트업이며, AI 추론 연산에 특화된 NPU를 설계한다. SK텔레콤 자회사인 사피온코리아와 합병했으며 국내외 대규모 투자 유치를 통해 성장 중이다.",
+    "latest_source_date": "2026-03",
     "discovery_done": true
   }
 ]
