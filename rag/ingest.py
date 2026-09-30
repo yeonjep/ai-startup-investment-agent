@@ -1,4 +1,6 @@
 import argparse
+import re
+import shutil
 
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_community.vectorstores import FAISS
@@ -10,9 +12,30 @@ from rag.config import (
     CHUNK_SIZE,
     DOCS_DIR,
     EMBEDDING_MODEL,
+    MIN_MEANINGLESS_FRAGMENT_CHARS,
     vectorstore_path_for_model,
 )
 from rag.doc_meta import DOC_META, PDF_PAGE_STARTS
+
+
+def clean_page_text(text: str) -> str:
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"[^\S\n]+", " ", text)
+
+    cleaned_lines = []
+    for line in text.split("\n"):
+        fragment = line.strip()
+        if (
+            fragment
+            and len(fragment) < MIN_MEANINGLESS_FRAGMENT_CHARS
+            and not any(character.isalpha() for character in fragment)
+        ):
+            continue
+        cleaned_lines.append(fragment)
+
+    normalized = "\n".join(cleaned_lines)
+    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+    return normalized.strip()
 
 
 def load_and_split_documents() -> tuple[list, list[tuple[str, int]]]:
@@ -31,6 +54,7 @@ def load_and_split_documents() -> tuple[list, list[tuple[str, int]]]:
         page_start = PDF_PAGE_STARTS.get(filename, 1)
         pages = PyMuPDFLoader(str(pdf_path)).load()
         for page in pages:
+            page.page_content = clean_page_text(page.page_content)
             page_index = page.metadata.get("page")
             if not isinstance(page_index, int):
                 raise ValueError(f"PDF page metadata is missing for {pdf_path}")
@@ -43,22 +67,31 @@ def load_and_split_documents() -> tuple[list, list[tuple[str, int]]]:
             )
 
         document_chunks = splitter.split_documents(pages)
+        document_chunks = [
+            chunk
+            for chunk in document_chunks
+            if chunk.page_content.strip()
+            and not (
+                len(chunk.page_content.strip()) < MIN_MEANINGLESS_FRAGMENT_CHARS
+                and not any(character.isalpha() for character in chunk.page_content)
+            )
+        ]
         for chunk in document_chunks:
-            chunk.metadata["chunk_id"] = len(chunks)
+            chunk.metadata["chunk_id"] = f"chunk_{len(chunks):06d}"
             chunks.append(chunk)
         chunk_counts.append((doc_meta["doc_id"], len(document_chunks)))
 
     return chunks, chunk_counts
 
 
-def ingest(embedding_model: str = EMBEDDING_MODEL) -> FAISS:
+def ingest(embedding_model: str = EMBEDDING_MODEL, rebuild: bool = False) -> FAISS:
     chunks, chunk_counts = load_and_split_documents()
     vectorstore_path = vectorstore_path_for_model(embedding_model)
     embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
 
     index_file = vectorstore_path / "index.faiss"
     metadata_file = vectorstore_path / "index.pkl"
-    if index_file.is_file() and metadata_file.is_file():
+    if not rebuild and index_file.is_file() and metadata_file.is_file():
         vectorstore = FAISS.load_local(
             str(vectorstore_path),
             embeddings,
@@ -88,8 +121,13 @@ def main() -> None:
         default=EMBEDDING_MODEL,
         help=f"Hugging Face model ID (default: {EMBEDDING_MODEL})",
     )
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="Recreate the selected model's FAISS index from cleaned documents.",
+    )
     args = parser.parse_args()
-    ingest(args.embedding_model)
+    ingest(args.embedding_model, rebuild=args.rebuild)
 
 
 if __name__ == "__main__":

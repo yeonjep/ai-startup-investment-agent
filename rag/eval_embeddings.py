@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 import random
 import time
@@ -30,6 +31,10 @@ MAX_K = 5
 QWEN_QUERY_INSTRUCTION = "Given a question, retrieve relevant passages that answer the question"
 
 
+def chunk_fingerprint(chunk) -> str:
+    return hashlib.sha256(chunk.page_content.encode("utf-8")).hexdigest()
+
+
 class RetrievalEmbeddings(Embeddings):
     def __init__(self, model_name: str) -> None:
         self.model_name = model_name
@@ -52,7 +57,7 @@ class RetrievalEmbeddings(Embeddings):
         return self.model.embed_query(text)
 
 
-def generate_evaluation_set(chunks: list) -> list[dict[str, str | int]]:
+def generate_evaluation_set(chunks: list) -> list[dict[str, str]]:
     eligible_chunks = [
         chunk for chunk in chunks if len(chunk.page_content.strip()) >= MIN_CHUNK_LENGTH
     ]
@@ -89,7 +94,8 @@ def generate_evaluation_set(chunks: list) -> list[dict[str, str | int]]:
         evaluation_set.append(
             {
                 "question": question.strip(),
-                "chunk_id": int(chunk.metadata["chunk_id"]),
+                "chunk_id": str(chunk.metadata["chunk_id"]),
+                "chunk_fingerprint": chunk_fingerprint(chunk),
             }
         )
         print(f"Generated evaluation question {index}/{EVAL_SAMPLE_COUNT}")
@@ -102,22 +108,28 @@ def generate_evaluation_set(chunks: list) -> list[dict[str, str | int]]:
     return evaluation_set
 
 
-def load_or_create_evaluation_set(chunks: list) -> list[dict[str, str | int]]:
-    valid_chunk_ids = {int(chunk.metadata["chunk_id"]) for chunk in chunks}
+def load_or_create_evaluation_set(chunks: list) -> list[dict[str, str]]:
+    chunks_by_id = {str(chunk.metadata["chunk_id"]): chunk for chunk in chunks}
     if EVAL_SET_PATH.is_file():
         evaluation_set = json.loads(EVAL_SET_PATH.read_text(encoding="utf-8"))
-        if not isinstance(evaluation_set, list) or len(evaluation_set) != EVAL_SAMPLE_COUNT:
-            raise ValueError(f"{EVAL_SET_PATH} must contain exactly {EVAL_SAMPLE_COUNT} items")
-        for item in evaluation_set:
-            if (
-                not isinstance(item, dict)
-                or not isinstance(item.get("question"), str)
-                or not isinstance(item.get("chunk_id"), int)
-                or item["chunk_id"] not in valid_chunk_ids
-            ):
-                raise ValueError(f"Invalid question or chunk_id in {EVAL_SET_PATH}")
-        print(f"Reusing evaluation set: {EVAL_SET_PATH}")
-        return evaluation_set
+        is_current = isinstance(evaluation_set, list) and len(evaluation_set) == EVAL_SAMPLE_COUNT
+        if is_current:
+            for item in evaluation_set:
+                chunk_id = item.get("chunk_id") if isinstance(item, dict) else None
+                chunk = chunks_by_id.get(str(chunk_id))
+                if (
+                    not isinstance(item, dict)
+                    or not isinstance(item.get("question"), str)
+                    or not isinstance(chunk_id, str)
+                    or chunk is None
+                    or item.get("chunk_fingerprint") != chunk_fingerprint(chunk)
+                ):
+                    is_current = False
+                    break
+        if is_current:
+            print(f"Reusing evaluation set: {EVAL_SET_PATH}")
+            return evaluation_set
+        print("Existing evaluation set is stale; regenerating it for the current cleaned chunks.")
 
     print(f"Generating {EVAL_SAMPLE_COUNT} questions with gpt-4.1-nano")
     return generate_evaluation_set(chunks)
@@ -125,7 +137,7 @@ def load_or_create_evaluation_set(chunks: list) -> list[dict[str, str | int]]:
 
 def evaluate_retrieval(
     vectorstore: FAISS,
-    evaluation_set: list[dict[str, str | int]],
+    evaluation_set: list[dict[str, str]],
 ) -> dict[str, float]:
     hits = {k: 0 for k in (1, 3, 5)}
     reciprocal_rank_sum = 0.0
