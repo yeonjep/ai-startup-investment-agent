@@ -1,5 +1,5 @@
 # Candidate gate -> parallel analysis -> evaluation/decision -> report/quality.
-# Supervisor is used only for exceptional analysis or report rework.
+# Supervisor is the mandatory evidence gate and coordinates report rework.
 
 from typing import Literal, Sequence
 
@@ -7,9 +7,10 @@ from langgraph.graph import END, START, StateGraph
 
 from agents.config import (
     MAX_CANDIDATES,
+    MAX_CANDIDATE_POOL,
     MAX_EVIDENCE_RETRIES,
     MAX_QUALITY_RETRIES,
-    MAX_SUPERVISOR_STEPS,
+    MAX_SELECTION_RETRIES,
 )
 from agents.quality import quality_agent
 from agents.report import report_agent
@@ -35,6 +36,7 @@ SUPERVISOR_DESTINATIONS = (
     "technology_agent",
     "market_agent",
     "competitor_agent",
+    "decision_agent",
     "report_agent",
 )
 
@@ -58,24 +60,9 @@ def route_after_startup(
 
 def route_after_evaluator(
     state: InvestmentState,
-) -> Literal["supervisor", "decision_agent"]:
-    refreshable = any(
-        metric
-        in {
-            "development_stage",
-            "technical_originality",
-            "market_tam",
-            "market_cagr",
-            "demand_clarity",
-            "competitive_difference",
-            "entry_barrier",
-            "risk_mitigation",
-        }
-        for metric in state.get("missing_evidence") or []
-    )
-    if refreshable and int(state.get("evidence_retry") or 0) < MAX_EVIDENCE_RETRIES:
-        return "supervisor"
-    return "decision_agent"
+) -> Literal["supervisor"]:
+    del state
+    return "supervisor"
 
 
 def route_after_decision(
@@ -144,10 +131,7 @@ def build_graph():
     builder.add_conditional_edges(
         "evaluator_agent",
         route_after_evaluator,
-        {
-            "supervisor": "supervisor",
-            "decision_agent": "decision_agent",
-        },
+        {"supervisor": "supervisor"},
     )
     builder.add_conditional_edges(
         "decision_agent",
@@ -176,4 +160,8 @@ def build_graph():
 
 
 def recursion_limit() -> int:
-    return MAX_SUPERVISOR_STEPS * 2 + 20
+    # Emergency engine guard only. Business termination is controlled by the
+    # candidate, selection, evidence, and quality retry budgets.
+    per_candidate = 8 + MAX_SELECTION_RETRIES + (3 * MAX_EVIDENCE_RETRIES)
+    quality_steps = 4 * (1 + MAX_QUALITY_RETRIES)
+    return MAX_CANDIDATE_POOL * per_candidate + quality_steps + 20

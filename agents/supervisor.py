@@ -1,12 +1,11 @@
-# Supervisor handles only exceptional rework: missing-evidence analysis and
-# report revision after a failed quality gate.
+# Supervisor gates every evaluation on evidence sufficiency and coordinates
+# selective analysis or report revision without changing investment policy.
 
 from typing import Any
 
 from agents.config import (
     MAX_EVIDENCE_RETRIES,
     MAX_QUALITY_RETRIES,
-    MAX_SUPERVISOR_STEPS,
 )
 from agents.state import InvestmentState
 
@@ -26,6 +25,11 @@ REFRESH_AREAS = {
     "risk_mitigation": {"tech", "market"},
 }
 AREA_ORDER = ("tech", "market", "competitor")
+WORKER_TO_AREA = {
+    "technology_agent": "tech",
+    "market_agent": "market",
+    "competitor_agent": "competitor",
+}
 
 
 def merge_vote(state: dict[str, Any], worker: str, sufficient: bool, reason: str) -> dict[str, Any]:
@@ -42,14 +46,15 @@ def pending_refresh_areas(state: dict[str, Any]) -> list[str]:
     needed: set[str] = set()
     for metric in state.get("missing_evidence") or []:
         needed |= REFRESH_AREAS.get(metric, set())
+    votes = state.get("sufficiency_votes") or {}
+    for worker, area in WORKER_TO_AREA.items():
+        if (votes.get(worker) or {}).get("vote") != "sufficient":
+            needed.add(area)
     return [area for area in AREA_ORDER if area in needed]
 
 
 def choose_routes(state: dict[str, Any]) -> tuple[list[str], str]:
-    """Choose only exceptional rework destinations."""
-    if int(state.get("step_count") or 0) >= MAX_SUPERVISOR_STEPS:
-        return ["report_agent"], "재작업 상한 도달, 현재 결과로 보고서 작성"
-
+    """Choose evidence-gate or quality-revision destinations."""
     quality = state.get("quality_result")
     if quality and not quality.get("passed"):
         if int(state.get("quality_retry") or 0) < MAX_QUALITY_RETRIES:
@@ -66,7 +71,14 @@ def choose_routes(state: dict[str, Any]) -> tuple[list[str], str]:
         nodes = [AREA_TO_NODE[area] for area in areas]
         return nodes, "결측 영역 추가 분석: " + ", ".join(areas)
 
-    return ["report_agent"], "추가 분석 대상 없음, 보고서 수정"
+    if state.get("scores") and state.get("decision") is None:
+        if areas:
+            return ["decision_agent"], "근거 보완 상한 도달, 결측을 유지하고 판정"
+        if state.get("missing_evidence"):
+            return ["decision_agent"], "재분석 대상 외 결측을 유지하고 판정"
+        return ["decision_agent"], "근거 충분성 확인 완료"
+
+    return ["decision_agent"], "평가 결과 판정 필요"
 
 
 def supervisor(state: InvestmentState) -> dict[str, Any]:
@@ -76,8 +88,6 @@ def supervisor(state: InvestmentState) -> dict[str, Any]:
         "route_reason": reason,
         "refresh_areas": [],
     }
-    if routes:
-        update["step_count"] = int(state.get("step_count") or 0) + 1
 
     quality = state.get("quality_result") or {}
     if (
@@ -104,6 +114,13 @@ def supervisor(state: InvestmentState) -> dict[str, Any]:
         update["scores"] = {}
         update["total_score"] = None
         update["decision"] = None
+        update["evidence_gate_status"] = "pending"
+    elif routes == ["decision_agent"]:
+        update["evidence_gate_status"] = (
+            "insufficient_accepted"
+            if pending_refresh_areas(state) or state.get("missing_evidence")
+            else "sufficient"
+        )
 
     return update
 

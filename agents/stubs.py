@@ -550,6 +550,8 @@ def _score_deterministic_metric(
     evidence_ids = [item["evidence_id"] for item in evidence]
     if finding and finding.get("conflict"):
         return _missing_score(metric, "범위가 다른 수치 또는 상충 근거가 해소되지 않음")
+    if finding and finding.get("validation"):
+        return _missing_score(metric, str(finding["validation"]))
     if not finding:
         observed_values = {
             (str(item.get("value")), str(item.get("unit")))
@@ -752,6 +754,7 @@ def initialize_state(
         "competitor_evidence": state.get("competitor_evidence", []),
         "rag_retry": state.get("rag_retry", {topic: 0 for topic in TOPICS}),
         "evidence_retry": state.get("evidence_retry", 0),
+        "evidence_gate_status": state.get("evidence_gate_status", "pending"),
         "scores": state.get("scores", {}),
         "total_score": state.get("total_score"),
         "missing_evidence": state.get("missing_evidence", []),
@@ -763,7 +766,6 @@ def initialize_state(
         "quality_retry": state.get("quality_retry", 0),
         "quality_feedback": state.get("quality_feedback", ""),
         "trace_id": state.get("trace_id") or uuid.uuid4().hex,
-        "step_count": state.get("step_count", 0),
         "node_status": state.get("node_status") or {},
         "last_error": state.get("last_error"),
         "next_routes": state.get("next_routes") or [],
@@ -1051,6 +1053,7 @@ def next_candidate(state: InvestmentState) -> dict[str, Any]:
         "competitor_evidence": [],
         "rag_retry": {topic: 0 for topic in TOPICS},
         "evidence_retry": 0,
+        "evidence_gate_status": "pending",
         "scores": {},
         "total_score": None,
         "missing_evidence": [],

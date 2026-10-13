@@ -23,7 +23,10 @@ def _open_candidate(**extra):
         "tech_summary": {"summary": "기술"},
         "market_analysis": {"insufficient_topics": [], "topics": {}},
         "competitor_analysis": {"summary": "경쟁"},
-        "sufficiency_votes": {"market_agent": {"vote": "sufficient", "reason": "충분"}},
+        "sufficiency_votes": {
+            worker: {"vote": "sufficient", "reason": "충분"}
+            for worker in ("technology_agent", "market_agent", "competitor_agent")
+        },
         "scores": {},
         "decision": None,
         "evidence_retry": 0,
@@ -51,13 +54,28 @@ class SupervisorRouteTests(unittest.TestCase):
         )
         self.assertEqual(route, "next_candidate")
 
+    def test_review_retries_once_then_enters_parallel_analysis(self):
+        retry = _open_candidate(
+            selection_status="REVIEW",
+            current_startup=None,
+            selection_retry=1,
+        )
+        self.assertEqual(route_after_startup(retry), "startup_agent")
+        resolved = _open_candidate(
+            selection_status="REVIEW",
+            current_startup={"name": "에이"},
+            selection_retry=1,
+            uncertain=True,
+        )
+        self.assertEqual(route_after_startup(resolved), list(ANALYSIS_NODES))
+
     def test_empty_candidates_go_directly_to_report(self):
         route = route_after_startup(
             _open_candidate(candidates=[], current_startup=None, selection_status=None)
         )
         self.assertEqual(route, "report_agent")
 
-    def test_evaluator_delegates_refreshable_missing_to_supervisor(self):
+    def test_evaluator_always_delegates_to_evidence_supervisor(self):
         state = _open_candidate(
             scores={"technical_originality": {"status": "missing"}},
             missing_evidence=["technical_originality", "market_tam"],
@@ -76,13 +94,48 @@ class SupervisorRouteTests(unittest.TestCase):
         self.assertEqual(dispatched["evidence_retry"], 1)
         self.assertEqual(dispatched["scores"], {})
 
-    def test_evaluator_moves_to_decision_after_retry_budget(self):
+    def test_supervisor_moves_to_decision_after_retry_budget(self):
         state = _open_candidate(
             scores={"technical_originality": {"status": "missing"}},
             missing_evidence=["technical_originality"],
             evidence_retry=1,
         )
-        self.assertEqual(route_after_evaluator(state), "decision_agent")
+        self.assertEqual(route_after_evaluator(state), "supervisor")
+        self.assertEqual(choose_routes(state)[0], ["decision_agent"])
+        update = supervisor(state)
+        self.assertEqual(update["evidence_gate_status"], "insufficient_accepted")
+
+    def test_insufficient_vote_triggers_reanalysis_without_missing_metric(self):
+        state = _open_candidate(
+            scores={"team_experience": {"status": "observed"}},
+            sufficiency_votes={
+                "technology_agent": {"vote": "sufficient", "reason": "충분"},
+                "market_agent": {"vote": "insufficient", "reason": "시장 부족"},
+                "competitor_agent": {"vote": "sufficient", "reason": "충분"},
+            },
+        )
+        self.assertEqual(choose_routes(state)[0], ["market_agent"])
+
+    def test_step_count_never_forces_incomplete_report(self):
+        state = _open_candidate(
+            scores={"team_experience": {"status": "observed"}},
+            step_count=120,
+        )
+        self.assertEqual(choose_routes(state)[0], ["decision_agent"])
+        self.assertEqual(supervisor(state)["evidence_gate_status"], "sufficient")
+
+    def test_non_refreshable_missing_is_explicitly_accepted(self):
+        state = _open_candidate(
+            scores={"customer_traction": {"status": "missing"}},
+            missing_evidence=["customer_traction"],
+        )
+        routes, reason = choose_routes(state)
+        self.assertEqual(routes, ["decision_agent"])
+        self.assertIn("재분석 대상 외 결측", reason)
+        self.assertEqual(
+            supervisor(state)["evidence_gate_status"],
+            "insufficient_accepted",
+        )
 
     def test_hold_with_room_continues_and_invest_goes_to_report(self):
         hold = _open_candidate(
@@ -159,6 +212,106 @@ class QualityRuleTests(unittest.TestCase):
         failed, reason = check_groundedness("# SUMMARY\n\n시장 규모 999억 달러.\n", state)
         self.assertFalse(failed)
         self.assertIn("999", reason)
+
+    def test_groundedness_rejects_wrong_number_even_with_citation(self):
+        state = {
+            "evaluated": [
+                {
+                    "total_score": 60.0,
+                    "missing_evidence": [],
+                    "scores": {},
+                    "evidence": [
+                        {
+                            "source_type": "web",
+                            "url": "https://market.example/report",
+                            "value": 550,
+                            "unit": "억원",
+                            "quote": "누적 투자 550억원",
+                            "scope": "누적 투자",
+                        }
+                    ],
+                }
+            ]
+        }
+        report = (
+            "# SUMMARY\n\n시장 규모 999억원 [1]\n\n# REFERENCE\n\n"
+            "1. 기관(2026-01-01). *자료*. 기관, https://market.example/report.\n"
+        )
+        ok, reason = check_groundedness(report, state)
+        self.assertFalse(ok)
+        self.assertIn("999", reason)
+
+    def test_groundedness_rejects_invalid_catalog_tag(self):
+        state = {
+            "evaluated": [
+                {
+                    "total_score": 60.0,
+                    "missing_evidence": [],
+                    "scores": {},
+                    "evidence": [],
+                }
+            ]
+        }
+        ok, reason = check_groundedness("주장 [INVALID:E9]", state)
+        self.assertFalse(ok)
+        self.assertIn("없는 인용", reason)
+
+    def test_groundedness_matches_rag_reference_by_official_url(self):
+        state = {
+            "evaluated": [
+                {
+                    "total_score": 60.0,
+                    "missing_evidence": [],
+                    "scores": {},
+                    "evidence": [
+                        {
+                            "source_type": "rag",
+                            "doc_id": "gov_strategy",
+                            "url": "https://gov.example/strategy",
+                            "value": 8124,
+                            "unit": "억원",
+                            "quote": "AI 반도체 분야 8,124억원 투자",
+                            "scope": "2020~2025년",
+                        }
+                    ],
+                }
+            ]
+        }
+        report = (
+            "# SUMMARY\n\n정부는 8,124억원을 투자했다 [1].\n\n"
+            "# REFERENCE\n\n1. 정부(2025). *전략*. "
+            "[원문 링크](https://gov.example/strategy).\n"
+        )
+        ok, reason = check_groundedness(report, state)
+        self.assertTrue(ok, reason)
+
+    def test_groundedness_accepts_formatted_krw_value(self):
+        state = {
+            "evaluated": [
+                {
+                    "total_score": 60.0,
+                    "missing_evidence": [],
+                    "scores": {},
+                    "evidence": [
+                        {
+                            "source_type": "web",
+                            "url": "https://funding.example/round",
+                            "value": 111_000_000_000,
+                            "unit": "KRW",
+                            "quote": "누적 투자액이 증가했다",
+                            "scope": "누적 투자",
+                        }
+                    ],
+                }
+            ]
+        }
+        report = (
+            "# SUMMARY\n\n누적 투자액은 1,110억원이다 [1].\n\n"
+            "# REFERENCE\n\n1. 기관(2026). *투자*. "
+            "https://funding.example/round.\n"
+        )
+        ok, reason = check_groundedness(report, state)
+        self.assertTrue(ok, reason)
 
     def test_bias_fails_when_one_source_exceeds_seventy_percent(self):
         report = (

@@ -6,6 +6,7 @@ from agents.stubs import (
     MarketFindings,
     QualitativeScore,
     QualitativeScores,
+    _score_deterministic_metric,
     decision_agent,
     evaluator_agent,
     market_agent,
@@ -93,6 +94,29 @@ class FakeLLM:
 
 
 class AgentImplementationTests(unittest.TestCase):
+    def test_invalid_market_finding_is_scored_as_missing(self):
+        item = evidence(
+            "tam",
+            "market",
+            "market_tam",
+            550,
+            "억원",
+            "누적 투자 유치 550억원",
+        )
+        score = _score_deterministic_metric(
+            "market_tam",
+            "CHIP",
+            [item],
+            {
+                "value": 550,
+                "unit": "억원",
+                "evidence_ids": ["tam"],
+                "validation": "투자 유치·자금 조달액은 시장 규모가 아님",
+            },
+        )
+        self.assertEqual(score["status"], "missing")
+        self.assertIn("시장 규모가 아님", score["reason"])
+
     def test_market_agent_extracts_structured_findings(self):
         def fake_search(query, **_kwargs):
             if "시장 규모" in query:

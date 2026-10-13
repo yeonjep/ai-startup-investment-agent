@@ -19,7 +19,7 @@ from tools.pdf_export import render_markdown_pdf
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = PROJECT_ROOT / "outputs"
 QUANTITY = re.compile(
-    r"\d+(?:\.\d+)?\s*(?:%|％|억|조|만|달러|원|건|명|배|TOPS|nm)",
+    r"\d[\d,]*(?:\.\d+)?\s*(?:%|％|억|조|만|달러|원|건|명|배|TOPS|nm)",
     re.IGNORECASE,
 )
 SUPERIORITY = re.compile(r"세계\s*최고|압도적|독보적|확실히\s*우수|경쟁사를\s*완전히")
@@ -36,23 +36,40 @@ def check_groundedness(report: str, state: dict[str, Any]) -> tuple[bool, str]:
         if "평가 대상 없음" in report or "선정 기준에서 제외" in report:
             return True, "평가 기록이 없는 보고서는 선정 결과만 적는다"
         return False, "평가 기록 없이 투자 평가 문장을 적음"
+    if "[INVALID:E" in report:
+        return False, "근거 카탈로그에 없는 인용 태그가 포함됨"
 
-    body = report.split("# REFERENCE")[0]
-    evidence_text = "\n".join(
-        f"{item.get('value') or ''} {item.get('quote') or ''} {item.get('scope') or ''}"
+    body, _, references = report.partition("# REFERENCE")
+    reference_identities = _reference_identities(references)
+    evidence = [
+        item
         for record in evaluated
         for item in record.get("evidence") or []
-    )
+    ]
     allowed = _allowed_numbers(state)
     failures: list[str] = []
     for sentence in re.split(r"\n+|(?<=[.!?。])\s+", body):
-        if re.search(r"\[\d+\]", sentence):
-            continue
+        citation_numbers = re.findall(r"\[(\d+)\]", sentence)
+        cited_identities = {
+            reference_identities[number]
+            for number in citation_numbers
+            if number in reference_identities
+        }
+        cited_evidence = [
+            item
+            for item in evidence
+            if _evidence_identities(item) & cited_identities
+        ]
         for match in QUANTITY.finditer(sentence):
             token = match.group(0)
-            number = re.match(r"\d+(?:\.\d+)?", token)
-            number_text = number.group(0) if number else token
-            if number_text in allowed or token in evidence_text or number_text in evidence_text:
+            number = re.match(r"\d[\d,]*(?:\.\d+)?", token)
+            number_text = number.group(0).replace(",", "") if number else token
+            if number_text in allowed:
+                continue
+            if citation_numbers and any(
+                number_text in _evidence_numbers(item)
+                for item in cited_evidence
+            ):
                 continue
             failures.append(sentence.strip()[:120])
             break
@@ -140,7 +157,43 @@ def _allowed_numbers(state: dict[str, Any]) -> set[str]:
             raw = entry.get("raw_value")
             if raw not in (None, ""):
                 allowed.add(str(raw))
+                allowed.update(
+                    token.replace(",", "")
+                    for token in re.findall(r"\d[\d,]*(?:\.\d+)?", str(raw))
+                )
     return {item for item in allowed if item}
+
+
+def _evidence_identities(item: dict[str, Any]) -> set[str]:
+    identities: set[str] = set()
+    if item.get("source_type") == "rag" and item.get("doc_id"):
+        identities.add(f"doc:{item['doc_id']}")
+    if item.get("url"):
+        host = urlparse(str(item["url"])).netloc.lower().removeprefix("www.")
+        identities.add(f"host:{host}")
+    return identities
+
+
+def _evidence_numbers(item: dict[str, Any]) -> set[str]:
+    text = " ".join(
+        str(item.get(key) or "")
+        for key in ("value", "unit", "quote", "scope")
+    )
+    numbers = {
+        token.replace(",", "")
+        for token in re.findall(r"\d[\d,]*(?:\.\d+)?", text)
+    }
+    value = item.get("value")
+    unit = str(item.get("unit") or "").upper()
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if unit == "KRW":
+            numbers.add(f"{value / 1e8:g}")
+        elif unit == "USD":
+            if value >= 1e9:
+                numbers.add(f"{value / 1e9:g}")
+            if value >= 1e6:
+                numbers.add(f"{value / 1e6:g}")
+    return numbers
 
 
 def _reference_identities(references: str) -> dict[str, str]:

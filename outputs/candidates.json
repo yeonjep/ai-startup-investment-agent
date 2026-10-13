@@ -2,15 +2,15 @@
   {
     "name": "퓨리오사AI",
     "aliases": [
-      "Furiosa AI"
+      "FuriosaAI"
     ],
-    "country": "South Korea",
+    "country": "대한민국",
     "domain_url": "",
-    "founded_year": "",
+    "founded_year": "2017",
     "ceo": "",
-    "recent_round": "Series C 또는 프리IPO 단계 (국민성장펀드 8000억원 규모 투자 승인)",
-    "total_funding": "누적 약 1,700억원 투자 유치 (다른 출처 약 8000억원 규모 자금 조달 언급)",
-    "description": "국내 AI 반도체 설계 스타트업으로, 데이터센터용 NPU 및 텐서 연산 가속기 개발. 메타의 인수 제안 거절, 독자 생존 선택.",
+    "recent_round": "프리IPO (Pre-IPO)",
+    "total_funding": "약 8,000억원",
+    "description": "국내 AI 반도체(NPU) 팹리스 스타트업으로, 생성형 AI 서비스에 필요한 추론 연산 가속기를 개발 중이다. 2세대 AI 추론 가속기 '레니게이드(RNGD)' 양산과 해외 공급 확대를 추진한다. 2027년 상장 예정이며, 글로벌 기업인 메타의 인수 제안을 거절하고 독자 노선을 걷고 있다.",
     "latest_source_date": "2026-10-10",
     "discovery_done": true,
     "company_type": "CHIP",
@@ -18,49 +18,115 @@
       {
         "criterion_name": "domain_relevance",
         "status": "PASS",
-        "reason": "퓨리오사AI는 AI 반도체(NPU, AI가속기) 전문 팹리스 스타트업으로, 명확히 AI 반도체 도메인에 해당한다.",
-        "source_url": "https://blog.naver.com/yak-bang/223834007427"
+        "reason": "퓨리오사AI는 AI 반도체, NPU를 주력 제품으로 개발하는 팹리스 기업으로 명백히 AI 반도체 도메인에 해당됨.",
+        "source_url": "https://www.cio.com/article/3823460/%EB%A9%94%ED%83%80-%ED%95%9C%EA%B5%AD-ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%ACai-%EC%9D%B8%EC%88%98-%EB%85%BC%EC%9D%98.html"
       },
       {
         "criterion_name": "ai_core",
         "status": "PASS",
-        "reason": "AI가 퓨리오사AI 제품 핵심가치이며, AI 연산 가속 특화 칩과 소프트웨어를 함께 개발하여 핵심 기술로 삼고 있다.",
-        "source_url": "https://blog.naver.com/yak-bang/223834007427"
+        "reason": "퓨리오사AI 제품의 핵심가치는 AI 연산 최적화된 NPU 칩으로, AI가 제품 본질적 핵심임이 명확함.",
+        "source_url": "https://www.cio.com/article/3823460/%EB%A9%94%ED%83%80-%ED%95%9C%EA%B5%AD-ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%ACai-%EC%9D%B8%EC%88%98-%EB%85%BC%EC%9D%98.html"
       },
       {
         "criterion_name": "unlisted",
         "status": "PASS",
-        "reason": "2026년 코스닥 상장 예정이나 현재 비상장인 상태이다.",
-        "source_url": "https://blog.naver.com/yak-bang/223834007427"
+        "reason": "공식적으로 상장하지 않았으며, Pre-IPO 단계이나 상장심사나 IPO 주관사 발표가 공식적으로 확인되지 않아 PASS로 평가.",
+        "source_url": "https://thevc.kr/furiosaai"
       },
       {
         "criterion_name": "funding_stage",
         "status": "FAIL",
-        "reason": "최근 투자 라운드는 Series C 또는 Pre-IPO 단계로, Pre-IPO는 기준 상 Series D 이상으로 간주해 FAIL 처리함.",
-        "source_url": "https://thevc.kr/furiosaai, https://namu.wiki/w/%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%AC%EC%97%90%EC%9D%B4%EC%95%84%EC%9D%B4"
+        "reason": "최근 라운드가 Pre-IPO로 확인되어 Series D 이상에 해당하며, 해당 기준에서는 FAIL임.",
+        "source_url": "https://thevc.kr/furiosaai"
       },
       {
         "criterion_name": "no_exit",
-        "status": "PASS",
-        "reason": "피인수, 합병, 상장 이력 없이 독립 스타트업 상태이다.",
-        "source_url": "https://blog.naver.com/yak-bang/223834007427"
+        "status": "REVIEW",
+        "reason": "현재 메타(페이스북) 등과 인수 협의 중이라는 보도가 있으나 인수/합병 완료 여부는 불명확하여 검토 필요.",
+        "source_url": "https://www.cio.com/article/3823460/%EB%A9%94%ED%83%80-%ED%95%9C%EA%B5%AD-ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%ACai-%EC%9D%B8%EC%88%98-%EB%85%BC%EC%9D%98.html"
       },
       {
         "criterion_name": "info_sufficiency",
         "status": "PASS",
-        "reason": "다수의 상세 기사와 공식 정보가 존재하여 정보가 충분하다.",
-        "source_url": "https://blog.naver.com/yak-bang/223834007427"
+        "reason": "홈페이지는 명확치 않지만 여러 주요 기사 3건 이상에서 충분한 정보가 확인됨.",
+        "source_url": "https://www.cio.com/article/3823460/%EB%A9%94%ED%83%80-%ED%95%9C%EA%B5%AD-ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%ACai-%EC%9D%B8%EC%88%98-%EB%85%BC%EC%9D%98.html"
       }
     ],
-    "evaluation_product": "국내 AI 반도체 설계 스타트업으로, 데이터센터용 NPU 및 텐서 연산 가속기 개발. 메타의 인수 제안 거절, 독자 생존 선택.",
+    "evaluation_product": "국내 AI 반도체(NPU) 팹리스 스타트업으로, 생성형 AI 서비스에 필요한 추론 연산 가속기를 개발 중이다. 2세대 AI 추론 가속기 '레니게이드(RNGD)' 양산과 해외 공급 확대를 추진한다. 2027년 상장 예정이며, 글로벌 기업인 메타의 인수 제안을 거절하고 독자 노선을 걷고 있다.",
     "selection_status": "FAIL",
     "uncertain": false,
     "failed_criterion": "funding_stage",
-    "exclusion_reason": "최근 투자 라운드는 Series C 또는 Pre-IPO 단계로, Pre-IPO는 기준 상 Series D 이상으로 간주해 FAIL 처리함.",
+    "exclusion_reason": "최근 라운드가 Pre-IPO로 확인되어 Series D 이상에 해당하며, 해당 기준에서는 FAIL임.",
     "sources": [
       {
-        "title": "The Rational Optimist : 네이버 블로그",
-        "url": "https://blog.naver.com/yak-bang/223834007427?viewType=pc",
+        "title": "“메타, 한국 AI 반도체 스타트업 ‘퓨리오사AI’ 인수 논의 중” 포브스 | CIO",
+        "url": "https://www.cio.com/article/3823460/%EB%A9%94%ED%83%80-%ED%95%9C%EA%B5%AD-ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%ACai-%EC%9D%B8%EC%88%98-%EB%85%BC%EC%9D%98.html",
+        "date": null
+      }
+    ]
+  },
+  {
+    "name": "리벨리온",
+    "aliases": [
+      "Rebellions"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "2020",
+    "ceo": "",
+    "recent_round": "프리IPO (Pre-IPO)",
+    "total_funding": "약 1조 3,000억원",
+    "description": "AI 칩과 컴파일러, 소프트웨어를 설계·개발하는 팹리스 스타트업이다. AI 추론에 특화된 NPU를 개발하며, SK텔레콤 자회사 사피온코리아와 합병했으며, 정부와 산업계의 대규모 투자를 받고 있다. 데이터센터용 AI 인프라 구축을 지원한다.",
+    "latest_source_date": "2026-10-10",
+    "discovery_done": true,
+    "company_type": "CHIP",
+    "criteria_results": [
+      {
+        "criterion_name": "domain_relevance",
+        "status": "PASS",
+        "reason": "리벨리온은 AI 반도체(NPU) 설계 팹리스 기업으로, 주력 제품인 아이온, 아톰, 리벨 등 AI 반도체 제품을 보유하고 있음.",
+        "source_url": "https://kr.rebellions.ai/newsroom/ai%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%EB%A6%AC%EB%B2%A8%EB%A6%AC-1650%EC%96%B5%EC%9B%90-%EA%B7%9C%EB%AA%A8-%EC%8B%9C%EB%A6%AC%EC%A6%88b-%ED%88%AC%EC%9E%90-%EC%9C%A0"
+      },
+      {
+        "criterion_name": "ai_core",
+        "status": "PASS",
+        "reason": "리벨리온의 제품 핵심가치는 AI 반도체 칩이며 AI가 제품의 본질적 가치임이 명확함.",
+        "source_url": "https://namu.wiki/w/%EB%A6%AC%EB%B2%A8%EB%A6%AC%EC%98%A8(%ED%95%9C%EA%B5%AD%20%EA%B8%B0%EC%97%85)"
+      },
+      {
+        "criterion_name": "unlisted",
+        "status": "REVIEW",
+        "reason": "리벨리온은 프리IPO 단계(2026년 3월 예정)로 아직 상장하지 않았으나 IPO 공시 단계 여부가 불분명해 REVIEW 처리함.",
+        "source_url": "https://namu.wiki/w/%EB%A6%AC%EB%B2%A8%EB%A6%AC%EC%98%A8(%ED%95%9C%EA%B5%AD%20%EA%B8%B0%EC%97%85)"
+      },
+      {
+        "criterion_name": "funding_stage",
+        "status": "FAIL",
+        "reason": "최근 투자 라운드는 프리IPO 및 시리즈C 이상으로, Seed~Series C 단계가 아님.",
+        "source_url": "https://namu.wiki/w/%EB%A6%AC%EB%B2%A8%EB%A6%AC%EC%98%A8(%ED%95%9C%EA%B5%AD%20%EA%B8%B0%EC%97%85)"
+      },
+      {
+        "criterion_name": "no_exit",
+        "status": "PASS",
+        "reason": "현재 인수, 합병, 상장 등의 exit 이력이 없고, 단지 합병(사피온코리아와) 완료하여 사업기반 강화 중임.",
+        "source_url": "https://namu.wiki/w/%EB%A6%AC%EB%B2%A8%EB%A6%AC%EC%98%A8(%ED%95%9C%EA%B5%AD%20%EA%B8%B0%EC%97%85)"
+      },
+      {
+        "criterion_name": "info_sufficiency",
+        "status": "PASS",
+        "reason": "홈페이지 및 2건 이상의 뉴스 자료(투자, 제품 출시, 합병 등)가 풍부하게 존재함.",
+        "source_url": "https://kr.rebellions.ai/newsroom/ai%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%EB%A6%AC%EB%B2%A8%EB%A6%AC-1650%EC%96%B5%EC%9B%90-%EA%B7%9C%EB%AA%A8-%EC%8B%9C%EB%A6%AC%EC%A6%88b-%ED%88%AC%EC%9E%90-%EC%9C%A0"
+      }
+    ],
+    "evaluation_product": "AI 칩과 컴파일러, 소프트웨어를 설계·개발하는 팹리스 스타트업이다. AI 추론에 특화된 NPU를 개발하며, SK텔레콤 자회사 사피온코리아와 합병했으며, 정부와 산업계의 대규모 투자를 받고 있다. 데이터센터용 AI 인프라 구축을 지원한다.",
+    "selection_status": "FAIL",
+    "uncertain": false,
+    "failed_criterion": "funding_stage",
+    "exclusion_reason": "최근 투자 라운드는 프리IPO 및 시리즈C 이상으로, Seed~Series C 단계가 아님.",
+    "sources": [
+      {
+        "title": "AI반도체 스타트업 리벨리온, 1,650억원 규모 시리즈B 투자 유치 완료 - Rebellions",
+        "url": "https://kr.rebellions.ai/newsroom/ai%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%EB%A6%AC%EB%B2%A8%EB%A6%AC-1650%EC%96%B5%EC%9B%90-%EA%B7%9C%EB%AA%A8-%EC%8B%9C%EB%A6%AC%EC%A6%88b-%ED%88%AC%EC%9E%90-%EC%9C%A0",
         "date": null
       }
     ]
@@ -68,60 +134,79 @@
   {
     "name": "하이퍼엑셀",
     "aliases": [
-      "HyperAccel"
+      "HyperExcel"
     ],
-    "country": "South Korea",
+    "country": "대한민국",
     "domain_url": "",
     "founded_year": "",
     "ceo": "",
-    "recent_round": "Series B 2차 클로징 진행중",
-    "total_funding": "약 2,000억 원 규모 예정",
-    "description": "AI 팹리스 스타트업으로 서버용 LPU '베르다' 개발, 네이버클라우드 및 현대차 컨소시엄과 협력 중. LG전자와 가전용 LPU도 개발 중이며 연말 국가 실증 사업 참여.",
-    "latest_source_date": "2026-10-08",
+    "recent_round": "시리즈 B",
+    "total_funding": "시리즈 B 1,500억 원 이상 예상",
+    "description": "AI 팹리스 스타트업으로, 서버용 LPU '베르다'를 개발 중이며 네이버클라우드와 기술검증 중이다. LG전자, 현대자동차 컨소시엄과 협력 중이다.",
+    "latest_source_date": "2026-10-10",
     "discovery_done": true,
     "company_type": "CHIP",
     "criteria_results": [
       {
         "criterion_name": "domain_relevance",
         "status": "PASS",
-        "reason": "하이퍼엑셀은 AI 반도체(LLM 추론에 특화된 AI 가속기 LPU) 개발 기업으로, 명백히 AI 반도체 영역에 해당함.",
-        "source_url": "https://www.forbeskorea.co.kr/news/articleView.html?idxno=401398"
+        "reason": "하이퍼엑셀은 LLM 추론에 특화된 AI 가속기(칩)을 개발하는 AI 반도체 팹리스 기업으로, AI 반도체에 명확히 해당됨.",
+        "source_url": "https://demoday.co.kr/funding/insights/132"
       },
       {
         "criterion_name": "ai_core",
         "status": "PASS",
-        "reason": "제품 핵심 가치가 LLM 추론에 특화된 AI 가속기 칩(LPU) 기술이므로 AI가 제품 핵심임이 명확함.",
-        "source_url": "https://www.forbeskorea.co.kr/news/articleView.html?idxno=401398"
+        "reason": "핵심 제품은 LLM 추론 특화 AI 가속기이며, AI 기능이 제품의 핵심 가치임이 분명함.",
+        "source_url": "https://demoday.co.kr/funding/insights/132"
       },
       {
         "criterion_name": "unlisted",
         "status": "PASS",
-        "reason": "상장 관련 정보가 없고 네고스탁 등 비상장기업 투자플랫폼에 등재되어 있어 미상장 상태임.",
-        "source_url": "https://www.negostock.co.kr/company/view/1100002074"
+        "reason": "기업이 비상장 상태임이 명확히 확인됨.",
+        "source_url": "https://www.innoforest.co.kr/company/CP00014304/%ED%95%98%EC%9D%B4%ED%8D%BC%EC%97%91%EC%85%80"
       },
       {
         "criterion_name": "funding_stage",
         "status": "PASS",
-        "reason": "최근 라운드가 Series B 2차 클로징 진행 중으로 Seed~Series C 범위 내.",
+        "reason": "최근 라운드가 시리즈 B이며 누적 투자 1,500억 이상으로 확인되어, Seed~Series C 구간에 해당함.",
         "source_url": "https://demoday.co.kr/funding/insights/132"
       },
       {
         "criterion_name": "no_exit",
         "status": "PASS",
-        "reason": "인수, 합병, 상장 등의 exit 이력이 없고 현 투자 단계에서 exit 미완료로 판단됨.",
-        "source_url": "https://demoday.co.kr/funding/insights/132"
+        "reason": "인수, 합병, 상장 등의 종료 경력이 없으며 운영 중인 스타트업임.",
+        "source_url": "https://www.innoforest.co.kr/company/CP00014304/%ED%95%98%EC%9D%B4%ED%8D%BC%EC%97%91%EC%85%80"
       },
       {
         "criterion_name": "info_sufficiency",
         "status": "PASS",
-        "reason": "홈페이지와 다수 기사를 통해 충분한 정보를 확보할 수 있음(기사 3건 이상 확인됨).",
-        "source_url": "https://www.forbeskorea.co.kr/news/articleView.html?idxno=401398"
+        "reason": "홈페이지 명시는 없으나 기사, 인터뷰, 여러 투자 관련 자료 등 2건 이상 충분한 정보 확인 가능함.",
+        "source_url": "https://demoday.co.kr/funding/insights/132"
       }
     ],
-    "evaluation_product": "AI 팹리스 스타트업으로 서버용 LPU '베르다' 개발, 네이버클라우드 및 현대차 컨소시엄과 협력 중. LG전자와 가전용 LPU도 개발 중이며 연말 국가 실증 사업 참여.",
+    "evaluation_product": "AI 팹리스 스타트업으로, 서버용 LPU '베르다'를 개발 중이며 네이버클라우드와 기술검증 중이다. LG전자, 현대자동차 컨소시엄과 협력 중이다.",
     "selection_status": "PASS",
     "uncertain": false,
     "profile_evidence": [
+      {
+        "evidence_id": "하이퍼엑셀:profile:team_experience:cc747e5c",
+        "company": "하이퍼엑셀",
+        "category": "profile",
+        "metric": "team_experience",
+        "value": "하이퍼엑셀은 2023년 1월 KAIST 전기및전자공학부 교수인 김주영 대표가 창업했다. 김 대표는 Microsoft Azure에서 9년간 하드웨어 가속 프로젝트를 이끈 후 귀국해 KAIST AI반도체시스템연구센터장을 겸임 중이다.",
+        "unit": null,
+        "source_type": "web",
+        "title": "하이퍼엑셀 500억 시리즈B 분석: 크래프톤이 AI 반도체 스타트업에 베팅한 이유 | 데모데이",
+        "source": "demoday.co.kr",
+        "date": null,
+        "accessed_at": "2026-10-13",
+        "url": "https://demoday.co.kr/funding/insights/132",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "하이퍼엑셀은 2023년 1월 KAIST 전기및전자공학부 교수인 김주영 대표가 창업했다. 김 대표는 Microsoft Azure에서 9년간 하드웨어 가속 프로젝트를 이끈 후 귀국해 KAIST AI반도체시스템연구센터장을 겸임 중이다.",
+        "scope": null
+      },
       {
         "evidence_id": "하이퍼엑셀:profile:technical_headcount:7e03ea1b",
         "company": "하이퍼엑셀",
@@ -138,107 +223,171 @@
         "doc_id": null,
         "page": null,
         "chunk_id": null,
-        "quote": "지금은 50명 이상의 규모로 성장하게 되었습니다.",
+        "quote": "지금은 50명 이상의 규모로 성장하게 되었다.",
         "scope": null
       },
       {
-        "evidence_id": "하이퍼엑셀:profile:funding_total:d47fd45f",
+        "evidence_id": "하이퍼엑셀:profile:funding_total:f7f03b0f",
         "company": "하이퍼엑셀",
         "category": "profile",
         "metric": "funding_total",
-        "value": 55000000000.0,
+        "value": 61000000000.0,
         "unit": "KRW",
         "source_type": "web",
-        "title": "AI 반도체 스타트업 하이퍼엑셀, 550억원 규모 투자 유치… “내년 삼성 4나노로 제품 양산” | Joo-Young Kim | 14 comments",
-        "source": "linkedin.com",
+        "title": "하이퍼엑셀 500억 시리즈B 분석: 크래프톤이 AI 반도체 스타트업에 베팅한 이유 | 데모데이",
+        "source": "demoday.co.kr",
         "date": null,
         "accessed_at": "2026-10-13",
-        "url": "https://www.linkedin.com/posts/joo-young-kim-7b227955_ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%95%98%EC%9D%B4%ED%8D%BC%EC%97%91%EC%85%80-550%EC%96%B5%EC%9B%90-%EA%B7%9C%EB%AA%A8-%ED%88%AC%EC%9E%90-%EC%9C%A0%EC%B9%98-%EB%82%B4%EB%85%84-%EC%82%BC%EC%84%B1-activity-7278367590295461889-plZE",
+        "url": "https://demoday.co.kr/funding/insights/132",
         "doc_id": null,
         "page": null,
         "chunk_id": null,
-        "quote": "지난 몇 개월간의 결실로 약 550억 규모의 Series A 투자를 성공적으로 마무리하게 되었습니다.",
+        "quote": "이번 라운드는 2024년 12월 한국투자파트너스·본엔젤스·KB인베스트먼트 등으로부터 550억원 시리즈A를 유치한 지 약 1년 반 만의 후속 라운드다. 누적 투자액은 시드(60억원)·시리즈A(550억원) 합산 610억원에서 이번 시리즈B로 크게 늘어난다.",
         "scope": null
       },
       {
-        "evidence_id": "하이퍼엑셀:profile:team_experience:115fd85f",
+        "evidence_id": "하이퍼엑셀:profile:customer_traction:408c2ca1",
         "company": "하이퍼엑셀",
         "category": "profile",
-        "metric": "team_experience",
-        "value": "하이퍼엑셀은 거대언어모델(LLM) 추론에 특화된 AI 가속기인 LPU(LLM Processing Unit)를 개발하는 팹리스다.",
-        "unit": null,
+        "metric": "customer_traction",
+        "value": 2.0,
+        "unit": "건",
         "source_type": "web",
-        "title": "김주영 하이퍼엑셀 대표 - 'AI 반도체'라는 종합예술",
-        "source": "forbeskorea.co.kr",
+        "title": "하이퍼엑셀 500억 시리즈B 분석: 크래프톤이 AI 반도체 스타트업에 베팅한 이유 | 데모데이",
+        "source": "demoday.co.kr",
         "date": null,
         "accessed_at": "2026-10-13",
-        "url": "https://www.forbeskorea.co.kr/news/articleView.html?idxno=401398",
+        "url": "https://demoday.co.kr/funding/insights/132",
         "doc_id": null,
         "page": null,
         "chunk_id": null,
-        "quote": "하이퍼엑셀은 거대언어모델(LLM) 추론에 특화된 AI 가속기인 LPU(LLM Processing Unit)를 개발하는 팹리스다.",
+        "quote": "네이버클라우드와 데이터센터용 AI 칩 공동 개발을, LG전자와 온디바이스 LPU 공동 개발을 진행 중이다.",
+        "scope": null
+      },
+      {
+        "evidence_id": "하이퍼엑셀:profile:risk_mitigation:b34462f9",
+        "company": "하이퍼엑셀",
+        "category": "profile",
+        "metric": "risk_mitigation",
+        "value": "엔비디아 GPU 의존 탈피를 위해 하이퍼엑셀에 투자해 대안 칩 공급망 확보를 통한 장기 원가 통제 전략을 추진 중이다.",
+        "unit": null,
+        "source_type": "web",
+        "title": "하이퍼엑셀 500억 시리즈B 분석: 크래프톤이 AI 반도체 스타트업에 베팅한 이유 | 데모데이",
+        "source": "demoday.co.kr",
+        "date": null,
+        "accessed_at": "2026-10-13",
+        "url": "https://demoday.co.kr/funding/insights/132",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "크래프톤이 AI 인프라를 엔비디아 GPU에만 의존하면 비용 통제권이 없다. 하이퍼엑셀에 투자해 대안 칩의 공급망을 확보하는 것이 장기 원가 통제 전략이다.",
         "scope": null
       }
     ]
   },
   {
-    "name": "아이에이치더블유 (IHW)",
+    "name": "아이에이치더블유",
     "aliases": [
       "IHW"
     ],
-    "country": "South Korea",
+    "country": "대한민국",
     "domain_url": "",
     "founded_year": "",
     "ceo": "",
-    "recent_round": "Series A 투자 유치(520억원 규모)",
-    "total_funding": "520억원 이상",
-    "description": "AI 반도체 스타트업으로 시리즈A 라운드에서 투자 유치함.",
-    "latest_source_date": "2026-10-08",
+    "recent_round": "시리즈 A",
+    "total_funding": "누적 투자금 640억원",
+    "description": "초저전력 AI 반도체 팹리스 스타트업으로, 아날로그 인메모리 컴퓨팅(ACiM) 방식의 AI 칩 '인퍼트론'을 개발한다. 국내 정책 금융기관과 방산 대기업 투자 참여가 특징이다.",
+    "latest_source_date": "2026-08-23",
     "discovery_done": true
   },
   {
-    "name": "딥엑스",
+    "name": "딥파인",
     "aliases": [
-      "DeepX"
+      "DeepFine"
     ],
-    "country": "South Korea",
+    "country": "대한민국",
     "domain_url": "",
     "founded_year": "",
     "ceo": "",
-    "recent_round": "정보 없음, AI 엣지 컴퓨팅용 NPU 개발 중",
-    "total_funding": "",
-    "description": "엣지 AI 분야에서 NPU 개발하는 스타트업.",
-    "latest_source_date": "2026-10-08",
+    "recent_round": "시리즈 B",
+    "total_funding": "누적 투자금 180억원",
+    "description": "공간지능 기반 산업 AI 플랫폼 기업으로, 공장·물류센터 등의 업무 효율을 높이는 AI 솔루션을 개발 중이다.",
+    "latest_source_date": "2026-08-23",
     "discovery_done": true
   },
   {
-    "name": "모빌린트",
+    "name": "알세미",
     "aliases": [
-      "Mobilint"
+      "Alsemy"
     ],
-    "country": "South Korea",
+    "country": "대한민국",
+    "domain_url": "http://alsemy.com",
+    "founded_year": "2019",
+    "ceo": "",
+    "recent_round": "Seed",
+    "total_funding": "비공개",
+    "description": "AI 기반 반도체 설계 자동화 스타트업으로, 반도체 공정 디지털 트윈, 피지컬 AI, AI 에이전트 관련 국가 연구개발 수행 경험이 있다.",
+    "latest_source_date": "2026-06",
+    "discovery_done": true
+  },
+  {
+    "name": "모레",
+    "aliases": [
+      "More"
+    ],
+    "country": "대한민국",
     "domain_url": "",
     "founded_year": "",
     "ceo": "",
-    "recent_round": "Series C 투자 유치 (700억원 규모)",
-    "total_funding": "누적 1,000억원 규모 투자 유치",
-    "description": "온디바이스와 온프레미스를 아우르는 엣지 AI NPU 개발. 1세대 제품 '에리스'는 삼성전자 14나노 공정으로 제작된 NPU 가속기. 다양한 AI 가속기 카드 및 서버, 산업용 AI PC 제공.",
-    "latest_source_date": "2026-04-05",
+    "recent_round": "Series C",
+    "total_funding": "약 598억원",
+    "description": "AI 반도체 구동 소프트웨어 개발 스타트업이다.",
+    "latest_source_date": "2026-06",
     "discovery_done": true
   },
   {
-    "name": "리벨리온",
+    "name": "잇다반도체",
     "aliases": [
-      "Rebellions"
+      "Itda Semiconductor"
     ],
-    "country": "South Korea",
-    "domain_url": "https://en.wikipedia.org/wiki/Rebellions_(company)",
-    "founded_year": "2020",
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "",
     "ceo": "",
-    "recent_round": "Pre-IPO (프리IPO, 6400억원 규모 투자 포함)",
-    "total_funding": "약 1조 3,000억원 누적 투자",
-    "description": "AI 칩과 컴파일러 등 소프트웨어 설계 및 개발하는 팹리스 스타트업. NPU 설계 및 AI 인프라 구축 지원. SK텔레콤 AI 반도체 자회사 사피온코리아와 합병. 정부 'K-엔비디아 육성 프로젝트' 직접 투자 1호 기업.",
-    "latest_source_date": "2026-03-30",
+    "recent_round": "Seed",
+    "total_funding": "3억원",
+    "description": "반도체 설계 솔루션을 제공하는 스타트업으로 클럭/파워 설계용 GUI 기반 SoC 설계 서비스가 주요 서비스이다.",
+    "latest_source_date": "2026-06",
+    "discovery_done": true
+  },
+  {
+    "name": "액시언",
+    "aliases": [
+      "Axion"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "",
+    "ceo": "",
+    "recent_round": "Seed",
+    "total_funding": "20억원",
+    "description": "AI 기반 반도체 설계 자동화(EDA) 소프트웨어 스타트업이다.",
+    "latest_source_date": "2026-06",
+    "discovery_done": true
+  },
+  {
+    "name": "세카",
+    "aliases": [
+      "SECA"
+    ],
+    "country": "대한민국",
+    "domain_url": "",
+    "founded_year": "",
+    "ceo": "",
+    "recent_round": "Seed",
+    "total_funding": "비공개",
+    "description": "AI 기반 하드웨어 설계 자동화(EDA) 소프트웨어 개발 스타트업이다.",
+    "latest_source_date": "2026-06",
     "discovery_done": true
   }
 ]

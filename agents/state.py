@@ -90,6 +90,7 @@ class InvestmentState(TypedDict, total=False):
     competitor_evidence: list[Evidence]
     rag_retry: dict[str, int]
     evidence_retry: int
+    evidence_gate_status: Literal["pending", "sufficient", "insufficient_accepted"]
     scores: dict[str, ScoreEntry]
     total_score: float | None
     missing_evidence: list[str]
@@ -101,7 +102,6 @@ class InvestmentState(TypedDict, total=False):
     quality_retry: int
     quality_feedback: str
     trace_id: str
-    step_count: int
     node_status: dict[str, str]
     last_error: str | None
     next_routes: list[str]

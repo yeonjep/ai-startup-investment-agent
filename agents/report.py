@@ -54,7 +54,42 @@ class ReportSections(BaseModel):
 
 
 # ---------------------------------------------------------------- helpers
+def _report_readiness_error(state: dict[str, Any]) -> str | None:
+    """Return why a final report cannot yet be written, or None when ready."""
+    evaluated = list(state.get("evaluated") or [])
+    evaluated_names = {
+        str((record.get("company_profile") or {}).get("name") or "")
+        for record in evaluated
+    }
+    unfinished = {
+        str(candidate.get("name") or "")
+        for candidate in state.get("candidates") or []
+        if candidate.get("selection_status") in {"PASS", "REVIEW"}
+        and str(candidate.get("name") or "") not in evaluated_names
+    }
+    current = state.get("current_startup") or {}
+    if (
+        state.get("selection_status") in {"PASS", "REVIEW"}
+        and str(current.get("name") or "") not in evaluated_names
+    ):
+        unfinished.add(str(current.get("name") or "현재 후보"))
+    unfinished.discard("")
+    if unfinished:
+        return "평가 가능한 후보의 판정 스냅샷이 없음: " + ", ".join(sorted(unfinished))
+
+    for record in evaluated:
+        name = str((record.get("company_profile") or {}).get("name") or "기업")
+        if record.get("decision") not in {"투자", "보류"}:
+            return f"{name}의 투자 판정이 완료되지 않음"
+        if not record.get("scores") or record.get("total_score") is None:
+            return f"{name}의 채점 결과가 완료되지 않음"
+    return None
+
+
 def report_type(state: dict[str, Any]) -> str:
+    readiness_error = _report_readiness_error(state)
+    if readiness_error:
+        raise ValueError(f"보고서 작성 불가: {readiness_error}")
     evaluated = state.get("evaluated", [])
     if any(record.get("decision") == "투자" for record in evaluated):
         return "invest"
@@ -99,6 +134,38 @@ def _raw(record: dict[str, Any], metric: str) -> Any:
     return None if not entry or entry.get("status") == "missing" else _fmt_raw(entry.get("raw_value"))
 
 
+def _report_market_analysis(record: dict[str, Any]) -> dict[str, Any]:
+    """Expose only market findings that survived Evaluator validation."""
+    analysis = record.get("market_analysis") or {}
+    metric_by_topic = {
+        "market_size": "market_tam",
+        "market_growth": "market_cagr",
+        "demand_risk": "demand_clarity",
+    }
+    findings = {
+        topic: finding
+        for topic, finding in (analysis.get("findings") or {}).items()
+        if (record.get("scores", {}).get(metric_by_topic.get(topic, "")) or {}).get(
+            "status"
+        )
+        == "observed"
+    }
+    missing = [
+        topic
+        for topic, metric in metric_by_topic.items()
+        if (record.get("scores", {}).get(metric) or {}).get("status") != "observed"
+    ]
+    return {
+        "summary": (
+            "Evaluator 검증을 통과한 목표 시장 지표만 서술한다."
+            if findings
+            else "검증을 통과한 목표 시장 정량 지표가 확인되지 않음."
+        ),
+        "findings": findings,
+        "insufficient_topics": missing,
+    }
+
+
 class Catalog:
     """근거 카탈로그: evidence_id ↔ 짧은 번호 E1.. (LLM 인용용)."""
 
@@ -113,19 +180,12 @@ class Catalog:
                     self.by_evidence_id[key] = f"E{len(self.items)}"
 
     def tag(self, evidence_ids: list[str]) -> str:
-        for evidence_id in evidence_ids:
-            if evidence_id in self.by_evidence_id:
-                return f"[{self.by_evidence_id[evidence_id]}]"
-        return ""
-
-    def category_tags(self, *categories: str, limit: int = 4) -> str:
         tags: list[str] = []
-        for index, item in enumerate(self.items, start=1):
-            if item.get("category") in categories:
-                tags.append(f"[E{index}]")
-            if len(tags) >= limit:
-                break
-        return "".join(tags)
+        for evidence_id in evidence_ids:
+            tag = self.by_evidence_id.get(evidence_id)
+            if tag and tag not in tags:
+                tags.append(tag)
+        return "".join(f"[{tag}]" for tag in tags)
 
     def prompt_lines(self) -> str:
         lines = []
@@ -192,7 +252,7 @@ def _finalize_citations(markdown_text: str, catalog: Catalog) -> str:
         tag = match.group(0)[1:-1]
         item = catalog.get(tag)
         if item is None:
-            return ""
+            return f"[INVALID:{tag}]"
         cited.append(item)
         ref_keys.setdefault(key_of(item), len(ref_keys) + 1)
         return f"[{ref_keys[key_of(item)]}]"
@@ -255,7 +315,7 @@ def _compact(record: dict[str, Any]) -> dict[str, Any]:
         "company_profile": profile,
         "selection_uncertain": record.get("selection_uncertain"),
         "tech_summary": record.get("tech_summary"),
-        "market_analysis": record.get("market_analysis"),
+        "market_analysis": _report_market_analysis(record),
         "competitor_analysis": record.get("competitor_analysis"),
         "scores": {
             m: {"score": s["score"], "status": s["status"], "raw_value": s["raw_value"], "reason": s["reason"]}
@@ -275,7 +335,7 @@ def _fallback_sections(rtype: str, records: list[dict[str, Any]]) -> ReportSecti
         summary=f"{_name(main)} 등 {len(records)}개 기업을 평가했다." if rtype == "all_hold" else f"{_name(main)}을(를) 평가했다.",
         overview=str(main["company_profile"].get("evaluation_product", unknown)),
         team_tech=str(main.get("tech_summary", {}).get("summary", unknown)),
-        market_competition=f"{main.get('market_analysis', {}).get('summary', unknown)} "
+        market_competition=f"{_report_market_analysis(main).get('summary', unknown)} "
         f"{main.get('competitor_analysis', {}).get('summary', '')}",
         risk_market=unknown, risk_tech=unknown, risk_regulation=unknown, risk_competition=unknown,
     )
@@ -307,14 +367,33 @@ def _write_sections(rtype: str, records: list[dict[str, Any]], catalog: Catalog,
     return _fallback_sections(rtype, records)
 
 
-def _cite_numeric_sentences(text: str, tags: str) -> str:
-    """Attach relevant Evidence tags to uncited quantitative narrative sentences."""
-    if not tags:
-        return text
+def _cite_numeric_sentences(
+    text: str,
+    catalog: Catalog,
+    categories: tuple[str, ...],
+) -> str:
+    """Attach only Evidence whose value/quote/scope contains the stated number."""
     parts = re.split(r"(?<=[.!?。])(\s+)", text)
     for index in range(0, len(parts), 2):
         sentence = parts[index]
-        if re.search(r"\d", sentence) and not re.search(r"\[E\d+\]", sentence):
+        if not re.search(r"\d", sentence) or re.search(r"\[E\d+\]", sentence):
+            continue
+        numbers = {
+            token.replace(",", "")
+            for token in re.findall(r"\d[\d,]*(?:\.\d+)?", sentence)
+        }
+        evidence_ids: list[str] = []
+        for item in catalog.items:
+            if item.get("category") not in categories:
+                continue
+            evidence_text = " ".join(
+                str(item.get(key) or "")
+                for key in ("value", "unit", "quote", "scope")
+            ).replace(",", "")
+            if any(number in evidence_text for number in numbers):
+                evidence_ids.append(str(item.get("evidence_id") or ""))
+        tags = catalog.tag([item for item in evidence_ids if item])
+        if tags:
             parts[index] = sentence.rstrip() + tags
     return "".join(parts)
 
@@ -368,7 +447,7 @@ def _market_table(records: list[dict[str, Any]], catalog: "Catalog") -> str:
                 row += [f"{_fmt_raw(entry.get('raw_value'))} {catalog.tag(entry.get('evidence_ids', []))}".strip(),
                         _cell(first.get("scope"), 45)]
             else:
-                row += [NEUTRAL, "-"]
+                row += [f"{NEUTRAL} (3점)", "-"]
         rows.append(row)
     return _table(["기업", "목표 시장 규모", "규모 범위·기준", "목표 시장 CAGR", "CAGR 범위·기간"], rows)
 
@@ -395,14 +474,26 @@ def _missing_text(record: dict[str, Any]) -> str:
     return text
 
 
-def _limitations(state: dict[str, Any]) -> str:
+def _limitations(state: dict[str, Any], rtype: str) -> str:
     total = len(state.get("candidates", []))
     done = len(state.get("evaluated", []))
     excluded = sum(1 for c in state.get("candidates", []) if c.get("selection_status") == "FAIL")
-    return (
+    progress = (
         f"- 후보 {total}개를 수집해 선정 기준(A-3)에서 {excluded}개를 제외하고 {done}개를 평가했다. "
-        "조사 순서상 최초 투자 판정에서 종료했으므로 나머지 후보는 평가되지 않았으며, 검색 순서·후보 상한에 따라 일부 기업이 평가되지 않았을 수 있다.\n"
-        "- 정량 구간은 공식 VC 표준이 아닌 프로젝트 초기 설계값이며, 누적 투자액은 조달 이력의 대리 지표(현재 자금 여력 아님)다.\n"
+    )
+    if rtype == "invest":
+        progress += (
+            "조사 순서상 최초 투자 판정에서 종료했으므로 나머지 후보는 평가되지 않았으며, "
+            "검색 순서·후보 상한에 따라 일부 기업이 평가되지 않았을 수 있다.\n"
+        )
+    else:
+        progress += (
+            "투자 판정 없이 후보가 소진되거나 평가 상한에 도달했으며, "
+            "검색 순서·후보 상한에 따라 일부 기업이 평가되지 않았을 수 있다.\n"
+        )
+    return (
+        progress
+        + "- 정량 구간은 공식 VC 표준이 아닌 프로젝트 초기 설계값이며, 누적 투자액은 조달 이력의 대리 지표(현재 자금 여력 아님)다.\n"
         "- Valuation·지분율이 비공개이므로 ROI는 산출하지 않았고, 기대 성장 여력은 시장·사업화 단계로 정성 평가했다.\n"
         "- 서로 다른 기업 유형의 원수치는 직접 비교하지 않는다."
     )
@@ -425,7 +516,24 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
         focus, holds = [main], [r for r in evaluated if r is not main]
     else:
         focus, holds = evaluated, []
-    catalog = Catalog(focus)
+    citation_records = []
+    for record in focus:
+        cited_ids = {
+            evidence_id
+            for entry in record.get("scores", {}).values()
+            if entry.get("status") == "observed"
+            for evidence_id in entry.get("evidence_ids", [])
+        }
+        citation_records.append(
+            {
+                "evidence": [
+                    item
+                    for item in record.get("evidence", [])
+                    if item.get("evidence_id") in cited_ids
+                ]
+            }
+        )
+    catalog = Catalog(citation_records)
     sec = _write_sections(rtype, focus, catalog, scale, as_of, str(state.get("quality_feedback") or ""))
     for field_name in (
         "summary",
@@ -438,12 +546,17 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
         "risk_competition",
     ):
         setattr(sec, field_name, _clean_narrative(getattr(sec, field_name)))
-    sec.summary = _cite_numeric_sentences(sec.summary, catalog.category_tags("profile", "tech", "market"))
-    sec.overview = _cite_numeric_sentences(sec.overview, catalog.category_tags("profile"))
-    sec.team_tech = _cite_numeric_sentences(sec.team_tech, catalog.category_tags("profile", "tech"))
+    sec.summary = _cite_numeric_sentences(
+        sec.summary, catalog, ("profile", "tech", "market")
+    )
+    sec.overview = _cite_numeric_sentences(sec.overview, catalog, ("profile",))
+    sec.team_tech = _cite_numeric_sentences(
+        sec.team_tech, catalog, ("profile", "tech")
+    )
     sec.market_competition = _cite_numeric_sentences(
         sec.market_competition,
-        catalog.category_tags("market", "competitor"),
+        catalog,
+        ("market", "competitor"),
     )
 
     if rtype == "invest":
@@ -489,7 +602,7 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
         f"- **기술**: {sec.risk_tech}\n"
         f"- **규제**: {sec.risk_regulation}\n"
         f"- **경쟁**: {sec.risk_competition}\n\n"
-        f"### 평가 범위와 한계\n\n{_limitations(state)}"
+        f"### 평가 범위와 한계\n\n{_limitations(state, rtype)}"
     )
     parts.append(risks)
     return _finalize_citations("\n\n".join(parts), catalog)

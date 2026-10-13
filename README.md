@@ -7,12 +7,12 @@
 ## Overview
 
 - Objective : AI 반도체 스타트업의 **팀, 시장성, 제품/기술력, 경쟁 우위, 실적, 자금조달·리스크**를 기준으로 투자 적합성을 분석하고 투자 평가 보고서(PDF)를 자동 생성
-- Method : 병렬 fan-out/fan-in과 예외 재작업 Supervisor를 결합한 LangGraph Multi-Agent, Agentic RAG(Hybrid 검색 + 관련성 평가 + 재검색 + 웹 보완), 근거(Evidence) 기반 13개 지표 채점, 코드 규칙에 의한 투자/보류 판정, 보고서 품질 평가
+- Method : 병렬 fan-out/fan-in과 필수 근거 Gate Supervisor를 결합한 LangGraph Multi-Agent, Agentic RAG(Hybrid 검색 + 관련성 평가 + 재검색 + 웹 보완), 근거(Evidence) 기반 13개 지표 채점, 코드 규칙에 의한 투자/보류 판정, 보고서 품질 평가
 
 ### Pattern 및 선정 이유
 
 - **Pattern: Parallel fan-out/fan-in + Supervisor**
-- Technology·Market·Competitor라는 역할과 최초 작업은 미리 정해져 있으므로, 작업을 새로 분해하고 Worker를 동적 생성하는 Orchestrator-Workers가 필요하지 않다. 세 분석을 병렬 실행해 Evaluator에서 합치고, Supervisor는 결과를 보고 **부족한 영역만 재배정**하는 예외 조정자 역할을 맡는다.
+- Technology·Market·Competitor라는 역할과 최초 작업은 미리 정해져 있으므로, 작업을 새로 분해하고 Worker를 동적 생성하는 Orchestrator-Workers가 필요하지 않다. 세 분석을 병렬 실행해 Evaluator에서 합치고, Supervisor는 모든 후보의 **근거 충분성을 확인한 뒤 부족한 영역만 재배정**한다.
 - 투자 점수와 판정은 기존 코드 규칙을 유지하며, 충분성 투표는 재분석 대상 선택에만 쓰고 점수를 바꾸지 않는다.
 
 ### 동적 처리 — 고정 순서와의 차이
@@ -20,6 +20,7 @@
 이전 그래프는 `Technology → Market → Competitor → Evaluator`를 항상 같은 순서로 실행했다. 현재 그래프는 후보 Gate 통과 후 세 분석을 같은 superstep에 fan-out하고, 모두 끝난 뒤 Evaluator에서 한 번 fan-in한다.
 
 - 채점 후 결측 영역이 기술·시장·경쟁 중 하나 이상이면 Supervisor가 해당 subset만 동시에 재배정한다.
+- 결측이 없어도 세 분석의 충분성 투표를 확인하고, 충분하거나 영역별 재분석 예산이 소진된 뒤에만 Decision으로 진행한다.
 - 보고서 품질이 미달이면 Supervisor가 Report를 한 번 재작성하게 한 뒤 Quality를 다시 실행한다.
 - 따라서 실행 경로와 노드 호출 횟수는 후보의 선정 결과·근거 충분성·결측·품질 결과에 따라 달라진다.
 
@@ -51,8 +52,8 @@
 - **국내외 후보 탐색**: 한국어·영어 웹검색으로 후보를 최대 10개 수집하고, 6개 선정 기준(도메인·AI 핵심성·비상장·투자 단계·Exit 미완료·정보 충분성)으로 PASS/FAIL/REVIEW 판정
 - **PDF 자료 기반 시장 분석(Agentic RAG)**: 정부·연구기관·컨설팅 보고서 4종(100페이지)을 Hybrid 검색(Dense + BM25, Weighted RRF)으로 조회하고, topic별 관련성 평가 → 질의 재작성 → 웹 보완
 - **근거 기반 채점**: 모든 지표는 출처가 연결된 Evidence로만 채점하고, 근거가 없으면 중립 3점 + `missing`으로 구분. 정량 점수·총점·투자/보류 분기는 LLM이 아닌 코드가 계산
-- **분기·루프**: 최초 분석 3종은 병렬 실행하고, Supervisor는 결측 영역 subset의 병렬 재분석과 품질 미달 보고서 수정만 배정한다. 선정 재검색(1회), 시장 재검색(topic별 2회), 결측 재분석(후보당 1라운드), 보류 시 다음 후보, 보고서 품질 미달 시 재작성 1회
-- **투자 보고서 자동 생성**: SUMMARY~REFERENCE 구조, 10페이지 이내 PDF(한글 폰트, 차트 포함). 실제 인용한 출처만 REFERENCE에 기재. 생성 후 Groundedness·중립성·편향 통제를 평가한다
+- **분기·루프**: 최초 분석 3종은 병렬 실행하고, Supervisor는 충분성 투표·결측을 함께 검사해 필요한 subset만 병렬 재분석한다. 전역 고정 스텝 종료 없이 선정 재검색(1회), 시장 재검색(topic별 2회), 근거 재분석(후보당 1라운드), 후보 수, 품질 재작성(1회)으로 종료를 보장한다
+- **투자 보고서 자동 생성**: 완료된 평가 스냅샷만 받아 SUMMARY~REFERENCE 구조의 10페이지 이내 PDF를 생성한다. 주장별 실제 Evidence만 인용하고, 인용 수치 일치·중립성·편향 통제를 평가한다
 
 ## Tech Stack
 
@@ -79,21 +80,21 @@ BAAI/bge-m3, intfloat/multilingual-e5-large, Qwen/Qwen3-Embedding-0.6B 3종을 �
 
 ## Agents
 
-- **Supervisor** : Evaluator가 찾은 결측 영역의 분석 워커들을 병렬 재배정하거나, Quality 실패 시 Report 수정을 배정한다. 정상 분석 순서는 지휘하지 않으며 배정 대상과 사유를 `next_routes`, `route_reason`에 남긴다
+- **Supervisor** : Evaluator 뒤 필수 근거 Gate로서 충분성 투표와 결측을 검사한다. 필요한 분석 워커들을 병렬 재배정하고, 충분하거나 재시도 소진 시 Decision, Quality 실패 시 Report 수정을 배정한다
 - **Startup Agent** : 국내외 후보 수집·정규화·중복 제거, A-3 선정 기준 판정과 기업 유형(CHIP / DESIGN_AI / PROCESS_AI) 분류, 팀·인력·투자·고객·매출 근거 수집
 - **Technology Agent** : 기업 유형별 기술 지표·개발 단계·검증 조건 수집, 기업 주장과 검증된 효과 구분, 기술 영역 충분성 투표
 - **Market Agent (RAG)** : `market_size` / `market_growth` / `demand_risk` topic별 Hybrid RAG → 관련성 평가 → 재검색 → 웹 보완, 범위·기준연도가 다른 수치는 결합하지 않음, 시장 영역 충분성 투표
 - **Competitor Agent** : 같은 유형·고객 문제의 국내외 경쟁 3~5개(기존 비AI 방식 포함) 비교, 진입장벽 근거 수집, 경쟁 영역 충분성 투표
 - **Evaluator Agent** : 13개 지표 채점(정량·범주는 코드, 정성은 1/3/5 루브릭), 결측 처리, 가중 총점 계산
 - **Decision Agent** : `total_score ≥ 70` · `결측 < 5` · `uncertain == False` 세 조건을 코드로 판정하고 후보별 스냅샷 저장. 충분성 투표는 이 판정을 바꾸지 않는다
-- **Report Agent** : 투자 기업 중심 / 전원 보류 비교 / 평가 대상 없음 3유형 보고서를 생성하고 PDF로 변환(10페이지 초과 시 분량 축소 재생성)
+- **Report Agent** : 투자 기업 중심 / 전원 보류 비교 / 평가 대상 없음 3유형을 생성한다. PASS·REVIEW 후보의 평가가 미완료이면 생성을 거부하고, 품질 수정 시 기존 판정·점수를 유지한다
 - **Quality Agent** : Groundedness(코드), 중립성(LLM), 편향 통제(코드). 미달이면 Supervisor가 보고서를 1회 재작성하게 한다
 
 ## State Schema
 
 가이드의 예시 State는 관점 합성용 참고라 그대로 쓰지 않았다. 이 그래프의 State는 투자 평가 본문과, Gate·Supervisor가 분기와 재작업을 결정하는 제어 정보로 나뉜다.
 
-작업 결과는 `candidates`, `current_startup`, 기술·시장·경쟁 분석, Evidence, `scores`, `decision`, `evaluated`, `final_report`다. 제어 정보는 `trace_id`, `step_count`, `node_status`, `last_error`, `next_routes`, `route_reason`, 재시도 카운터, `current_idx`, `sufficiency_votes`, `refresh_areas`, `quality_retry`다.
+작업 결과는 `candidates`, `current_startup`, 기술·시장·경쟁 분석, Evidence, `scores`, `decision`, `evaluated`, `final_report`다. 제어 정보는 `trace_id`, `node_status`, `last_error`, `next_routes`, `route_reason`, 재시도 카운터, `current_idx`, `sufficiency_votes`, `refresh_areas`, `evidence_gate_status`, `quality_retry`다.
 
 | 항목 | 이 그래프에서의 답 |
 | --- | --- |
@@ -101,47 +102,50 @@ BAAI/bge-m3, intfloat/multilingual-e5-large, Qwen/Qwen3-Embedding-0.6B 3종을 �
 | 관측성 위치 | 배정 이력은 LangSmith에 남긴다. State에는 최신 재작업 목록 `next_routes`와 사유 `route_reason`, 마지막 오류, 워커의 충분성 투표를 둔다 |
 | 지속성 비용 | 검색 원문과 RAG 청크는 State에 누적하지 않는다. 후보가 바뀌면 그 후보의 Evidence를 비우고, 보고서용 스냅샷만 `evaluated`에 후보당 1건 남긴다 |
 | 상관 | `initialize_state`가 `trace_id`를 만든다. LangSmith 추적과 같은 실행을 이 값으로 구분한다 |
-| 재개/복구 | `node_status`, `last_error`, `step_count`, `current_idx`, `selection_retry`, `rag_retry`, `evidence_retry`, `quality_retry`가 있으면 어느 후보의 어느 단계인지 알 수 있다 |
+| 재개/복구 | `node_status`, `last_error`, `current_idx`, `selection_retry`, `rag_retry`, `evidence_retry`, `evidence_gate_status`, `quality_retry`가 있으면 어느 후보의 어느 단계인지 알 수 있다 |
 | 동시 처리 | 분석 3종은 서로 다른 결과·Evidence 필드에 쓰며, `sufficiency_votes`는 dict merge reducer로 워커별 key를 합친다. `evaluated`는 `operator.add`로 후보별 스냅샷을 잇는다 |
-| 종료 보장 | `step_count` 상한, 선정·시장·결측 재시도 상한, 품질 재작성 1회로 루프를 끝낸다 |
+| 종료 보장 | 전역 스텝 수로 Report를 강제하지 않는다. 후보 수와 선정·시장·근거·품질의 영역별 재시도 상한으로 루프를 끝낸다 |
 
 ## Architecture
 
 ![Graph](outputs/graph.png)
 
-`initialize_state → Startup Gate` 이후, 통과 후보는 Technology·Market·Competitor로 병렬 분기되고 Evaluator에서 합쳐진다. Supervisor는 결측 추가 분석 또는 품질 미달 수정 때만 호출된다. (상세: [docs/DESIGN.md](docs/DESIGN.md) D장)
+`initialize_state → Startup Gate` 이후, 통과 후보는 Technology·Market·Competitor로 병렬 분기되고 Evaluator에서 합쳐진다. 모든 평가 후보는 Supervisor 근거 Gate를 통과한 뒤 Decision으로 간다. (상세: [docs/DESIGN.md](docs/DESIGN.md) D장)
 
-- 선정 REVIEW는 Startup, 보류는 다음 후보로 직접 분기한다. 결측 영역과 품질 미달만 Supervisor가 재작업을 배정한다
+- 선정 REVIEW는 Startup, 보류는 다음 후보로 직접 분기한다. Supervisor는 불충분 투표·결측 영역과 품질 미달에만 재작업을 배정한다
 - 투자 판정 또는 후보 소진 뒤에 보고서를 쓰고, 품질 평가를 통과하거나 재작성 1회를 마치면 종료한다
 - 기술·시장·경쟁의 충분성 투표는 재배정에만 쓰고, 투자/보류는 코드 규칙을 유지한다
 
-## 실행 결과 (제출본 기준)
+## 실행 결과 (2026-10-13 검증)
 
-아래 수치와 후보는 2026-09-30 제출 실행 기록이다. 현재 그래프는 같은 분석 역할을 병렬 실행한다.
+실제 API와 RAG를 사용해 필수 근거 Gate와 최종 보고서 생성을 종단 간 검증했다.
 
 ```text
 initialize_state → startup_agent
 → [technology_agent ∥ market_agent ∥ competitor_agent]
-→ evaluator_agent → decision_agent → report_agent → quality_agent
+→ evaluator_agent → supervisor(evidence gate) → market_agent → evaluator_agent
+→ supervisor(evidence gate)
+→ decision_agent → report_agent → quality_agent
 ```
 
 | 단계      | 결과                                                                                                      |
 | --------- | --------------------------------------------------------------------------------------------------------- |
-| 후보 수집 | 국내외 검색으로 10개 수집 (하이퍼엑셀, 페블스퀘어, 하이퍼비주얼AI, 딥엑스, 세카, iHW, Velaura AI, 퓨리오사AI, 아티크론, 리벨리온) |
-| 1번째 평가 | **하이퍼엑셀(HyperExcel)** — 총점 **72.50**, 결측 4개, 선정 불확실성 없음 → **투자**                    |
-| 종료      | 최초 투자 판정에서 종료 → 나머지 9개 후보는 평가하지 않음 (전체 후보 중 최우수 기업이라는 의미가 아님)    |
+| 후보 수집 | 국내외 검색으로 10개 수집, 선정 기준 FAIL 2개 제외                                                       |
+| 평가 | **하이퍼엑셀(HyperExcel)** — 총점 **82.17**, 결측 3개, 선정 불확실성 없음 → **투자**                    |
+| 근거 Gate | Market 영역만 선택적으로 1회 재분석한 뒤, 잔여 결측을 유지하고 Decision 진행                             |
+| 보고서 | **7페이지**, Groundedness·중립성·편향 통제 통과, 최대 10페이지 준수                                      |
 
 ### 투자 보고서 핵심 포인트
 
-- **판정**: 하이퍼엑셀(대한민국, AI 칩, Series A) — 총점 72.50/100, 투자. Evidence로 확인된 누적 투자 유치액은 약 550억원입니다.
-- **결측 4개(목표 시장 규모, 목표 시장 CAGR, 고객·PoC·계약 수, 매출 발생)** 는 3점을 중립 대입하고 보고서에 '중립 대입·미확인'으로 표시했습니다.
-- **시장 범위 검증**: HBM 매출 기준 CAGR 36.3%는 LPU 타깃 시장과 범위가 달라 시장 성장률 점수에서 제외했습니다.
-- **주요 리스크**: 구체적 성능 지표와 SW 생태계 정보 미공개(기술), 구체적 고객·계약 근거 미확인(실적), 글로벌 강자와의 경쟁, 규제 근거 미확인.
-- 보고서 구성: SUMMARY → 1. 기업 및 사업 개요 → 2. 팀·기술 및 제품 경쟁력 → 3. 시장성 및 경쟁 환경 → 4. 투자 판단 및 주요 리스크(Scorecard·차트·리스크 4종·한계) → REFERENCE (4페이지, 인용 출처만 기재)
+- **판정**: 하이퍼엑셀(대한민국, AI 칩) — 총점 82.17/100, 투자.
+- **결측 3개(목표 시장 규모, 목표 시장 CAGR, 매출 발생)** 는 3점을 중립 대입하고 보고서에 '중립 대입·미확인'으로 표시했습니다.
+- **시장 범위 검증**: 타깃 시장과 범위가 다른 시장 수치는 채점과 보고서 정량 서술에서 제외했습니다.
+- **주요 리스크**: ASIC 양산 전 단계, 구체적 시장 정량값과 매출 미확인, 글로벌 AI 가속기 경쟁, 규제 근거 미확인.
+- 보고서 구성: SUMMARY → 1. 기업 및 사업 개요 → 2. 팀·기술 및 제품 경쟁력 → 3. 시장성 및 경쟁 환경 → 4. 투자 판단 및 주요 리스크 → REFERENCE (7페이지, 실제 인용 출처만 기재)
 
 > 웹검색과 LLM 응답은 실행마다 달라져 후보·점수가 매번 같지는 않습니다. 위 내용은 제출본 PDF와 같은 실행 기준입니다.
 
-### 투자 보고서 미리보기
+### 이전 제출본 투자 보고서 미리보기
 
 | 1페이지: SUMMARY ~ 3장                | 2페이지: 4장 Scorecard·차트           | 4페이지: 한계·REFERENCE               |
 | ------------------------------------- | ------------------------------------- | ------------------------------------- |
