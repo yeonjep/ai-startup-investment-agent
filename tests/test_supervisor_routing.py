@@ -1,7 +1,16 @@
 import unittest
 
+from agents.graph import (
+    ANALYSIS_NODES,
+    route_after_decision,
+    route_after_evaluator,
+    route_after_quality,
+    route_after_startup,
+    route_from_supervisor,
+)
 from agents.quality import check_bias, check_groundedness
-from agents.supervisor import choose_route, pending_refresh_areas, supervisor
+from agents.state import merge_dicts
+from agents.supervisor import choose_routes, pending_refresh_areas, supervisor
 
 
 def _open_candidate(**extra):
@@ -32,47 +41,48 @@ def _open_candidate(**extra):
 
 
 class SupervisorRouteTests(unittest.TestCase):
-    def test_discovery_goes_to_startup(self):
-        route, reason = choose_route({"discovery_done": False, "step_count": 0})
-        self.assertEqual(route, "startup_agent")
-        self.assertTrue(reason)
+    def test_pass_candidate_fans_out_to_three_analysis_workers(self):
+        routes = route_after_startup(_open_candidate())
+        self.assertEqual(routes, list(ANALYSIS_NODES))
 
     def test_fail_goes_to_next_candidate(self):
-        route, _reason = choose_route(_open_candidate(selection_status="FAIL", current_startup=None))
+        route = route_after_startup(
+            _open_candidate(selection_status="FAIL", current_startup=None)
+        )
         self.assertEqual(route, "next_candidate")
 
-    def test_missing_tech_goes_to_technology_before_market(self):
-        route, _reason = choose_route(_open_candidate(tech_summary={}, market_analysis={}))
-        self.assertEqual(route, "technology_agent")
+    def test_empty_candidates_go_directly_to_report(self):
+        route = route_after_startup(
+            _open_candidate(candidates=[], current_startup=None, selection_status=None)
+        )
+        self.assertEqual(route, "report_agent")
 
-    def test_refresh_dispatches_one_area_then_rescores(self):
+    def test_evaluator_delegates_refreshable_missing_to_supervisor(self):
         state = _open_candidate(
             scores={"technical_originality": {"status": "missing"}},
             missing_evidence=["technical_originality", "market_tam"],
         )
-        route, reason = choose_route(state)
-        self.assertEqual(route, "technology_agent")
-        self.assertIn("tech", reason)
+        self.assertEqual(route_after_evaluator(state), "supervisor")
+        routes, reason = choose_routes(state)
+        self.assertEqual(routes, ["technology_agent", "market_agent"])
+        self.assertIn("tech, market", reason)
 
-        dispatched = supervisor({**state, "next_route": "evaluator_agent"})
-        self.assertEqual(dispatched["active_refresh_area"], "tech")
-        self.assertEqual(dispatched["next_route"], "technology_agent")
-        self.assertNotIn("evidence_retry", dispatched)
+        dispatched = supervisor(state)
+        self.assertEqual(
+            dispatched["next_routes"],
+            ["technology_agent", "market_agent"],
+        )
+        self.assertEqual(dispatched["refresh_areas"], ["tech", "market"])
+        self.assertEqual(dispatched["evidence_retry"], 1)
+        self.assertEqual(dispatched["scores"], {})
 
-        after_tech = {
-            **state,
-            **dispatched,
-            "tech_summary": {"summary": "보완"},
-        }
-        second = supervisor(after_tech)
-        self.assertEqual(second["next_route"], "market_agent")
-        self.assertEqual(second["evidence_retry"], 1)
-        self.assertEqual(second["node_status"]["refresh:tech"], "done")
-
-        after_market = {**after_tech, **second, "market_analysis": state["market_analysis"]}
-        third = supervisor(after_market)
-        self.assertEqual(third["next_route"], "evaluator_agent")
-        self.assertEqual(third["route_reason"], "결측 재배정 후 재채점")
+    def test_evaluator_moves_to_decision_after_retry_budget(self):
+        state = _open_candidate(
+            scores={"technical_originality": {"status": "missing"}},
+            missing_evidence=["technical_originality"],
+            evidence_retry=1,
+        )
+        self.assertEqual(route_after_evaluator(state), "decision_agent")
 
     def test_hold_with_room_continues_and_invest_goes_to_report(self):
         hold = _open_candidate(
@@ -81,9 +91,13 @@ class SupervisorRouteTests(unittest.TestCase):
             candidates=[{"name": "에이"}, {"name": "비"}],
             evaluated=[{"decision": "보류"}],
         )
-        self.assertEqual(choose_route(hold)[0], "next_candidate")
-        invest = _open_candidate(scores={"team_experience": {"score": 5}}, decision="투자", evaluated=[{"decision": "투자"}])
-        self.assertEqual(choose_route(invest)[0], "report_agent")
+        self.assertEqual(route_after_decision(hold), "next_candidate")
+        invest = _open_candidate(
+            scores={"team_experience": {"score": 5}},
+            decision="투자",
+            evaluated=[{"decision": "투자"}],
+        )
+        self.assertEqual(route_after_decision(invest), "report_agent")
 
     def test_quality_failure_rewrites_once_then_stops(self):
         failed = _open_candidate(
@@ -93,11 +107,12 @@ class SupervisorRouteTests(unittest.TestCase):
             final_report="# SUMMARY\n\n판정 투자\n",
             quality_result={"passed": False, "checks": {"groundedness": {"passed": False, "reason": "수치 없음"}}},
         )
-        self.assertEqual(choose_route(failed)[0], "report_agent")
+        self.assertEqual(route_after_quality(failed), "supervisor")
         update = supervisor(failed)
         self.assertEqual(update["quality_retry"], 1)
         self.assertEqual(update["final_report"], "")
         self.assertIn("groundedness", update["quality_feedback"])
+        self.assertEqual(route_from_supervisor(update), ["report_agent"])
 
         again = _open_candidate(
             scores={"team_experience": {"score": 5}},
@@ -107,21 +122,24 @@ class SupervisorRouteTests(unittest.TestCase):
             quality_result={"passed": False, "checks": {}},
             quality_retry=1,
         )
-        self.assertEqual(choose_route(again)[0], "end")
-
-    def test_step_cap_ends_after_quality(self):
-        state = _open_candidate(
-            step_count=120,
-            final_report="# SUMMARY\n",
-            quality_result={"passed": True, "checks": {}},
-        )
-        self.assertEqual(choose_route(state)[0], "end")
+        self.assertEqual(route_after_quality(again), "end")
 
     def test_pending_areas_follow_tech_market_competitor_order(self):
         areas = pending_refresh_areas(
             {"missing_evidence": ["entry_barrier", "market_tam", "technical_originality"], "node_status": {}}
         )
         self.assertEqual(areas, ["tech", "market", "competitor"])
+
+    def test_parallel_vote_reducer_merges_worker_keys(self):
+        merged = merge_dicts(
+            {"technology_agent": {"vote": "sufficient", "reason": "기술"}},
+            {"market_agent": {"vote": "insufficient", "reason": "시장"}},
+        )
+        self.assertEqual(
+            set(merged),
+            {"technology_agent", "market_agent"},
+        )
+        self.assertEqual(merge_dicts(merged, {}), {})
 
 
 class QualityRuleTests(unittest.TestCase):

@@ -766,9 +766,9 @@ def initialize_state(
         "step_count": state.get("step_count", 0),
         "node_status": state.get("node_status") or {},
         "last_error": state.get("last_error"),
-        "next_route": state.get("next_route"),
+        "next_routes": state.get("next_routes") or [],
         "route_reason": state.get("route_reason", ""),
-        "active_refresh_area": state.get("active_refresh_area"),
+        "refresh_areas": state.get("refresh_areas") or [],
     }
 
 
@@ -879,15 +879,14 @@ def market_agent(
             topic_results[topic]["sufficient"] = False
 
     insufficient_topics = [topic for topic in TOPICS if not topic_results[topic]["sufficient"]]
-    votes = dict(state.get("sufficiency_votes") or {})
-    votes["market_agent"] = {
+    votes = {"market_agent": {
         "vote": "insufficient" if insufficient_topics else "sufficient",
         "reason": (
             "부족한 topic: " + ", ".join(insufficient_topics)
             if insufficient_topics
             else "시장 topic 근거 충분"
         ),
-    }
+    }}
     missing_metrics = [
         metric
         for topic in insufficient_topics
@@ -1057,7 +1056,8 @@ def next_candidate(state: InvestmentState) -> dict[str, Any]:
         "missing_evidence": [],
         "decision": None,
         "sufficiency_votes": {},
-        "active_refresh_area": None,
+        "refresh_areas": [],
+        "next_routes": [],
         "node_status": status,
     }
 

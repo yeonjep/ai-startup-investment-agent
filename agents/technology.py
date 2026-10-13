@@ -72,7 +72,7 @@ def technology_agent(state: InvestmentState, config: RunnableConfig | None = Non
     product = startup.get("evaluation_product")
 
     queries = [f"{company} {product or 'AI 반도체'} 기술 성능 개발 단계 아키텍처"]
-    if state.get("evidence_retry", 0) > 0 or state.get("active_refresh_area") == "tech":
+    if state.get("evidence_retry", 0) > 0 or "tech" in state.get("refresh_areas", []):
         queries.append(f"{company} 벤치마크 검증 결과 고객 PoC 테이프아웃 양산")
     docs: list[dict[str, Any]] = []
     for query in queries:

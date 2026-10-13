@@ -99,7 +99,7 @@ def competitor_agent(state: InvestmentState, config: RunnableConfig | None = Non
         f"{company} {product or 'AI 반도체'} 경쟁사 비교 차별성",
         f"{company} competitors comparison alternative benchmark",
     ]
-    if state.get("evidence_retry", 0) > 0 or state.get("active_refresh_area") == "competitor":
+    if state.get("evidence_retry", 0) > 0 or "competitor" in state.get("refresh_areas", []):
         queries.append(f"{company} patent SDK partnership 특허 파트너십")
     docs: list[dict[str, Any]] = []
     for query in queries:

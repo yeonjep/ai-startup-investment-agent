@@ -1,9 +1,16 @@
 # State contract: docs/DESIGN.md D-1, D-1a, and D-2.
 # Payload fields hold the investment evaluation. Control fields are only what
-# the supervisor needs to route. The guide's sample perspective schema is not used.
+# graph gates and the rework supervisor need. The guide's perspective schema is not used.
 
 import operator
 from typing import Annotated, Any, Literal, TypedDict
+
+
+def merge_dicts(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+    """Merge parallel worker keys; an explicit empty update resets a round."""
+    if right == {}:
+        return {}
+    return {**(left or {}), **(right or {})}
 
 
 class Evidence(TypedDict):
@@ -89,7 +96,7 @@ class InvestmentState(TypedDict, total=False):
     decision: Literal["투자", "보류"] | None
     evaluated: Annotated[list[EvaluationRecord], operator.add]
     final_report: str
-    sufficiency_votes: dict[str, SufficiencyVote]
+    sufficiency_votes: Annotated[dict[str, SufficiencyVote], merge_dicts]
     quality_result: QualityResult | None
     quality_retry: int
     quality_feedback: str
@@ -97,6 +104,6 @@ class InvestmentState(TypedDict, total=False):
     step_count: int
     node_status: dict[str, str]
     last_error: str | None
-    next_route: str | None
+    next_routes: list[str]
     route_reason: str
-    active_refresh_area: Literal["tech", "market", "competitor"] | None
+    refresh_areas: list[Literal["tech", "market", "competitor"]]

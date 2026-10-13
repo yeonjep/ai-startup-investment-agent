@@ -61,8 +61,10 @@ def main(scenario: Scenario = "real") -> dict[str, Any]:
     ):
         for node_name, node_update in update.items():
             if node_name == "supervisor":
+                routes = node_update.get("next_routes") or []
                 node_visits.append(
-                    f"supervisor[{node_update.get('next_route')}: {node_update.get('route_reason')}]"
+                    f"supervisor[{','.join(routes)}: "
+                    f"{node_update.get('route_reason')}]"
                 )
             else:
                 node_visits.append(node_name)

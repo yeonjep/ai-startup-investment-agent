@@ -7,21 +7,20 @@
 ## Overview
 
 - Objective : AI 반도체 스타트업의 **팀, 시장성, 제품/기술력, 경쟁 우위, 실적, 자금조달·리스크**를 기준으로 투자 적합성을 분석하고 투자 평가 보고서(PDF)를 자동 생성
-- Method : Supervisor 패턴의 LangGraph Multi-Agent, Agentic RAG(Hybrid 검색 + 관련성 평가 + 재검색 + 웹 보완), 근거(Evidence) 기반 13개 지표 채점, 코드 규칙에 의한 투자/보류 판정, 보고서 품질 평가
+- Method : 병렬 fan-out/fan-in과 예외 재작업 Supervisor를 결합한 LangGraph Multi-Agent, Agentic RAG(Hybrid 검색 + 관련성 평가 + 재검색 + 웹 보완), 근거(Evidence) 기반 13개 지표 채점, 코드 규칙에 의한 투자/보류 판정, 보고서 품질 평가
 
 ### Pattern 및 선정 이유
 
-- **Pattern: Supervisor**
-- 이 그래프에서 실행마다 달라지는 것은 워커 목록이 아니라, 현재 근거의 충분성에 따라 **다음에 호출하거나 재호출할 워커**다. 따라서 작업 목록을 만들고 Worker를 동적으로 병렬 생성하는 Orchestrator-Workers보다 중앙 Supervisor가 적합하다.
-- Technology·Market·Competitor는 자기 영역의 충분성을 State에 투표하고 Supervisor로만 돌아온다. 투자 점수와 판정은 기존 코드 규칙을 유지하며, 충분성 투표가 점수를 바꾸지 않는다.
+- **Pattern: Parallel fan-out/fan-in + Supervisor**
+- Technology·Market·Competitor라는 역할과 최초 작업은 미리 정해져 있으므로, 작업을 새로 분해하고 Worker를 동적 생성하는 Orchestrator-Workers가 필요하지 않다. 세 분석을 병렬 실행해 Evaluator에서 합치고, Supervisor는 결과를 보고 **부족한 영역만 재배정**하는 예외 조정자 역할을 맡는다.
+- 투자 점수와 판정은 기존 코드 규칙을 유지하며, 충분성 투표는 재분석 대상 선택에만 쓰고 점수를 바꾸지 않는다.
 
 ### 동적 처리 — 고정 순서와의 차이
 
-이전 그래프는 `Technology → Market → Competitor → Evaluator`를 항상 같은 순서로 실행했다. 현재 그래프는 모든 워커가 Supervisor로 복귀하고, Supervisor가 `route_reason`과 재시도 예산을 보고 다음 노드 하나를 고른다.
+이전 그래프는 `Technology → Market → Competitor → Evaluator`를 항상 같은 순서로 실행했다. 현재 그래프는 후보 Gate 통과 후 세 분석을 같은 superstep에 fan-out하고, 모두 끝난 뒤 Evaluator에서 한 번 fan-in한다.
 
-- 시장 topic이 부족하면 Competitor로 넘어가지 않고 Market을 다시 호출한다.
-- 채점 후 결측 영역이 기술이면 Technology, 시장이면 Market, 경쟁이면 Competitor만 다시 배정한다.
-- 보고서 품질이 미달이면 Report를 한 번 재작성한 뒤 Quality를 다시 실행한다.
+- 채점 후 결측 영역이 기술·시장·경쟁 중 하나 이상이면 Supervisor가 해당 subset만 동시에 재배정한다.
+- 보고서 품질이 미달이면 Supervisor가 Report를 한 번 재작성하게 한 뒤 Quality를 다시 실행한다.
 - 따라서 실행 경로와 노드 호출 횟수는 후보의 선정 결과·근거 충분성·결측·품질 결과에 따라 달라진다.
 
 ## Problem & Approach
@@ -52,7 +51,7 @@
 - **국내외 후보 탐색**: 한국어·영어 웹검색으로 후보를 최대 10개 수집하고, 6개 선정 기준(도메인·AI 핵심성·비상장·투자 단계·Exit 미완료·정보 충분성)으로 PASS/FAIL/REVIEW 판정
 - **PDF 자료 기반 시장 분석(Agentic RAG)**: 정부·연구기관·컨설팅 보고서 4종(100페이지)을 Hybrid 검색(Dense + BM25, Weighted RRF)으로 조회하고, topic별 관련성 평가 → 질의 재작성 → 웹 보완
 - **근거 기반 채점**: 모든 지표는 출처가 연결된 Evidence로만 채점하고, 근거가 없으면 중립 3점 + `missing`으로 구분. 정량 점수·총점·투자/보류 분기는 LLM이 아닌 코드가 계산
-- **분기·루프**: Supervisor가 근거의 충분성을 보고 다음 워커 하나를 배정한다. 선정 재검색(1회), 시장 재검색(topic별 2회), 결측 영역 재배정(후보당 1라운드), 보류 시 다음 후보, 보고서 품질 미달 시 재작성 1회
+- **분기·루프**: 최초 분석 3종은 병렬 실행하고, Supervisor는 결측 영역 subset의 병렬 재분석과 품질 미달 보고서 수정만 배정한다. 선정 재검색(1회), 시장 재검색(topic별 2회), 결측 재분석(후보당 1라운드), 보류 시 다음 후보, 보고서 품질 미달 시 재작성 1회
 - **투자 보고서 자동 생성**: SUMMARY~REFERENCE 구조, 10페이지 이내 PDF(한글 폰트, 차트 포함). 실제 인용한 출처만 REFERENCE에 기재. 생성 후 Groundedness·중립성·편향 통제를 평가한다
 
 ## Tech Stack
@@ -80,7 +79,7 @@ BAAI/bge-m3, intfloat/multilingual-e5-large, Qwen/Qwen3-Embedding-0.6B 3종을 �
 
 ## Agents
 
-- **Supervisor** : 수집된 근거와 재시도 횟수를 보고 다음 워커 하나를 고른다. 워커끼리는 호출하지 않으며, 배정 사유는 `route_reason`에 남긴다
+- **Supervisor** : Evaluator가 찾은 결측 영역의 분석 워커들을 병렬 재배정하거나, Quality 실패 시 Report 수정을 배정한다. 정상 분석 순서는 지휘하지 않으며 배정 대상과 사유를 `next_routes`, `route_reason`에 남긴다
 - **Startup Agent** : 국내외 후보 수집·정규화·중복 제거, A-3 선정 기준 판정과 기업 유형(CHIP / DESIGN_AI / PROCESS_AI) 분류, 팀·인력·투자·고객·매출 근거 수집
 - **Technology Agent** : 기업 유형별 기술 지표·개발 단계·검증 조건 수집, 기업 주장과 검증된 효과 구분, 기술 영역 충분성 투표
 - **Market Agent (RAG)** : `market_size` / `market_growth` / `demand_risk` topic별 Hybrid RAG → 관련성 평가 → 재검색 → 웹 보완, 범위·기준연도가 다른 수치는 결합하지 않음, 시장 영역 충분성 투표
@@ -92,37 +91,38 @@ BAAI/bge-m3, intfloat/multilingual-e5-large, Qwen/Qwen3-Embedding-0.6B 3종을 �
 
 ## State Schema
 
-가이드의 예시 State는 관점 합성용 참고라 그대로 쓰지 않았다. 이 그래프의 State는 투자 평가 본문과, Supervisor가 다음 워커를 고르는 제어 정보로 나뉜다.
+가이드의 예시 State는 관점 합성용 참고라 그대로 쓰지 않았다. 이 그래프의 State는 투자 평가 본문과, Gate·Supervisor가 분기와 재작업을 결정하는 제어 정보로 나뉜다.
 
-작업 결과는 `candidates`, `current_startup`, 기술·시장·경쟁 분석, Evidence, `scores`, `decision`, `evaluated`, `final_report`다. 제어 정보는 `trace_id`, `step_count`, `node_status`, `last_error`, `next_route`, `route_reason`, 재시도 카운터, `current_idx`, `sufficiency_votes`, `active_refresh_area`, `quality_retry`다.
+작업 결과는 `candidates`, `current_startup`, 기술·시장·경쟁 분석, Evidence, `scores`, `decision`, `evaluated`, `final_report`다. 제어 정보는 `trace_id`, `step_count`, `node_status`, `last_error`, `next_routes`, `route_reason`, 재시도 카운터, `current_idx`, `sufficiency_votes`, `refresh_areas`, `quality_retry`다.
 
 | 항목 | 이 그래프에서의 답 |
 | --- | --- |
 | 제어 vs 페이로드 분리 | 라우팅에 필요한 최소 상태는 제어 필드다. 기업 분석, 근거, 점수, 보고서 문장은 작업 결과로 둔다 |
-| 관측성 위치 | 배정 이력은 LangSmith에 남긴다. State에는 최신 배정 `next_route`와 사유 `route_reason`, 마지막 오류, 워커의 충분성 투표만 덮어쓴다 |
+| 관측성 위치 | 배정 이력은 LangSmith에 남긴다. State에는 최신 재작업 목록 `next_routes`와 사유 `route_reason`, 마지막 오류, 워커의 충분성 투표를 둔다 |
 | 지속성 비용 | 검색 원문과 RAG 청크는 State에 누적하지 않는다. 후보가 바뀌면 그 후보의 Evidence를 비우고, 보고서용 스냅샷만 `evaluated`에 후보당 1건 남긴다 |
 | 상관 | `initialize_state`가 `trace_id`를 만든다. LangSmith 추적과 같은 실행을 이 값으로 구분한다 |
 | 재개/복구 | `node_status`, `last_error`, `step_count`, `current_idx`, `selection_retry`, `rag_retry`, `evidence_retry`, `quality_retry`가 있으면 어느 후보의 어느 단계인지 알 수 있다 |
-| 동시 처리 | Supervisor는 한 번에 워커 하나만 부른다. 분석 필드는 덮어쓴다. 후보를 넘겨도 남아야 하는 `evaluated`만 `operator.add`로 스냅샷 1건을 잇는다 |
+| 동시 처리 | 분석 3종은 서로 다른 결과·Evidence 필드에 쓰며, `sufficiency_votes`는 dict merge reducer로 워커별 key를 합친다. `evaluated`는 `operator.add`로 후보별 스냅샷을 잇는다 |
 | 종료 보장 | `step_count` 상한, 선정·시장·결측 재시도 상한, 품질 재작성 1회로 루프를 끝낸다 |
 
 ## Architecture
 
 ![Graph](outputs/graph.png)
 
-`initialize_state → supervisor` 이후, 워커는 항상 Supervisor로 돌아온다. Supervisor가 제어 State를 보고 다음 노드 하나를 고른다. (상세: [docs/DESIGN.md](docs/DESIGN.md) D장)
+`initialize_state → Startup Gate` 이후, 통과 후보는 Technology·Market·Competitor로 병렬 분기되고 Evaluator에서 합쳐진다. Supervisor는 결측 추가 분석 또는 품질 미달 수정 때만 호출된다. (상세: [docs/DESIGN.md](docs/DESIGN.md) D장)
 
-- 선정 REVIEW, 시장 근거 부족, 결측 영역, 보류, 품질 미달은 각각 해당 워커를 다시 배정한다
+- 선정 REVIEW는 Startup, 보류는 다음 후보로 직접 분기한다. 결측 영역과 품질 미달만 Supervisor가 재작업을 배정한다
 - 투자 판정 또는 후보 소진 뒤에 보고서를 쓰고, 품질 평가를 통과하거나 재작성 1회를 마치면 종료한다
 - 기술·시장·경쟁의 충분성 투표는 재배정에만 쓰고, 투자/보류는 코드 규칙을 유지한다
 
 ## 실행 결과 (제출본 기준)
 
-아래 수치와 후보는 2026-09-30 제출 실행 기록이다. 현재 그래프는 같은 워커를 Supervisor가 배정한다.
+아래 수치와 후보는 2026-09-30 제출 실행 기록이다. 현재 그래프는 같은 분석 역할을 병렬 실행한다.
 
 ```text
-initialize_state → supervisor → startup_agent → technology_agent → market_agent
-→ competitor_agent → evaluator_agent → decision_agent → report_agent → quality_agent
+initialize_state → startup_agent
+→ [technology_agent ∥ market_agent ∥ competitor_agent]
+→ evaluator_agent → decision_agent → report_agent → quality_agent
 ```
 
 | 단계      | 결과                                                                                                      |
