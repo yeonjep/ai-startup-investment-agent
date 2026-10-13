@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from agents.common import create_llm
 from agents.evidence import format_search_docs, make_evidence, merge_evidence, source_lookup
 from agents.state import Evidence, InvestmentState
+from agents.supervisor import merge_vote
 from tools.web_search import web_search
 
 STAGE_GUIDE = {
@@ -71,7 +72,7 @@ def technology_agent(state: InvestmentState, config: RunnableConfig | None = Non
     product = startup.get("evaluation_product")
 
     queries = [f"{company} {product or 'AI 반도체'} 기술 성능 개발 단계 아키텍처"]
-    if state.get("evidence_retry", 0) > 0:  # evidence_refresh 재호출: 결측 보완용 추가 질의
+    if state.get("evidence_retry", 0) > 0 or state.get("active_refresh_area") == "tech":
         queries.append(f"{company} 벤치마크 검증 결과 고객 PoC 테이프아웃 양산")
     docs: list[dict[str, Any]] = []
     for query in queries:
@@ -110,7 +111,14 @@ def technology_agent(state: InvestmentState, config: RunnableConfig | None = Non
         }
     else:  # 보완 재호출이 실패해도 기존 분석은 유지한다
         tech_summary = state.get("tech_summary") or {"summary": "기술 근거를 확인하지 못했다.", "error": error}
+    sufficient = bool(tech_summary.get("summary")) and not tech_summary.get("error")
     return {
         "tech_summary": tech_summary,
         "tech_evidence": merge_evidence(list(state.get("tech_evidence", [])), new_evidence),
+        "sufficiency_votes": merge_vote(
+            state,
+            "technology_agent",
+            sufficient,
+            "기술 근거 확보" if sufficient else str(tech_summary.get("error") or "기술 근거 부족"),
+        ),
     }

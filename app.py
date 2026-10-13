@@ -6,15 +6,10 @@ from typing import Any, Literal
 
 from agents.common import configure_runtime
 from agents.config import (
-    MAX_CANDIDATE_POOL,
-    MAX_EVIDENCE_RETRIES,
-    MAX_RAG_RETRIES,
-    MAX_SELECTION_RETRIES,
     get_as_of_date,
     validate_max_candidates,
 )
-from agents.graph import build_graph
-from agents.report import REPORT_BASENAME
+from agents.graph import build_graph, recursion_limit
 from agents.report import REPORT_BASENAME
 from agents.state import InvestmentState
 
@@ -45,15 +40,9 @@ def main(scenario: Scenario = "real") -> dict[str, Any]:
     initial_state: InvestmentState = {"domain": "AI 반도체"}  # This line is unchanged
     max_candidates = validate_max_candidates()
     graph = build_graph()
-    max_steps = (
-        MAX_CANDIDATE_POOL * (MAX_SELECTION_RETRIES + 2)
-        + max_candidates * (12 + MAX_RAG_RETRIES * len(("market_size", "market_growth", "demand_risk")) + MAX_EVIDENCE_RETRIES * 2)
-        + 10
-    )
-    # stub 시나리오가 제출용 보고서를 덮어쓰지 않도록 파일명을 분리한다
     report_basename = REPORT_BASENAME if scenario == "real" else f"stub-{scenario}"
     graph_config = {
-        "recursion_limit": max(25, max_steps),
+        "recursion_limit": recursion_limit(),
         "configurable": {
             "scenario": scenario,
             "report_basename": report_basename,
@@ -71,7 +60,12 @@ def main(scenario: Scenario = "real") -> dict[str, Any]:
         stream_mode="updates",
     ):
         for node_name, node_update in update.items():
-            node_visits.append(node_name)
+            if node_name == "supervisor":
+                node_visits.append(
+                    f"supervisor[{node_update.get('next_route')}: {node_update.get('route_reason')}]"
+                )
+            else:
+                node_visits.append(node_name)
             if "evaluated" in node_update:
                 result["evaluated"] = [
                     *result.get("evaluated", []),

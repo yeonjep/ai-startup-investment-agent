@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from agents.common import create_llm
 from agents.evidence import format_search_docs, make_evidence, merge_evidence, source_lookup
 from agents.state import Evidence, InvestmentState
+from agents.supervisor import merge_vote
 from tools.web_search import web_search
 
 BASIS = {
@@ -98,7 +99,7 @@ def competitor_agent(state: InvestmentState, config: RunnableConfig | None = Non
         f"{company} {product or 'AI 반도체'} 경쟁사 비교 차별성",
         f"{company} competitors comparison alternative benchmark",
     ]
-    if state.get("evidence_retry", 0) > 0:  # evidence_refresh 재호출: 결측 보완용 추가 질의
+    if state.get("evidence_retry", 0) > 0 or state.get("active_refresh_area") == "competitor":
         queries.append(f"{company} patent SDK partnership 특허 파트너십")
     docs: list[dict[str, Any]] = []
     for query in queries:
@@ -152,7 +153,14 @@ def competitor_agent(state: InvestmentState, config: RunnableConfig | None = Non
     else:  # 보완 재호출이 실패해도 기존 분석은 유지한다
         competitor_analysis = state.get("competitor_analysis") or {
             "summary": "경쟁 근거를 확인하지 못했다.", "competitors": [], "error": error}
+    sufficient = bool(competitor_analysis.get("summary")) and not competitor_analysis.get("error")
     return {
         "competitor_analysis": competitor_analysis,
         "competitor_evidence": merge_evidence(list(state.get("competitor_evidence", [])), new_evidence),
+        "sufficiency_votes": merge_vote(
+            state,
+            "competitor_agent",
+            sufficient,
+            "경쟁 근거 확보" if sufficient else str(competitor_analysis.get("error") or "경쟁 근거 부족"),
+        ),
     }

@@ -7,7 +7,7 @@
 ## Overview
 
 - Objective : AI 반도체 스타트업의 **팀, 시장성, 제품/기술력, 경쟁 우위, 실적, 자금조달·리스크**를 기준으로 투자 적합성을 분석하고 투자 평가 보고서(PDF)를 자동 생성
-- Method : AI Agent(LangGraph Multi-Agent), Agentic RAG(Hybrid 검색 + 관련성 평가 + 재검색 + 웹 보완), 근거(Evidence) 기반 13개 지표 채점, 코드 규칙에 의한 투자/보류 판정
+- Method : Supervisor 패턴의 LangGraph Multi-Agent, Agentic RAG(Hybrid 검색 + 관련성 평가 + 재검색 + 웹 보완), 근거(Evidence) 기반 13개 지표 채점, 코드 규칙에 의한 투자/보류 판정, 보고서 품질 평가
 
 ## Problem & Approach
 
@@ -37,8 +37,8 @@
 - **국내외 후보 탐색**: 한국어·영어 웹검색으로 후보를 최대 10개 수집하고, 6개 선정 기준(도메인·AI 핵심성·비상장·투자 단계·Exit 미완료·정보 충분성)으로 PASS/FAIL/REVIEW 판정
 - **PDF 자료 기반 시장 분석(Agentic RAG)**: 정부·연구기관·컨설팅 보고서 4종(100페이지)을 Hybrid 검색(Dense + BM25, Weighted RRF)으로 조회하고, topic별 관련성 평가 → 질의 재작성 → 웹 보완
 - **근거 기반 채점**: 모든 지표는 출처가 연결된 Evidence로만 채점하고, 근거가 없으면 중립 3점 + `missing`으로 구분. 정량 점수·총점·투자/보류 분기는 LLM이 아닌 코드가 계산
-- **분기·루프**: 선정 재검색(1회), RAG 재검색(topic별 2회), 결측 근거 보완(1회), 보류 시 다음 후보로 순회, 전원 보류/후보 없음 시 종료 후 보고서 생성
-- **투자 보고서 자동 생성**: SUMMARY~REFERENCE 구조, 5장 이내 PDF(한글 폰트, 차트 포함). 실제 인용한 출처만 REFERENCE에 기재
+- **분기·루프**: Supervisor가 근거의 충분성을 보고 다음 워커 하나를 배정한다. 선정 재검색(1회), 시장 재검색(topic별 2회), 결측 영역 재배정(후보당 1라운드), 보류 시 다음 후보, 보고서 품질 미달 시 재작성 1회
+- **투자 보고서 자동 생성**: SUMMARY~REFERENCE 구조, 10페이지 이내 PDF(한글 폰트, 차트 포함). 실제 인용한 출처만 REFERENCE에 기재. 생성 후 Groundedness·중립성·편향 통제를 평가한다
 
 ## Tech Stack
 
@@ -65,33 +65,49 @@ BAAI/bge-m3, intfloat/multilingual-e5-large, Qwen/Qwen3-Embedding-0.6B 3종을 �
 
 ## Agents
 
+- **Supervisor** : 수집된 근거와 재시도 횟수를 보고 다음 워커 하나를 고른다. 워커끼리는 호출하지 않으며, 배정 사유는 `route_reason`에 남긴다
 - **Startup Agent** : 국내외 후보 수집·정규화·중복 제거, A-3 선정 기준 판정과 기업 유형(CHIP / DESIGN_AI / PROCESS_AI) 분류, 팀·인력·투자·고객·매출 근거 수집
-- **Technology Agent** : 기업 유형별 기술 지표·개발 단계·검증 조건 수집, 기업 주장과 검증된 효과 구분
-- **Market Agent (RAG)** : `market_size` / `market_growth` / `demand_risk` topic별 Hybrid RAG → 관련성 평가 → 재검색 → 웹 보완, 범위·기준연도가 다른 수치는 결합하지 않음
-- **Competitor Agent** : 같은 유형·고객 문제의 국내외 경쟁 3~5개(기존 비AI 방식 포함) 비교, 진입장벽 근거 수집
+- **Technology Agent** : 기업 유형별 기술 지표·개발 단계·검증 조건 수집, 기업 주장과 검증된 효과 구분, 기술 영역 충분성 투표
+- **Market Agent (RAG)** : `market_size` / `market_growth` / `demand_risk` topic별 Hybrid RAG → 관련성 평가 → 재검색 → 웹 보완, 범위·기준연도가 다른 수치는 결합하지 않음, 시장 영역 충분성 투표
+- **Competitor Agent** : 같은 유형·고객 문제의 국내외 경쟁 3~5개(기존 비AI 방식 포함) 비교, 진입장벽 근거 수집, 경쟁 영역 충분성 투표
 - **Evaluator Agent** : 13개 지표 채점(정량·범주는 코드, 정성은 1/3/5 루브릭), 결측 처리, 가중 총점 계산
-- **Decision Agent** : `total_score ≥ 70` · `결측 < 5` · `uncertain == False` 세 조건을 코드로 판정하고 후보별 스냅샷 저장
-- **Report Agent** : 투자 기업 중심 / 전원 보류 비교 / 평가 대상 없음 3유형 보고서를 생성하고 PDF로 변환(5장 초과 시 분량 축소 재생성)
+- **Decision Agent** : `total_score ≥ 70` · `결측 < 5` · `uncertain == False` 세 조건을 코드로 판정하고 후보별 스냅샷 저장. 충분성 투표는 이 판정을 바꾸지 않는다
+- **Report Agent** : 투자 기업 중심 / 전원 보류 비교 / 평가 대상 없음 3유형 보고서를 생성하고 PDF로 변환(10페이지 초과 시 분량 축소 재생성)
+- **Quality Agent** : Groundedness(코드), 중립성(LLM), 편향 통제(코드). 미달이면 Supervisor가 보고서를 1회 재작성하게 한다
+
+## State Schema
+
+가이드의 예시 State는 관점 합성용 참고라 그대로 쓰지 않았다. 이 그래프의 State는 투자 평가 본문과, Supervisor가 다음 워커를 고르는 제어 정보로 나뉜다.
+
+작업 결과는 `candidates`, `current_startup`, 기술·시장·경쟁 분석, Evidence, `scores`, `decision`, `evaluated`, `final_report`다. 제어 정보는 `trace_id`, `step_count`, `node_status`, `last_error`, `next_route`, `route_reason`, 재시도 카운터, `current_idx`, `sufficiency_votes`, `active_refresh_area`, `quality_retry`다.
+
+| 항목 | 이 그래프에서의 답 |
+| --- | --- |
+| 제어 vs 페이로드 분리 | 라우팅에 필요한 최소 상태는 제어 필드다. 기업 분석, 근거, 점수, 보고서 문장은 작업 결과로 둔다 |
+| 관측성 위치 | 배정 이력은 LangSmith에 남긴다. State에는 최신 배정 `next_route`와 사유 `route_reason`, 마지막 오류, 워커의 충분성 투표만 덮어쓴다 |
+| 지속성 비용 | 검색 원문과 RAG 청크는 State에 누적하지 않는다. 후보가 바뀌면 그 후보의 Evidence를 비우고, 보고서용 스냅샷만 `evaluated`에 후보당 1건 남긴다 |
+| 상관 | `initialize_state`가 `trace_id`를 만든다. LangSmith 추적과 같은 실행을 이 값으로 구분한다 |
+| 재개/복구 | `node_status`, `last_error`, `step_count`, `current_idx`, `selection_retry`, `rag_retry`, `evidence_retry`, `quality_retry`가 있으면 어느 후보의 어느 단계인지 알 수 있다 |
+| 동시 처리 | Supervisor는 한 번에 워커 하나만 부른다. 분석 필드는 덮어쓴다. 후보를 넘겨도 남아야 하는 `evaluated`만 `operator.add`로 스냅샷 1건을 잇는다 |
+| 종료 보장 | `step_count` 상한, 선정·시장·결측 재시도 상한, 품질 재작성 1회로 루프를 끝낸다 |
 
 ## Architecture
 
 ![Graph](outputs/graph.png)
 
-`initialize_state → startup_agent → technology_agent → market_agent → competitor_agent → evaluator_agent → decision_agent → report_agent` 흐름에 다음 분기·루프가 있습니다. (상세: [docs/DESIGN.md](docs/DESIGN.md) D장)
+`initialize_state → supervisor` 이후, 워커는 항상 Supervisor로 돌아온다. Supervisor가 제어 State를 보고 다음 노드 하나를 고른다. (상세: [docs/DESIGN.md](docs/DESIGN.md) D장)
 
-- `startup_agent`: PASS → Technology / FAIL → 다음 후보 / REVIEW → 1회 재검색 후 재판정 / 후보 없음 → Report
-- `market_agent`: 부족한 topic만 재검색(topic별 최대 2회) 후 웹 보완
-- `evaluator_agent`: 분석 영역 결측이 있으면 `evidence_refresh`(1회) 후 재채점
-- `decision_agent`: 투자 → Report / 보류 → 다음 후보 (수집 최대 10개, 평가 완료 최대 5개)
+- 선정 REVIEW, 시장 근거 부족, 결측 영역, 보류, 품질 미달은 각각 해당 워커를 다시 배정한다
+- 투자 판정 또는 후보 소진 뒤에 보고서를 쓰고, 품질 평가를 통과하거나 재작성 1회를 마치면 종료한다
+- 기술·시장·경쟁의 충분성 투표는 재배정에만 쓰고, 투자/보류는 코드 규칙을 유지한다
 
 ## 실행 결과 (제출본 기준)
 
-`uv run python app.py` 한 번의 실행에서 그래프가 아래 순서로 동작해 보고서를 생성했습니다.
+아래 수치와 후보는 2026-09-30 제출 실행 기록이다. 현재 그래프는 같은 워커를 Supervisor가 배정한다.
 
 ```text
-initialize_state → startup_agent → technology_agent → market_agent ×3(RAG 재검색 2회) → competitor_agent
-→ evaluator_agent → evidence_refresh(결측 보완 1회) → evaluator_agent → decision_agent
-→ [투자] report_agent
+initialize_state → supervisor → startup_agent → technology_agent → market_agent
+→ competitor_agent → evaluator_agent → decision_agent → report_agent → quality_agent
 ```
 
 | 단계      | 결과                                                                                                      |
@@ -122,7 +138,7 @@ initialize_state → startup_agent → technology_agent → market_agent ×3(RAG
 
 ```text
 ├── agents/             # Agent 모듈(startup, technology, competitor, report), State, Graph, config
-│   └── stubs.py        # Market·Evaluator·Decision 및 공통 노드(initialize_state, next_candidate, evidence_refresh)
+│   └── stubs.py        # Market·Evaluator·Decision 및 공통 노드(initialize_state, next_candidate)
 ├── data/
 │   ├── raw/            # 원본 PDF
 │   ├── docs/           # RAG 적재용 PDF (4종, 100페이지)
@@ -202,6 +218,6 @@ uv run python app.py
 - **정예지 : 시장 분석, 채점 및 투자 판정**
   - Market Agent: topic별 Corrective RAG(시장 규모·성장률·수요/리스크), 근거 충분성 판정, topic별 재검색 2회 상한, 웹 보완
   - Evaluator Agent: 13개 지표 채점(정량 구간 점수 변환은 코드, 정성 루브릭 채점은 LLM), 결측·부재 구분 처리, 통화 환산, 가중 총점 계산
-  - 결측 영역 근거 보완(evidence_refresh) 흐름
+  - 결측 영역은 Supervisor가 해당 워커만 다시 배정한 뒤 재채점한다
   - Decision Agent: 투자/보류 규칙 판정(총점·결측 수·선정 불확실성), 후보별 평가 스냅샷 저장
   - 채점·판정 규칙 단위 테스트

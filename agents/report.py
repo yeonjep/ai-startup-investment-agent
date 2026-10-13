@@ -17,7 +17,7 @@ from tools.web_meta import fetch_published_date
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = PROJECT_ROOT / "outputs"
 REPORT_BASENAME = "RAG-Output_울산캠퍼스-4반_박연제+이정인+정예지"
-MAX_PAGES = 5
+MAX_PAGES = 10
 MAX_REGENERATIONS = 2
 # 재생성 회차별 서술 분량 배율 (최초, 재생성 1회, 재생성 2회)
 LENGTH_SCALES = (1.0, 0.7, 0.5)
@@ -268,7 +268,7 @@ def _fallback_sections(rtype: str, records: list[dict[str, Any]]) -> ReportSecti
     )
 
 
-def _write_sections(rtype: str, records: list[dict[str, Any]], catalog: Catalog, scale: float, as_of: str) -> ReportSections:
+def _write_sections(rtype: str, records: list[dict[str, Any]], catalog: Catalog, scale: float, as_of: str, feedback: str = "") -> ReportSections:
     limits = {k: int(v * scale) for k, v in BASE_LIMITS.items()}
     human = (
         f"보고서 유형: {rtype}\n평가 기준일: {as_of}\n"
@@ -278,6 +278,12 @@ def _write_sections(rtype: str, records: list[dict[str, Any]], catalog: Catalog,
         f"평가 결과(JSON):\n{json.dumps([_compact(r) for r in records], ensure_ascii=False)}\n\n"
         f"근거 카탈로그:\n{catalog.prompt_lines()}"
     )
+    if feedback:
+        human += (
+            "\n\n품질 평가에서 아래 항목이 미달이었다. 투자/보류 판정과 점수는 그대로 두고, "
+            "지적된 문장만 고쳐라.\n"
+            f"{feedback}\n"
+        )
     try:
         llm = create_llm(temperature=0).with_structured_output(ReportSections)
         result = llm.invoke([("system", load_prompt("report")), ("human", human)])
@@ -390,7 +396,7 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
     else:
         focus, holds = evaluated, []
     catalog = Catalog(focus)
-    sec = _write_sections(rtype, focus, catalog, scale, as_of)
+    sec = _write_sections(rtype, focus, catalog, scale, as_of, str(state.get("quality_feedback") or ""))
 
     if rtype == "invest":
         p = main["company_profile"]
@@ -461,7 +467,7 @@ def _assemble_none(state: dict[str, Any]) -> str:
 
 
 def generate_report(state: dict[str, Any], output_dir: Path = OUTPUT_DIR, basename: str = REPORT_BASENAME) -> dict[str, Any]:
-    """보고서 md·PDF를 만들고, 5장 초과 시 서술을 줄여 최대 2회 재생성한다."""
+    """보고서 md·PDF를 만들고, 10페이지 초과 시 서술을 줄여 최대 2회 재생성한다."""
     rtype = report_type(state)
     output_dir.mkdir(parents=True, exist_ok=True)
     md_path, pdf_path = output_dir / f"{basename}.md", output_dir / f"{basename}.pdf"

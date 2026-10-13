@@ -1,6 +1,7 @@
 # Node internals are deterministic branch-test stubs; replace agent logic only.
 
 import re
+import uuid
 from datetime import date
 from typing import Any, Literal
 
@@ -10,10 +11,7 @@ from pydantic import BaseModel, Field
 from agents.common import create_llm
 from agents.config import (
     INVESTMENT_SCORE_THRESHOLD,
-    MAX_CANDIDATE_POOL,
-    MAX_EVIDENCE_RETRIES,
     MAX_RAG_RETRIES,
-    MAX_SELECTION_RETRIES,
     MAX_MISSING_EVIDENCE_FOR_INVESTMENT,
     SCORE_WEIGHTS,
     USD_KRW_FIXED_RATE,
@@ -742,6 +740,17 @@ def initialize_state(
         "decision": state.get("decision"),
         "evaluated": state.get("evaluated", []),
         "final_report": state.get("final_report", ""),
+        "sufficiency_votes": state.get("sufficiency_votes") or {},
+        "quality_result": state.get("quality_result"),
+        "quality_retry": state.get("quality_retry", 0),
+        "quality_feedback": state.get("quality_feedback", ""),
+        "trace_id": state.get("trace_id") or uuid.uuid4().hex,
+        "step_count": state.get("step_count", 0),
+        "node_status": state.get("node_status") or {},
+        "last_error": state.get("last_error"),
+        "next_route": state.get("next_route"),
+        "route_reason": state.get("route_reason", ""),
+        "active_refresh_area": state.get("active_refresh_area"),
     }
 
 
@@ -852,6 +861,15 @@ def market_agent(
             topic_results[topic]["sufficient"] = False
 
     insufficient_topics = [topic for topic in TOPICS if not topic_results[topic]["sufficient"]]
+    votes = dict(state.get("sufficiency_votes") or {})
+    votes["market_agent"] = {
+        "vote": "insufficient" if insufficient_topics else "sufficient",
+        "reason": (
+            "부족한 topic: " + ", ".join(insufficient_topics)
+            if insufficient_topics
+            else "시장 topic 근거 충분"
+        ),
+    }
     missing_metrics = [
         metric
         for topic in insufficient_topics
@@ -875,6 +893,7 @@ def market_agent(
         },
         "rag_retry": retries,
         "market_evidence": market_evidence,
+        "sufficiency_votes": votes,
     }
 
 
@@ -882,7 +901,6 @@ def evaluator_agent(
     state: InvestmentState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    del config
     evidence = _all_evidence(state)
     market_analysis = state.get("market_analysis", {})
     company_type = (state.get("current_startup") or {}).get("company_type")
@@ -906,6 +924,12 @@ def evaluator_agent(
             finding,
         )
 
+    scenario = (config or {}).get("configurable", {}).get("scenario")
+    if scenario == "evidence_retry" and state.get("evidence_retry", 0) == 0:
+        scores["technical_originality"] = _missing_score(
+            "technical_originality",
+            "evidence_retry 시나리오에서 결측 재배정을 확인하기 위한 표시",
+        )
     missing_evidence = [
         metric
         for metrics in _METRIC_GROUPS.values()
@@ -926,40 +950,6 @@ def evaluator_agent(
         "total_score": total_score,
         "missing_evidence": missing_evidence,
     }
-
-
-def _refresh_area_for_metric(metric: str) -> set[str]:
-    mapping = {
-        "development_stage": {"tech"},
-        "technical_originality": {"tech"},
-        "market_tam": {"market"},
-        "market_cagr": {"market"},
-        "demand_clarity": {"market"},
-        "competitive_difference": {"competitor"},
-        "entry_barrier": {"competitor"},
-        "risk_mitigation": {"tech", "market"},
-    }
-    return mapping.get(metric, set())
-
-
-def evidence_refresh(
-    state: InvestmentState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    missing = state.get("missing_evidence", [])
-    needed_areas = set().union(*(_refresh_area_for_metric(metric) for metric in missing))
-    refresh_state = {**state, "evidence_retry": min(MAX_EVIDENCE_RETRIES, state.get("evidence_retry", 0) + 1)}
-    update: dict[str, Any] = {"evidence_retry": refresh_state["evidence_retry"]}
-
-    if "tech" in needed_areas:
-        update.update(technology_agent(refresh_state, config))
-    if "market" in needed_areas:
-        update.update(market_agent(refresh_state, config))
-    if "competitor" in needed_areas:
-        update.update(competitor_agent(refresh_state, config))
-
-        # update["missing_evidence"] = []  # This line is removed to preserve D-3 missing evidence rule
-    return update
 
 
 def decision_agent(
@@ -1025,6 +1015,11 @@ def decision_agent(
 
 
 def next_candidate(state: InvestmentState) -> dict[str, Any]:
+    status = {
+        key: value
+        for key, value in (state.get("node_status") or {}).items()
+        if not str(key).startswith("refresh:") and key != "rescore"
+    }
     return {
         "current_idx": state.get("current_idx", 0) + 1,
         "current_startup": None,
@@ -1043,6 +1038,9 @@ def next_candidate(state: InvestmentState) -> dict[str, Any]:
         "total_score": None,
         "missing_evidence": [],
         "decision": None,
+        "sufficiency_votes": {},
+        "active_refresh_area": None,
+        "node_status": status,
     }
 
 

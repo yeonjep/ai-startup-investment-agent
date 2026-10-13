@@ -1,4 +1,6 @@
-# State contract: docs/DESIGN.md D-1 and D-2.
+# State contract: docs/DESIGN.md D-1, D-1a, and D-2.
+# Payload fields hold the investment evaluation. Control fields are only what
+# the supervisor needs to route. The guide's sample perspective schema is not used.
 
 import operator
 from typing import Annotated, Any, Literal, TypedDict
@@ -47,6 +49,21 @@ class EvaluationRecord(TypedDict):
     reason: str
 
 
+class SufficiencyVote(TypedDict):
+    vote: Literal["sufficient", "insufficient"]
+    reason: str
+
+
+class QualityCheck(TypedDict):
+    passed: bool
+    reason: str
+
+
+class QualityResult(TypedDict):
+    passed: bool
+    checks: dict[str, QualityCheck]
+
+
 class InvestmentState(TypedDict, total=False):
     domain: str
     as_of_date: str
@@ -72,3 +89,14 @@ class InvestmentState(TypedDict, total=False):
     decision: Literal["투자", "보류"] | None
     evaluated: Annotated[list[EvaluationRecord], operator.add]
     final_report: str
+    sufficiency_votes: dict[str, SufficiencyVote]
+    quality_result: QualityResult | None
+    quality_retry: int
+    quality_feedback: str
+    trace_id: str
+    step_count: int
+    node_status: dict[str, str]
+    last_error: str | None
+    next_route: str | None
+    route_reason: str
+    active_refresh_area: Literal["tech", "market", "competitor"] | None

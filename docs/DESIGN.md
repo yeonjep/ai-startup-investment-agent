@@ -30,7 +30,7 @@ AI 반도체 스타트업의 투자 검토에는 기술 검증, 시장성, 경�
 
 - **입력**: 도메인, 후보 탐색 조건, 평가 기준일(`as_of_date`), 평가 수 상한(`max_candidates`, 기본 5)
 - **처리**: 후보 탐색 → 적합성 판정 → 기술·시장·경쟁 분석 → 근거 확인 → 점수화 → 투자/보류 판정
-- **출력**: SUMMARY부터 REFERENCE까지 포함한 투자 평가 PDF, 최대 5페이지
+- **출력**: SUMMARY부터 REFERENCE까지 포함한 투자 평가 PDF, 최대 10페이지
 
 ### A-3. 스타트업 선정 기준
 
@@ -320,17 +320,28 @@ AI 반도체 칩과 설계·제조 개선 솔루션은 기술 효과 검증과 �
 | `tech_summary`        | dict / {}                                                   | overwrite                | Technology                       |
 | `market_analysis`     | dict / {}                                                   | overwrite                | Market                           |
 | `competitor_analysis` | dict / {}                                                   | overwrite                | Competitor                       |
-| `tech_evidence`       | list[Evidence] / []                                         | overwrite                | Technology, evidence_refresh     |
-| `market_evidence`     | list[Evidence] / []                                         | overwrite                | Market, evidence_refresh         |
-| `competitor_evidence` | list[Evidence] / []                                         | overwrite                | Competitor, evidence_refresh     |
+| `tech_evidence`       | list[Evidence] / []                                         | overwrite                | Technology                       |
+| `market_evidence`     | list[Evidence] / []                                         | overwrite                | Market                           |
+| `competitor_evidence` | list[Evidence] / []                                         | overwrite                | Competitor                       |
 | `rag_retry`           | dict[str,int] / 각 topic 0                                  | overwrite                | Market                           |
-| `evidence_retry`      | int / 0                                                     | overwrite                | evidence_refresh                 |
+| `evidence_retry`      | int / 0                                                     | overwrite                | Supervisor                       |
 | `scores`              | dict[str,ScoreEntry] / {}                                   | overwrite                | Evaluator                        |
 | `total_score`         | float 또는 None / None                                      | overwrite                | Evaluator                        |
 | `missing_evidence`    | list[str] / []                                              | overwrite                | Evaluator                        |
 | `decision`            | 투자/보류 또는 None / None                                  | overwrite                | Decision                         |
 | `evaluated`           | list[EvaluationRecord] / []                                 | **add (`operator.add`)** | Decision                         |
-| `final_report`        | str / 빈 문자열                                             | overwrite                | Report                           |
+| `final_report`        | str / 빈 문자열                                             | overwrite                | Report, Quality                  |
+| `sufficiency_votes`   | dict / {}                                                   | overwrite                | Technology, Market, Competitor   |
+| `quality_result`      | dict 또는 None / None                                       | overwrite                | Quality                          |
+| `quality_retry`       | int / 0                                                     | overwrite                | Supervisor                       |
+| `quality_feedback`    | str / 빈 문자열                                             | overwrite                | Supervisor                       |
+| `trace_id`            | str / 실행마다 생성                                         | overwrite                | initialize_state                 |
+| `step_count`          | int / 0                                                     | overwrite                | Supervisor                       |
+| `node_status`         | dict / {}                                                   | overwrite                | Supervisor, next_candidate       |
+| `last_error`          | str 또는 None / None                                        | overwrite                | Supervisor                       |
+| `next_route`          | str 또는 None / None                                        | overwrite                | Supervisor                       |
+| `route_reason`        | str / 빈 문자열                                             | overwrite                | Supervisor                       |
+| `active_refresh_area` | tech/market/competitor 또는 None / None                     | overwrite                | Supervisor                       |
 
 `rag_retry` 초기값은 `{"market_size": 0, "market_growth": 0, "demand_risk": 0}`이다. `current_startup=None`, `total_score=None`, `decision=None`은 미평가 상태이며, Report가 이를 0점·보류 평가 완료로 바꾸지 않는다.
 
@@ -342,7 +353,25 @@ AI 반도체 칩과 설계·제조 개선 솔루션은 기술 효과 검증과 �
 - `evaluated`의 각 레코드는 기업 프로필(국가·유형·평가 제품 포함)·선정 불확실성·분석 3종·근거 전체·지표 점수·총점·결측·판정·사유의 **스냅샷**을 보존한다. 다음 후보 초기화 후에도 이전 기업의 REFERENCE를 생성할 수 있다.
 - add reducer가 적용된 `evaluated`에는 새 레코드 한 개만 `[record]`로 반환한다. 기존 전체 목록을 다시 반환하여 중복 누적하지 않는다.
 
-`next_candidate`는 `current_idx`를 1 증가시키고, `current_startup`부터 `decision`까지의 후보별 필드·카운터를 위 기본값으로 초기화한다. 실행 공통 필드, `candidates`, `discovery_done`, `evaluated`, `final_report`는 보존한다. 후보의 선정 상태·근거는 `candidates` 안에 남긴다.
+`next_candidate`는 `current_idx`를 1 증가시키고, 후보별 작업 결과와 그 후보의 충분성 투표·결측 재배정 표시를 기본값으로 초기화한다. `trace_id`, `step_count`, `candidates`, `discovery_done`, `evaluated`, `final_report`는 보존한다. 후보의 선정 상태·근거는 `candidates` 안에 남긴다.
+
+### D-1a. 제어 정보와 작업 결과
+
+가이드의 예시 State(`selected_tech`, `perspectives`, `synthesis`, `PerspectiveResult`)는 관점 합성용 참고다. 이 과제의 State는 투자 평가에 맞게 나눈다.
+
+작업 결과는 기업과 평가 본문이다. `candidates`, `current_startup`, 기술·시장·경쟁 분석, Evidence, `scores`, `decision`, `evaluated`, `final_report`가 여기 속한다.
+
+제어 정보는 Supervisor가 다음 워커를 고르는 데 필요한 최소 상태다. `trace_id`, `step_count`, `node_status`, `last_error`, `next_route`, `route_reason`, 재시도 카운터, `current_idx`, `sufficiency_votes`, `active_refresh_area`, `quality_retry`가 여기 속한다.
+
+| 설계 질문 | 이 그래프에서의 답 |
+| --- | --- |
+| 제어와 작업 결과 | 라우팅 최소 상태는 위 제어 필드다. 분석 본문과 보고서 문장은 작업 결과로 둔다 |
+| 관측 로그의 위치 | 배정 이력은 LangSmith에 남긴다. State에는 최신 배정(`next_route`)과 그 사유(`route_reason`), 마지막 오류, 워커의 충분성 투표만 덮어쓴다 |
+| 지속 비용 | 검색 원문과 RAG 청크는 State에 누적하지 않는다. 후보가 바뀌면 그 후보의 Evidence와 분석을 비우고, 보고서용 스냅샷만 `evaluated`에 후보당 1건 남긴다 |
+| 외부 로그와 연결 | `initialize_state`가 `trace_id`를 만든다. LangSmith 추적과 같은 실행을 이 값으로 구분한다 |
+| 중단 후 재개 | `node_status`, `last_error`, `step_count`, `current_idx`, `selection_retry`, `rag_retry`, `evidence_retry`, `quality_retry`가 있으면 어느 후보의 어느 단계인지 알 수 있다 |
+| 동시 기록 | Supervisor는 한 번에 워커 하나만 부른다. 분석 필드는 덮어쓴다. 후보를 넘겨도 남아야 하는 `evaluated`만 `operator.add`로 스냅샷 1건을 잇는다 |
+| 종료 | `step_count` 상한, 선정·RAG·결측 재시도 상한, 품질 재작성 1회로 루프를 끝낸다 |
 
 ### D-2. Evidence 및 점수 레코드
 
@@ -365,57 +394,83 @@ AI 반도체 칩과 설계·제조 개선 솔루션은 기술 효과 검증과 �
 
 ### D-3. Node와 Branch·Loop
 
-| Node               | 역할 및 분기                                                                                                                                                                |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `initialize_state` | D-1 기본값을 모두 생성하고 실행 인자 검증(`max_candidates`는 1~10)                                                                                                          |
-| `startup_agent`    | `discovery_done=False`일 때만 후보 수집. 목록이 비면 Report로 이동. 현재 후보 선정 PASS → Technology, FAIL → next_candidate, REVIEW → 1회 재검색 후 PASS/FAIL/REVIEW 재판정 |
-| `technology_agent` | 기술 분석 후 Market으로 이동                                                                                                                                                |
-| `market_agent`     | B-5의 topic별 RAG 재검색·웹 보완 후 Competitor로 이동                                                                                                                       |
-| `competitor_agent` | 경쟁 분석 후 Evaluator로 이동                                                                                                                                               |
-| `evaluator_agent`  | 채점·결측 계산. 분석 영역에 결측이 있고 `evidence_retry==0`이면 evidence_refresh, 그 외 Decision으로 이동                                                                   |
-| `evidence_refresh` | 기술·시장·경쟁의 결측 지표만 담당 Agent 도구로 보완하고 해당 Evidence에 병합. 카운터를 먼저 1 증가시킨 후 Evaluator로 복귀                                                  |
-| `decision_agent`   | C-3 판정·스냅샷 기록. 투자 → Report, 보류 → next_candidate                                                                                                                  |
-| `next_candidate`   | 다음 후보로 이동·후보별 초기화. 목록 내 후보가 남고 평가 상한 미도달 → Startup, 그 외 Report                                                                                |
-| `report_agent`     | 보존된 결과에 따라 보고서 생성 후 END                                                                                                                                       |
+워커는 서로 호출하지 않는다. 모든 워커는 Supervisor로 돌아오고, Supervisor가 `add_conditional_edges`로 다음 하나를 고른다.
 
-Evidence 보완은 전체 분석 체인을 다시 실행하지 않는 코드 노드이다. 기술 → 시장 → 경쟁 순으로 필요한 영역만 보완하며 기존 기업 유형·타깃 제품·시장·비교 범위는 유지한다. 새로운 자료가 기존 범위를 뒤집거나 충돌하면 임의로 혼합하지 않고 해당 지표를 결측으로 남긴다. 결측 보완의 담당은 `development_stage`·`technical_originality`는 Technology, `market_tam`·`market_cagr`·`demand_clarity`는 Market, `competitive_difference`·`entry_barrier`는 Competitor이다. `risk_mitigation`은 기술·시장 근거를 함께 보완한다. 팀·실적·투자 지표는 Startup의 최초 프로필 수집에서 확보하며 Evidence 보완 루프 대상에서는 제외한다.
+| Node               | 역할                                                                                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `initialize_state` | D-1 기본값을 모두 생성하고 실행 인자 검증(`max_candidates`는 1~10). `trace_id`를 만든다                                                                      |
+| `supervisor`       | 제어 필드를 보고 다음 노드를 고른다. 배정할 때마다 `step_count`를 1 올리고 `next_route`와 `route_reason`을 덮어쓴다                                          |
+| `startup_agent`    | 후보 수집과 A-3 선정. 결과는 Supervisor가 읽는다                                                                                                             |
+| `technology_agent` | 기술 분석과 기술 영역 충분성 투표                                                                                                                            |
+| `market_agent`     | topic별 RAG 재검색·웹 보완과 시장 영역 충분성 투표. 재검색 횟수 증가는 이 노드 안에서만 한다                                                                |
+| `competitor_agent` | 경쟁 분석과 경쟁 영역 충분성 투표                                                                                                                            |
+| `evaluator_agent`  | 13개 지표 채점과 결측 계산                                                                                                                                   |
+| `decision_agent`   | C-3 코드 규칙으로 투자/보류를 판정하고 스냅샷 1건을 `evaluated`에 추가한다. 투표로 이 판정을 바꾸지 않는다                                                   |
+| `next_candidate`   | 다음 후보로 넘기고 후보별 작업 결과를 초기화한다                                                                                                             |
+| `report_agent`     | E장 보고서를 작성한다. 품질 피드백이 있으면 판정과 점수는 유지한 채 해당 문장만 고친다                                                                       |
+| `quality_agent`    | 보고서의 Groundedness, 중립성, 편향 통제를 평가한다                                                                                                          |
 
-| Loop          | 반복 조건                     | 상한·카운터 갱신                                                   |
-| ------------- | ----------------------------- | ------------------------------------------------------------------ |
-| 선정 보완     | FAIL 없이 REVIEW 존재         | 후보당 추가 웹검색 1회, 검색 직전 `selection_retry=1`              |
-| RAG 보완      | topic의 근거 충분성 불충족    | 후보·topic별 최대 2회, 검색 직전 `rag_retry[topic]+=1`             |
-| Evidence 보완 | 기술·시장·경쟁 영역 결측 존재 | 후보당 보완 단계 1회, 실행 직전 `evidence_retry=1`                 |
-| 후보 순회     | 선정 FAIL 또는 투자 보류      | 수집 최대 10개, 평가 완료 최대 `max_candidates`, 최초 투자 시 종료 |
+Supervisor가 처음 일치하는 조건 하나만 고른다.
 
-모든 분기는 코드가 결정한다. 추가 검색에서도 해결되지 않은 결측은 중립 점수와 결측 표시를 유지하고 최종 판정으로 넘어간다. API 오류·빈 검색 결과는 근거 없음으로 기록하며 반복 상한을 우회하지 않는다.
+1. `step_count`가 상한이면 보고서가 없을 때 Report, 품질 평가 전이면 Quality, 그 외에는 종료한다.
+2. 후보 수집 전이거나 현재 후보의 선정이 없으면 Startup.
+3. 후보가 없거나 인덱스가 목록을 벗어나면 보고서 경로.
+4. REVIEW이고 아직 재검색 결과로 기업이 확정되지 않았으면 Startup.
+5. FAIL이면 `next_candidate`.
+6. 기술 요약이 없으면 Technology.
+7. 시장 분석이 없거나, 시장 투표가 부족이고 topic 재검색 예산이 남았으면 Market.
+8. 경쟁 분석이 없으면 Competitor.
+9. 점수가 있고 판정 전이며 재조사할 결측 영역이 있고 `evidence_retry`가 상한 미만이면, 기술 → 시장 → 경쟁 순으로 그 영역 워커 하나만 배정한다.
+10. 결측 재배정 뒤 재채점이 필요하면 Evaluator.
+11. 점수가 없으면 Evaluator.
+12. 판정이 없으면 Decision.
+13. 보류이고 다음 후보와 평가 상한이 남았으면 `next_candidate`.
+14. 보고서가 없으면 Report.
+15. 품질 결과가 없으면 Quality. 실패했고 재작성이 0회이면 Report를 한 번 더 호출한 뒤 Quality를 다시 실행한다. 통과했거나 재작성 상한이면 종료한다.
+
+결측 보완은 워커를 노드 안에서 직접 부르지 않는다. Supervisor가 필요한 영역만 다시 배정한다. 담당은 `development_stage`·`technical_originality`는 Technology, `market_tam`·`market_cagr`·`demand_clarity`는 Market, `competitive_difference`·`entry_barrier`는 Competitor이다. `risk_mitigation`은 기술·시장을 함께 본다. 팀·실적·투자 지표는 Startup의 최초 프로필 수집에서 확보하며 이 재배정 대상이 아니다. 한 후보의 재배정 라운드는 1회이고, 그 라운드 안에서는 한 번에 한 영역만 호출한 뒤 재채점한다.
+
+Technology, Market, Competitor는 자기 영역이 지표를 채울 수 있으면 `sufficient`, 재조사가 필요하면 `insufficient`와 사유를 `sufficiency_votes`에 남긴다. 이 투표는 재배정에만 쓰고 `total_score`와 `decision`은 바꾸지 않는다.
+
+| Loop          | 반복 조건                          | 상한·카운터 갱신                                      |
+| ------------- | ---------------------------------- | ----------------------------------------------------- |
+| 선정 보완     | FAIL 없이 REVIEW                   | 후보당 추가 웹검색 1회, `selection_retry=1`           |
+| RAG 보완      | 시장 투표 부족이고 topic 예산 잔여 | topic당 최대 2회. 횟수 증가는 Market 노드 안        |
+| 결측 재배정   | 기술·시장·경쟁 결측                | 후보당 1라운드. 라운드 안에서 영역당 1회              |
+| 품질 재작성   | 품질 3항목 중 실패                 | 1회                                                   |
+| 후보 순회     | 선정 FAIL 또는 투자 보류           | 수집 최대 10개, 평가 완료 최대 `max_candidates`       |
+| 배정 상한     | Supervisor 배정 횟수               | `step_count` 상한                                     |
+
+모든 분기는 코드가 결정한다. 추가 검색에서도 해결되지 않은 결측은 중립 점수와 결측 표시를 유지하고 최종 판정으로 넘어간다. API 오류·빈 검색 결과는 근거 없음으로 기록하고 `last_error`에 남기며 반복 상한을 우회하지 않는다.
 
 ### D-4. Graph
 
 ```mermaid
 flowchart TD
     START([START]) --> INIT[State 초기화]
-    INIT --> SA[Startup Agent]
-    SA --> SG{선정 결과}
-    SG -->|후보 없음| RA[Report Agent]
-    SG -->|PASS 또는 재검색 후 REVIEW| TA[Technology Agent]
-    SG -->|REVIEW이고 retry 0| SA
-    SG -->|FAIL| NC[다음 후보]
-    TA --> MA[Market Agent]
-    MA --> CA[Competitor Agent]
-    CA --> EV[Evaluator Agent]
-    EV --> EG{분석 영역 결측과 retry 0}
-    EG -->|예| ER[결측 영역 근거 보완]
-    ER --> EV
-    EG -->|아니오| DA[Decision Agent]
-    DA -->|투자| RA
-    DA -->|보류| NC
-    NC --> CG{남은 후보와 평가 상한}
-    CG -->|계속 가능| SA
-    CG -->|소진 또는 상한 도달| RA
-    RA --> END([END])
+    INIT --> SV[Supervisor]
+    SV -->|선정| SA[Startup]
+    SV -->|기술| TA[Technology]
+    SV -->|시장| MA[Market]
+    SV -->|경쟁| CA[Competitor]
+    SV -->|채점| EV[Evaluator]
+    SV -->|판정| DA[Decision]
+    SV -->|다음 후보| NC[next_candidate]
+    SV -->|보고서| RA[Report]
+    SV -->|품질| QA[Quality]
+    SA --> SV
+    TA --> SV
+    MA --> SV
+    CA --> SV
+    EV --> SV
+    DA --> SV
+    NC --> SV
+    RA --> SV
+    QA --> SV
+    SV -->|통과 또는 상한| END([END])
 ```
 
-Market의 topic별 검색·관련성 평가·질의 재작성은 Market 내부 루프로 수행한다. 순차 실행은 Market·Competitor가 Technology의 기업 유형·타깃 제품·고객 문제를 읽기 때문이며, 후보별 State 초기화와 결과 스냅샷으로 기업 간 자료 혼입을 방지한다.
+Market의 topic 재검색 횟수는 Market 안에서만 증가한다. Supervisor는 예산이 남아 있을 때만 Market으로 다시 보낸다. 후보별 State 초기화와 `evaluated` 스냅샷으로 기업 간 자료를 섞지 않는다.
 
 ## E. 투자 보고서 목차 및 작성 규칙
 
@@ -427,7 +482,7 @@ Market의 topic별 검색·관련성 평가·질의 재작성은 Market 내부 �
 | 3. 시장성 및 경쟁 환경      | 시장 규모·성장률의 지역·범위·기간, 수요, 같은 유형의 국내외 경쟁사 비교            |          1페이지 |
 | 4. 투자 판단 및 주요 리스크 | Scorecard, 판단 사유, 시장·기술·규제·경쟁 위험, 결측·선정 불확실성, 보류 후보 요약 |          1페이지 |
 | REFERENCE                   | 실제 인용한 자료만 기재                                                            |          1페이지 |
-| **합계**                    | SUMMARY와 REFERENCE 포함                                                           | **최대 5페이지** |
+| **합계**                    | SUMMARY와 REFERENCE 포함                                                           | **최대 10페이지** |
 
 **보고서 유형**
 
@@ -445,13 +500,25 @@ REFERENCE는 `evaluated`에 보존된 자료 중 **실제 보고서에 인용한
 
 PDF 변환 후 실제 페이지 수, 한글 폰트, 표 잘림, 출처 링크를 확인한다. 파일명은 `RAG-Output_울산캠퍼스-4반_박연제+이정인+정예지.pdf`로 한다.
 
+### E-1. 보고서 품질 평가
+
+보고서 생성 뒤에 `quality_agent`를 둔다. 아래 세 항목을 모두 통과해야 통과다. 하나라도 실패하고 `quality_retry == 0`이면 Supervisor가 실패 사유를 `quality_feedback`에 담아 보고서를 한 번 다시 쓰게 한 뒤 품질 평가를 다시 한다. 재작성 후에도 실패하면 실패 사유를 보고서에 남기고 종료한다.
+
+| 항목 | 판정 | 통과 기준 |
+| --- | --- | --- |
+| Groundedness | 코드 | 수치·판정 문장이 `evaluated`의 Evidence 또는 채점 결과와 연결된다 |
+| 중립성 | LLM, temperature 0 | 투자/보류 문장은 유지한다. Evidence에 없는 기술 우열 단정이 있으면 실패 |
+| 편향 통제 | 코드 | 인용이 3개 이상일 때 같은 문서 또는 같은 URL 호스트가 인용의 70%를 넘으면 실패 |
+
+관점 커버리지는 평가 항목에 넣지 않는다. 방식은 Hybrid다. 출처 연결과 출처 편중은 코드가 보고, 문장의 우열 단정만 LLM이 본다.
+
 ## F. Tech Stack 및 구현 범위
 
 | 구분                              | 사용 기술                                 |
 | --------------------------------- | ----------------------------------------- |
 | Language·패키지 관리              | Python 3.11 계열, uv                      |
 | Framework                         | LangGraph, LangChain                      |
-| 분석·보고서·정성 채점·관련성 평가 | gpt-4.1-mini                              |
+| 분석·보고서·정성 채점·관련성 평가·중립성 판정 | gpt-4.1-mini                              |
 | 검색 평가 질문 생성               | gpt-4.1-nano                              |
 | 웹검색                            | Tavily                                    |
 | Embedding                         | Qwen/Qwen3-Embedding-0.6B, 로컬 실행      |
@@ -460,4 +527,4 @@ PDF 변환 후 실제 페이지 수, 한글 폰트, 표 잘림, 출처 링크를
 | Retrieval 평가                    | Hit Rate@1/3/5, MRR, 인덱싱 시간          |
 | 추적                              | LangSmith, 후보·Evidence·채점·재시도 로그 |
 
-이번 범위는 후보 탐색, 공개 근거 수집, Market RAG, 점수화·판정, 보고서 생성까지이다. 상세 API·모델·패키지 버전과 실행 설정은 구현 저장소에서 고정하고 README에 기록한다.
+이번 범위는 후보 탐색, 공개 근거 수집, Market RAG, 점수화·판정, Supervisor 배정, 보고서 생성, 품질 평가까지이다. 상세 API·모델·패키지 버전과 실행 설정은 구현 저장소에서 고정하고 README에 기록한다.

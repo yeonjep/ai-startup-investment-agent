@@ -290,8 +290,11 @@ def startup_agent(state: InvestmentState, config: RunnableConfig | None = None) 
 
     # 후보 수집은 discovery_done=False일 때만 (D-3)
     if not discovery_done:
-        configured_candidates = (config or {}).get("configurable", {}).get("demo_candidates")
-        candidates = list(configured_candidates) if configured_candidates else discover_candidates(domain=domain)
+        configured_candidates = (config or {}).get("configurable", {}).get("demo_candidates", None)
+        if configured_candidates is not None:
+            candidates = list(configured_candidates)
+        else:
+            candidates = discover_candidates(domain=domain)
         discovery_done = True
 
     current_idx = state.get("current_idx", 0)
@@ -331,6 +334,8 @@ def startup_agent(state: InvestmentState, config: RunnableConfig | None = None) 
     scenario = (config or {}).get("configurable", {}).get("scenario")
     if scenario == "zero_pass":
         final_status = "FAIL"
+    elif scenario == "uncertain":
+        final_status = "REVIEW"
 
     if final_status == "REVIEW" and not is_retry:
         candidate["selection_status"] = "REVIEW"

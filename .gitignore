@@ -26,3 +26,6 @@ outputs/*.zip
 data/vectorstore/
 vectorstore/
 faiss_index/
+
+# Local work instructions (not for submission)
+docs/supervisor-work-instructions.md
