@@ -219,29 +219,36 @@ uv run python app.py
 
 ## Contributors
 
-- **박연제 : RAG 인프라 및 그래프 통합**
-  - RAG 문서 준비·청킹·메타데이터 스키마, Qwen3 로컬 임베딩
-  - FAISS + BM25 Hybrid 검색(가중 RRF), 인덱스 재사용, 관련성 평가 도구
-  - 임베딩 3종 비교 평가(Hit Rate@1/3/5, MRR, 인덱싱 시간)
-  - State·Evidence 스키마 설계, LangGraph 조립(후보 순회·후보별 초기화·조건부 분기), LangSmith 추적
-  - Report Agent(투자/전원 보류/대상 없음 3종 보고서, REFERENCE 자동 생성), 한글 PDF 변환
-  - 후보 1개 end-to-end 통합 테스트, README 작성
+정• 박연제 : RAG 인프라·그래프 통합·보고서 생성
+   ◦ RAG 문서 준비·청킹·메타데이터 스키마, Qwen3 로컬 임베딩.
+   ◦ FAISS + BM25 Hybrid 검색, 인덱스 재사용, 임베딩 3종 비교 평가.
+   ◦ 분석 Worker 병렬 실행과 Evaluator → Supervisor 근거 Gate 연결.
+   ◦ 병렬 결과 병합 Reducer와 재작업 State 스키마 통합.
+   ◦ 미완료 평가의 보고서 생성 차단, 투자·전원 보류·대상 없음 유형별 작성 조건 정리.
+   ◦ 검증된 시장 지표만 보고서 입력에 반영, REFERENCE 생성·PDF 편집·보고서 계약 테스트.
+   ◦ 설계서·README·그래프 이미지 갱신 및 통합 실행 점검.
 
-- **이정인 : 후보 탐색 및 웹 기반 분석**
-  - 웹검색·출처 요약 도구
-  - Startup Agent: 국내·해외 후보 탐색·정규화, PASS/FAIL/REVIEW 선정 판정, 기업 유형 분류(CHIP / DESIGN_AI / PROCESS_AI), 팀·투자·고객 프로필 근거 수집
-  - Technology Agent: 기업 유형별 개발 단계·기술 지표·검증 조건 분석
-  - Competitor Agent: 동일 유형 국내외 경쟁사 비교, 진입장벽 3범주 분석
-  - 결측 지표 보완용 기술·경쟁 재조사 함수
+• 이정인 : 후보 탐색·기술 분석·경쟁사 분석
+   ◦ 웹검색·출처 요약 도구, 국내외 후보 탐색·정규화.
+   ◦ Startup Agent의 PASS/FAIL/REVIEW 선정, 기업 유형 분류, 프로필 근거 수집.
+   ◦ Technology·Competitor Agent의 기술 검증 조건·차별성·진입장벽 분석.
+   ◦ 기술·경쟁 분석 결과의 충분성 투표와 근거 반환 형식 정리.
+   ◦ Supervisor가 지정한 재조사 영역에 맞춰 추가 검색 수행.
+   ◦ 재조사 시 기존 근거 보존·병합과 분석 Worker 입출력 점검.
 
-- **정예지 : 시장 분석, 채점 및 투자 판정**
-  - Market Agent: topic별 Corrective RAG(시장 규모·성장률·수요/리스크), 근거 충분성 판정, topic별 재검색 2회 상한, 웹 보완
-  - Evaluator Agent: 13개 지표 채점(정량 구간 점수 변환은 코드, 정성 루브릭 채점은 LLM), 결측·부재 구분 처리, 통화 환산, 가중 총점 계산
-  - 결측 영역은 Supervisor가 해당 워커만 다시 배정한 뒤 재채점한다
-  - Decision Agent: 투자/보류 규칙 판정(총점·결측 수·선정 불확실성), 후보별 평가 스냅샷 저장
-  - 채점·판정 규칙 단위 테스트
+• 정예지 : 시장 근거 검증·채점·투자 판정
+   ◦ Market Agent의 주제별 Corrective RAG, 최대 2회 재검색과 웹 보완.
+   ◦ Evaluator Agent의 13개 지표 채점, 단위·통화 환산, 가중 총점 계산.
+   ◦ Decision Agent의 투자/보류 규칙과 후보별 평가 스냅샷 저장.
+   ◦ 투자유치 금액과 시장 규모 구분, 타깃 시장과 다른 수치의 검증 실패 처리.
+   ◦ 검증 실패한 시장 수치를 결측으로 유지하도록 채점 로직 보완.
+   ◦ 결측 목록을 Supervisor에 전달하고, 근거 보완 후 재채점하는 흐름 연동.
+   ◦ 시장 수치 검증·결측 처리·채점·판정 경계값 회귀 테스트.
 
-- **박태준 : Supervisor 품질 평가 및 실행 추적**
-  - 보고서 Groundedness·중립성·편향 통제 평가 기준 검토
-  - Supervisor 동적 라우팅과 결측 재배정 흐름 검증
-  - LangSmith Tracing 캡처 및 제출 결과 점검
+• 박태준 : Supervisor 근거 Gate·품질 평가·실행 추적
+   ◦ 모든 Evaluator 결과에 대한 필수 근거 Gate 구현.
+   ◦ 충분성 투표·결측·재시도 예산을 바탕으로 재분석 대상과 Decision 진행 여부 결정.
+   ◦ 재시도 소진 시 잔여 결측을 명시적으로 수용하고 판정으로 진행하도록 종료 조건 정리.
+   ◦ 품질 미달 시 기존 점수·판정을 유지하며 보고서 수정 요청 전달.
+   ◦ Groundedness의 인용·수치 대조, 잘못된 인용 태그 탐지, 중립성·편향 평가 점검.
+   ◦ Supervisor 분기·재작업·종료 테스트, LangSmith Tracing 캡처와 제출 결과 점검.
