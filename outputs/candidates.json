@@ -9,8 +9,8 @@
     "founded_year": "2018",
     "ceo": "김녹원",
     "recent_round": "Series D",
-    "total_funding": "약 3조 1350억 원 기업가치, 투자금 420억 원 (시리즈 D)",
-    "description": "AI용 NPU를 개발하는 국내 AI 반도체 팹리스 스타트업으로, 온디바이스 AI 반도체 분야에서 활발히 활동중이며, 저전력 AI 반도체 개발에 주력하고 있음.",
+    "total_funding": "약 3조 1350억원",
+    "description": "AI용 NPU를 개발하는 국내 AI 반도체 팹리스 스타트업으로, 온디바이스 AI 반도체 시장에서 주목받고 있으며, 3700억원 규모 시리즈 D 투자 유치 및 약 3조 1350억원 기업 가치를 인정받음.",
     "latest_source_date": "2026-08-23",
     "discovery_done": true,
     "company_type": "CHIP",
@@ -18,121 +18,188 @@
       {
         "criterion_name": "domain_relevance",
         "status": "PASS",
-        "reason": "주력 제품이 AI 반도체(NPU 기반 칩 및 솔루션)로 명확하여 domain relevance를 충족함.",
-        "source_url": "https://deepx.ai/category/press, https://ko.wikipedia.org/wiki/%EB%94%A5%EC%97%91%EC%8A%A4"
+        "reason": "딥엑스는 인공지능을 위한 인공신경망 연산처리 장치(NPU, AI반도체)를 개발하는 기업으로, 주력 제품이 AI 반도체임이 명확함.",
+        "source_url": "https://www.nextround.kr/startup/detail/3019"
       },
       {
         "criterion_name": "ai_core",
         "status": "PASS",
-        "reason": "AI 반도체가 제품의 핵심 가치로, 엣지 AI 및 온디바이스 AI 적용을 위한 NPU 칩 개발에 집중함.",
-        "source_url": "https://deepx.ai/category/press, https://www.theguru.co.kr/news/article.html?no=105296"
+        "reason": "AI가 딥엑스 제품의 핵심 가치로, AI 신경망 처리 장치를 직접 개발하고 있으며, 특허 보유 및 원천기술 확보가 되어 있음.",
+        "source_url": "https://www.nextround.kr/startup/detail/3019"
       },
       {
         "criterion_name": "unlisted",
         "status": "PASS",
-        "reason": "상장하지 않은 비상장기업이며 IPO 준비 중이나 아직 상장 전 상태임.",
-        "source_url": "https://ko.wikipedia.org/wiki/%EB%94%A5%EC%97%91%EC%8A%A4, https://thevc.kr/deepx"
+        "reason": "공개된 정보에 따르면 딥엑스는 아직 비상장 상태임.",
+        "source_url": "https://thevc.kr/deepx"
       },
       {
         "criterion_name": "funding_stage",
         "status": "FAIL",
-        "reason": "최근 투자 라운드가 Series D이며, 기준에 따라 Series D 이상은 FAIL임.",
+        "reason": "딥엑스는 최근 시리즈 D 라운드의 투자 유치를 마쳤으며, 시리즈 D 이상은 FAIL 기준에 해당함.",
         "source_url": "https://www.theguru.co.kr/news/article.html?no=105296"
       },
       {
         "criterion_name": "no_exit",
         "status": "PASS",
-        "reason": "인수, 합병, 상장 이력 없이 현재 독립적으로 운영 중임.",
-        "source_url": "https://ko.wikipedia.org/wiki/%EB%94%A5%EC%97%91%EC%8A%A4"
+        "reason": "딥엑스는 인수, 합병, 상장 이력이 없으며 현재 IPO 준비 중임으로 Exit 미완료 상태임.",
+        "source_url": "https://www.theguru.co.kr/news/article.html?no=105296"
       },
       {
         "criterion_name": "info_sufficiency",
         "status": "PASS",
-        "reason": "홈페이지와 기사 2건 이상 존재하여 정보가 충분함.",
-        "source_url": "https://deepx.ai, https://www.theguru.co.kr/news/article.html?no=105296, https://ko.wikipedia.org/wiki/%EB%94%A5%EC%97%91%EC%8A%A4"
+        "reason": "홈페이지 및 다수의 뉴스 기사(5건 이상)에서 충분한 정보가 제공되고 있음.",
+        "source_url": "https://www.nextround.kr/startup/detail/3019"
       }
     ],
-    "evaluation_product": "AI용 NPU를 개발하는 국내 AI 반도체 팹리스 스타트업으로, 온디바이스 AI 반도체 분야에서 활발히 활동중이며, 저전력 AI 반도체 개발에 주력하고 있음.",
+    "evaluation_product": "AI용 NPU를 개발하는 국내 AI 반도체 팹리스 스타트업으로, 온디바이스 AI 반도체 시장에서 주목받고 있으며, 3700억원 규모 시리즈 D 투자 유치 및 약 3조 1350억원 기업 가치를 인정받음.",
     "selection_status": "FAIL",
     "uncertain": false,
     "failed_criterion": "funding_stage",
-    "exclusion_reason": "최근 투자 라운드가 Series D이며, 기준에 따라 Series D 이상은 FAIL임.",
+    "exclusion_reason": "딥엑스는 최근 시리즈 D 라운드의 투자 유치를 마쳤으며, 시리즈 D 이상은 FAIL 기준에 해당함.",
     "sources": [
       {
-        "title": "국내 AI 반도체 스타트업 딥엑스, 기업가치 3조로 급등…AI 투자 열기 지속",
-        "url": "https://www.theguru.co.kr/news/article.html?no=105296",
-        "date": null
+        "title": "StartUp_딥엑스",
+        "url": "https://www.nextround.kr/startup/detail/3019",
+        "date": "2018-02-23"
       }
     ]
   },
   {
-    "name": "퓨리오사AI",
+    "name": "딥파인",
     "aliases": [
-      "Furiosa AI"
+      "DeepFine"
+    ],
+    "country": "한국",
+    "domain_url": "https://www.unicornfactory.co.kr/article/2026082313301325664",
+    "founded_year": "미상",
+    "ceo": "미상",
+    "recent_round": "Series B",
+    "total_funding": "약 180억원",
+    "description": "공간지능 기반 산업 AI 플랫폼 스타트업으로, 시리즈 B 투자 유치 및 산업 현장에 AI 솔루션 제공 중.",
+    "latest_source_date": "2026-08-23",
+    "discovery_done": true,
+    "company_type": "PROCESS_AI",
+    "criteria_results": [
+      {
+        "criterion_name": "domain_relevance",
+        "status": "FAIL",
+        "reason": "딥파인의 주력 제품은 산업 현장의 업무를 디지털화하고 AI로 지원하는 산업용 에이전트 플랫폼으로, AI 반도체(NPU, AI가속기, AI설계/공정솔루션)와 무관함.",
+        "source_url": "https://www.unicornfactory.co.kr/article/2026082313301325664"
+      },
+      {
+        "criterion_name": "ai_core",
+        "status": "PASS",
+        "reason": "AI 기술이 제품의 핵심가치로, 작업 지시, 검증, 기록, 분석 등 현장 업무 전 과정을 AI로 지원함.",
+        "source_url": "https://www.thelec.kr/news/articleView.html?idxno=61045"
+      },
+      {
+        "criterion_name": "unlisted",
+        "status": "PASS",
+        "reason": "상장 관련 정보가 없으며, 비상장 상태로 판단됨.",
+        "source_url": "https://www.unicornfactory.co.kr/article/2026082313301325664"
+      },
+      {
+        "criterion_name": "funding_stage",
+        "status": "PASS",
+        "reason": "최근 투자 라운드가 Series B로 Seed~Series C 단계에 해당함.",
+        "source_url": "https://wowtale.net/2026/08/18/263081"
+      },
+      {
+        "criterion_name": "no_exit",
+        "status": "PASS",
+        "reason": "인수, 합병, 상장 이력 없이 독립적인 비상장 스타트업임.",
+        "source_url": "https://www.unicornfactory.co.kr/article/2026082313301325664"
+      },
+      {
+        "criterion_name": "info_sufficiency",
+        "status": "PASS",
+        "reason": "홈페이지 정보 및 2건 이상의 기사 (유니콘팩토리, 와우테일, 디일렉, 한국M&A경제신문, FA저널 등) 보유.",
+        "source_url": "https://www.kmnanews.com/news/articleView.html?idxno=10744"
+      }
+    ],
+    "evaluation_product": "공간지능 기반 산업 AI 플랫폼 스타트업으로, 시리즈 B 투자 유치 및 산업 현장에 AI 솔루션 제공 중.",
+    "selection_status": "FAIL",
+    "uncertain": false,
+    "failed_criterion": "domain_relevance",
+    "exclusion_reason": "딥파인의 주력 제품은 산업 현장의 업무를 디지털화하고 AI로 지원하는 산업용 에이전트 플랫폼으로, AI 반도체(NPU, AI가속기, AI설계/공정솔루션)와 무관함.",
+    "sources": [
+      {
+        "title": "8월 셋째주, AI 반도체에 520억 '뭉칫돈'…딥테크 투자 열기 지속 - 유니콘팩토리",
+        "url": "https://www.unicornfactory.co.kr/article/2026082313301325664",
+        "date": "2026-08-23"
+      }
+    ]
+  },
+  {
+    "name": "퓨리오사에이아이",
+    "aliases": [
+      "Furiosa AI",
+      "퓨리오사AI"
     ],
     "country": "한국",
     "domain_url": "https://thevc.kr/furiosaai",
     "founded_year": "2017",
     "ceo": "백준호",
     "recent_round": "Pre-IPO",
-    "total_funding": "비공개, 1개월 전 투자 유치",
-    "description": "AI 반도체 설계 및 개발 기업으로, 저전력 NPU 시스템 반도체 '레니게이드' 등을 개발하고 있으며, 국내외 대기업과 협력 진행중.",
-    "latest_source_date": "2026-08-23",
+    "total_funding": "비공개, 최근 글로벌 대기업 메타로부터 1.2조원 인수 제안 거절",
+    "description": "AI 반도체 설계 및 개발 스타트업으로, 저전력 AI 반도체 NPU 개발에 특화되었으며, 국산 반도체 제조사들과 시너지를 기대받는 기업.",
+    "latest_source_date": "2026-08-20",
     "discovery_done": true,
     "company_type": "CHIP",
     "criteria_results": [
       {
         "criterion_name": "domain_relevance",
         "status": "PASS",
-        "reason": "퓨리오사AI는 AI 반도체(NPU) 설계 전문 팹리스 기업으로 데이터센터 및 자율주행용 AI 가속기 칩을 개발하는 주력 제품을 가지고 있음.",
-        "source_url": "https://www.cio.com/article/3823460/%EB%A9%94%ED%83%80-%ED%95%9C%EA%B5%AD-ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%ACai-%EC%9D%B8%EC%88%98-%EB%85%BC%EC%9D%98.html"
+        "reason": "퓨리오사AI는 AI 반도체(NPU, AI가속기) 설계 및 개발 기업으로서 주력 제품은 AI 반도체이다.",
+        "source_url": "https://thevc.kr/furiosaai, https://www.epnc.co.kr/news/articleView.html?idxno=402450"
       },
       {
         "criterion_name": "ai_core",
         "status": "PASS",
-        "reason": "AI 칩(NPU)이 제품의 핵심 가치이며, 독자적 반도체 아키텍처 및 성능으로 AI 컴퓨팅 인프라의 미래를 바꾸려는 기술기업임이 명확함.",
-        "source_url": "https://www.epnc.co.kr/news/articleView.html?idxno=402450"
+        "reason": "AI 반도체가 제품의 핵심 가치이며, 엔비디아 대비 높은 성능과 효율성을 갖춘 AI칩을 자체 개발하고 있다.",
+        "source_url": "https://www.epnc.co.kr/news/articleView.html?idxno=402450, https://m.blog.naver.com/simula/224232399422"
       },
       {
         "criterion_name": "unlisted",
         "status": "PASS",
-        "reason": "현재 비상장 상태이며 IPO 혹은 상장 대기 단계에 대한 공식 발표는 없으나, Pre-IPO 투자 시점임을 고려해 비상장으로 판정함.",
-        "source_url": "https://thevc.kr/furiosaai"
+        "reason": "2026년 현재 비상장 상태이며, 상장 심사나 IPO 공식 발표가 확인되지 않는다.",
+        "source_url": "https://thevc.kr/furiosaai, https://www.nextunicorn.kr/company/c2d4f0fcc3d1ebc7"
       },
       {
         "criterion_name": "funding_stage",
         "status": "FAIL",
-        "reason": "최근 투자 단계가 Pre-IPO로 명확히 확인되어 Series D 이전 투자 단계가 아니므로 FAIL임.",
-        "source_url": "https://thevc.kr/furiosaai"
+        "reason": "최근 투자 라운드가 Pre-IPO 단계로 Series D 이상에 해당한다.",
+        "source_url": "https://thevc.kr/furiosaai, https://namu.wiki/w/%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%AC%EC%97%90%EC%9D%B4%EC%95%84%EC%9D%B4"
       },
       {
         "criterion_name": "no_exit",
-        "status": "REVIEW",
-        "reason": "메타의 인수 제안은 공식 거절하였으나, 인수 논의 중이라는 보도가 있어 완전한 인수나 합병 완료 여부는 불분명함.",
-        "source_url": "https://www.cio.com/article/3823460/%EB%A9%94%ED%83%80-%ED%95%9C%EA%B5%AD-ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%ACai-%EC%9D%B8%EC%88%98-%EB%85%BC%EC%9D%98.html"
+        "status": "PASS",
+        "reason": "인수나 합병, 상장 이력이 없으며, 메타로부터 인수 제안은 거절했다.",
+        "source_url": "https://namu.wiki/w/%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%AC%EC%97%90%EC%9D%B4%EC%95%84%EC%9D%B4"
       },
       {
         "criterion_name": "info_sufficiency",
         "status": "PASS",
-        "reason": "홈페이지 정보와 2건 이상의 기사, 투자 정보가 충분히 확보되어 정보가 충분함.",
-        "source_url": "https://www.cio.com/article/3823460/%EB%A9%94%ED%83%80-%ED%95%9C%EA%B5%AD-ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%ACai-%EC%9D%B8%EC%88%98-%EB%85%BC%EC%9D%98.html"
+        "reason": "회사 홈페이지 및 2건 이상의 기사를 통한 상세한 정보를 확보하고 있다.",
+        "source_url": "https://thevc.kr/furiosaai, https://www.epnc.co.kr/news/articleView.html?idxno=402450, https://namu.wiki/w/%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%AC%EC%97%90%EC%9D%B4%EC%95%84%EC%9D%B4"
       }
     ],
-    "evaluation_product": "AI 반도체 설계 및 개발 기업으로, 저전력 NPU 시스템 반도체 '레니게이드' 등을 개발하고 있으며, 국내외 대기업과 협력 진행중.",
+    "evaluation_product": "AI 반도체 설계 및 개발 스타트업으로, 저전력 AI 반도체 NPU 개발에 특화되었으며, 국산 반도체 제조사들과 시너지를 기대받는 기업.",
     "selection_status": "FAIL",
     "uncertain": false,
     "failed_criterion": "funding_stage",
-    "exclusion_reason": "최근 투자 단계가 Pre-IPO로 명확히 확인되어 Series D 이전 투자 단계가 아니므로 FAIL임.",
+    "exclusion_reason": "최근 투자 라운드가 Pre-IPO 단계로 Series D 이상에 해당한다.",
     "sources": [
       {
-        "title": "“메타, 한국 AI 반도체 스타트업 ‘퓨리오사AI’ 인수 논의 중” 포브스 | CIO",
-        "url": "https://www.cio.com/article/3823460/%EB%A9%94%ED%83%80-%ED%95%9C%EA%B5%AD-ai-%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%ED%93%A8%EB%A6%AC%EC%98%A4%EC%82%ACai-%EC%9D%B8%EC%88%98-%EB%85%BC%EC%9D%98.html",
-        "date": null
+        "title": "퓨리오사에이아이(AI 반도체) - 기업정보 | 투자, 매출, 기업가치 - THE VC",
+        "url": "https://thevc.kr/furiosaai",
+        "date": "2026-09-17"
       }
     ]
   },
   {
-    "name": "아이에이치더블유 (iHW)",
+    "name": "아이에이치더블유",
     "aliases": [
       "iHW"
     ],
@@ -141,8 +208,8 @@
     "founded_year": "미상",
     "ceo": "미상",
     "recent_round": "Series A",
-    "total_funding": "약 640억 원 누적 투자금",
-    "description": "초저전력 AI 반도체 팹리스 스타트업으로, 아날로그 인메모리 컴퓨팅(ACiM) 방식의 AI 반도체를 개발하며, 전력 소모 및 연산 지연을 낮추는데 주력.",
+    "total_funding": "누적 약 640억원",
+    "description": "초저전력 AI 반도체 팹리스 스타트업으로, 520억원 규모의 Series A 투자를 최근 유치, 아날로그 인메모리 컴퓨팅(ACiM) 방식 기반 AI 반도체 개발 중.",
     "latest_source_date": "2026-08-19",
     "discovery_done": true,
     "company_type": "CHIP",
@@ -150,50 +217,50 @@
       {
         "criterion_name": "domain_relevance",
         "status": "PASS",
-        "reason": "아이에이치더블유(iHW)는 초저전력 AI 반도체 팹리스 기업으로, 핵심 제품은 ACiM 뉴로모픽 AI 반도체 및 AI SoC/APU이다. 따라서 AI 반도체 분야에 명확히 해당된다.",
+        "reason": "아이에이치더블유의 주력 제품은 아날로그 컴퓨트인메모리(ACiM) 기반 AI 반도체(NPU)인 인퍼트론으로, 명확히 AI 반도체 도메인에 해당함.",
         "source_url": "https://demoday.co.kr/funding/insights/178"
       },
       {
         "criterion_name": "ai_core",
         "status": "PASS",
-        "reason": "iHW의 제품은 ACiM(Analog Compute-in-Memory) 기술 기반의 AI 반도체로, AI가 제품 핵심 가치이며 주요 핵심 기술로 설명되고 있다.",
+        "reason": "AI 반도체 칩 자체가 핵심 제품으로 AI가 핵심 가치임이 명확하며, 단순 마케팅 문구가 아님이 확인됨.",
         "source_url": "https://demoday.co.kr/funding/insights/178"
       },
       {
         "criterion_name": "unlisted",
         "status": "PASS",
-        "reason": "기업은 비상장 상태이며 코스피/코스닥/코넥스 상장 이력이 없다.",
-        "source_url": "https://www.innoforest.co.kr/company/CP00021230/%EC%95%84%EC%9D%B4%EC%97%90%EC%9D%B4%EC%B9%98%EB%8D%94%EB%B8%94%EC%9C%A0"
+        "reason": "상장 관련 정보가 없으며 비상장 스타트업임이 명확함.",
+        "source_url": "https://demoday.co.kr/funding/insights/178"
       },
       {
         "criterion_name": "funding_stage",
         "status": "PASS",
-        "reason": "최근 라운드가 Series A이며, Seed~Series C 단계에 포함되어 PASS 기준에 부합한다.",
+        "reason": "최근 투자 라운드가 Series A로, Seed~Series C 범위에 포함되어 적합함.",
         "source_url": "https://demoday.co.kr/funding/insights/178"
       },
       {
         "criterion_name": "no_exit",
         "status": "PASS",
-        "reason": "피인수, 합병, 상장 이력이 없으며 현재 운영 중인 비상장 기업으로 Exit를 완료하지 않은 상태이다.",
-        "source_url": "https://www.innoforest.co.kr/company/CP00021230/%EC%95%84%EC%9D%B4%EC%97%90%EC%9D%B4%EC%B9%98%EB%8D%94%EB%B8%94%EC%9C%A0"
+        "reason": "피인수, 합병, 상장 이력이 없으며, exit가 완료되지 않은 상태임이 확인됨.",
+        "source_url": "https://demoday.co.kr/funding/insights/178"
       },
       {
         "criterion_name": "info_sufficiency",
         "status": "PASS",
-        "reason": "회사 홈페이지 정보와 투자 기사, 딜사이트 기사, 데모데이 등 다수의 기사(2건 이상)를 확인할 수 있어 정보가 충분하다.",
+        "reason": "홈페이지 및 2건 이상의 기사(데모데이, AI타임스, 더일렉 등)에서 충분한 정보가 확인됨.",
         "source_url": "https://demoday.co.kr/funding/insights/178"
       }
     ],
-    "evaluation_product": "초저전력 AI 반도체 팹리스 스타트업으로, 아날로그 인메모리 컴퓨팅(ACiM) 방식의 AI 반도체를 개발하며, 전력 소모 및 연산 지연을 낮추는데 주력.",
+    "evaluation_product": "초저전력 AI 반도체 팹리스 스타트업으로, 520억원 규모의 Series A 투자를 최근 유치, 아날로그 인메모리 컴퓨팅(ACiM) 방식 기반 AI 반도체 개발 중.",
     "selection_status": "PASS",
     "uncertain": false,
     "profile_evidence": [
       {
-        "evidence_id": "아이에이치더블유-ihw:profile:team_experience:af24586c",
-        "company": "아이에이치더블유 (iHW)",
+        "evidence_id": "아이에이치더블유:profile:team_experience:93f57563",
+        "company": "아이에이치더블유",
         "category": "profile",
         "metric": "team_experience",
-        "value": "창업팀은 삼성전자·SK하이닉스·인텔 출신 베테랑 임원·엔지니어 주축이며, 대표 김태훈은 삼성전자, 마이크론테크놀로지, SK하이닉스 부사장 출신으로 AI 반도체 분야 전문가임",
+        "value": "삼성전자·SK하이닉스·인텔 출신 베테랑 임원·엔지니어 주축",
         "unit": null,
         "source_type": "web",
         "title": "아이에이치더블유 520억 시리즈A 분석: 메모리에서 바로 연산하는 ACiM으로 NPU를 넘는다 | 데모데이",
@@ -204,12 +271,31 @@
         "doc_id": null,
         "page": null,
         "chunk_id": null,
-        "quote": "창업팀은 삼성전자·SK하이닉스·인텔 출신 베테랑 임원·엔지니어 주축이며, 대표 김태훈은 삼성전자와 마이크론테크놀로지에서 메모리 반도체 개발을 담당했고, SK하이닉스에서 부사장까지 역임한 AI 반도체 분야의 전문가임",
+        "quote": "삼성전자·SK하이닉스·인텔 출신 베테랑 임원·엔지니어 주축",
         "scope": null
       },
       {
-        "evidence_id": "아이에이치더블유-ihw:profile:funding_total:76979323",
-        "company": "아이에이치더블유 (iHW)",
+        "evidence_id": "아이에이치더블유:profile:funding_total:fdecea52",
+        "company": "아이에이치더블유",
+        "category": "profile",
+        "metric": "funding_total",
+        "value": 64000000000.0,
+        "unit": "KRW",
+        "source_type": "web",
+        "title": "iHW, 시리즈A 520억 투자 유치…누적 640억 확보 < 반도체 < 기사본문 - 디일렉(THE ELEC)",
+        "source": "thelec.kr",
+        "date": "2026-10-08",
+        "accessed_at": "2026-10-13",
+        "url": "https://www.thelec.kr/news/articleView.html?idxno=61112",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "아이에이치더블유(iHW)가 시리즈A 라운드에서 520억원 투자를 유치했다고 19일 밝혔다. 누적 투자금은 640억원이다.",
+        "scope": null
+      },
+      {
+        "evidence_id": "아이에이치더블유:profile:funding_total:76979323",
+        "company": "아이에이치더블유",
         "category": "profile",
         "metric": "funding_total",
         "value": 64000000000.0,
@@ -223,7 +309,45 @@
         "doc_id": null,
         "page": null,
         "chunk_id": null,
-        "quote": "누적 투자 유치액은 640억원이며, 2026년 8월 19일 시리즈A 520억원 투자 완료",
+        "quote": "누적 투자금 640억원, 시리즈A 520억원 투자 유치",
+        "scope": null
+      },
+      {
+        "evidence_id": "아이에이치더블유:profile:customer_traction:fbfe3054",
+        "company": "아이에이치더블유",
+        "category": "profile",
+        "metric": "customer_traction",
+        "value": 1.0,
+        "unit": "건",
+        "source_type": "web",
+        "title": "아이에이치더블유 520억 시리즈A 분석: 메모리에서 바로 연산하는 ACiM으로 NPU를 넘는다 | 데모데이",
+        "source": "demoday.co.kr",
+        "date": "2026-08-19",
+        "accessed_at": "2026-10-13",
+        "url": "https://demoday.co.kr/funding/insights/178",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "국가 R&D에서도 과기정통부·산업부 AI 반도체 사업을 수주해 약 1,000만달러(140억원) 이상의 정부 지원금을 확보했다.",
+        "scope": null
+      },
+      {
+        "evidence_id": "아이에이치더블유:profile:risk_mitigation:988a2444",
+        "company": "아이에이치더블유",
+        "category": "profile",
+        "metric": "risk_mitigation",
+        "value": "초저전력 설계로 발열 및 전력 소모 근본적 저감, 냉각장치·방열판 불필요",
+        "unit": null,
+        "source_type": "web",
+        "title": "아이에이치더블유 520억 시리즈A 분석: 메모리에서 바로 연산하는 ACiM으로 NPU를 넘는다 | 데모데이",
+        "source": "demoday.co.kr",
+        "date": "2026-08-19",
+        "accessed_at": "2026-10-13",
+        "url": "https://demoday.co.kr/funding/insights/178",
+        "doc_id": null,
+        "page": null,
+        "chunk_id": null,
+        "quote": "데이터 이동을 최소화해 전력 소모와 지연을 근본에서 줄인다. 방열판, 냉각 장치 없이 시스템을 구성한다.",
         "scope": null
       }
     ]
@@ -238,8 +362,8 @@
     "founded_year": "2020",
     "ceo": "박성현",
     "recent_round": "Pre-IPO",
-    "total_funding": "약 1조 3,000억 원 누적 투자액, 기업가치 약 3.4조 원",
-    "description": "NPU 설계 및 AI 칩, 컴파일러 등 소프트웨어 개발하는 팹리스 스타트업으로, SK텔레콤의 사피온코리아와 합병 완료. 데이터센터와 클라우드 사업자 대상 AI 인프라에 초점을 맞춤.",
+    "total_funding": "약 1조 3,000억원",
+    "description": "AI 칩과 컴파일러 등 소프트웨어를 설계 및 개발하는 팹리스 스타트업으로, AI 추론에 특화된 NPU를 설계하며, 2026년 3월 정부 선정 국민성장펀드 직접 투자 1호 기업으로 6,400억원 프리IPO 투자 유치, 기업가치 3.4조원 인정.",
     "latest_source_date": "2026-03-26",
     "discovery_done": true,
     "company_type": "CHIP",
@@ -247,45 +371,45 @@
       {
         "criterion_name": "domain_relevance",
         "status": "PASS",
-        "reason": "리벨리온은 AI 추론 연산에 특화된 NPU 및 AI 반도체를 설계하는 팹리스 스타트업으로, 주력 제품이 AI 반도체임이 명확하다.",
+        "reason": "리벨리온은 AI 추론 전용 신경망처리장치(NPU)인 AI 반도체를 설계하는 팹리스 스타트업으로, 주력 제품인 AI 반도체가 명확히 도메인과 부합함.",
         "source_url": "https://kr.rebellions.ai/newsroom/ai%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%EB%A6%AC%EB%B2%A8%EB%A6%AC-1650%EC%96%B5%EC%9B%90-%EA%B7%9C%EB%AA%A8-%EC%8B%9C%EB%A6%AC%EC%A6%88b-%ED%88%AC%EC%9E%90-%EC%9C%A0"
       },
       {
         "criterion_name": "ai_core",
         "status": "PASS",
-        "reason": "AI가 제품 핵심 가치이며 NPU 설계와 AI 특화 칩 개발이 회사의 본질임이 분명하다.",
-        "source_url": "https://kr.rebellions.ai/newsroom/ai%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%EB%A6%AC%EB%B2%A8%EB%A6%AC-1650%EC%96%B5%EC%9B%90-%EA%B7%9C%EB%AA%A8-%EC%8B%9C%EB%A6%AC%EC%A6%88b-%ED%88%AC%EC%9E%90-%EC%9C%A0"
+        "reason": "제품 핵심가치가 AI 반도체(NPU)이며 AI 추론에 특화되어 있어 AI가 제품의 핵심 가치를 차지함이 명백함.",
+        "source_url": "https://tristanchoi.tistory.com/636"
       },
       {
         "criterion_name": "unlisted",
         "status": "REVIEW",
-        "reason": "기업이 IPO를 준비 중이지만 상장 시기 및 증권시장(코스피/코스닥 등) 공개정보는 명확하지 않음.",
+        "reason": "IPO 준비 중이나 상장 시기 및 장소가 공식적으로 확정되지 않아 상장심사 또는 IPO 주관사 공식 발표 단계로 판단됨.",
         "source_url": "https://www.yna.co.kr/view/AKR20260331003900091"
       },
       {
         "criterion_name": "funding_stage",
         "status": "FAIL",
-        "reason": "최근 투자 라운드가 Pre-IPO 단계이며 누적 투자 1조 3,000억원으로 Series D 이상에 해당함.",
+        "reason": "최근 라운드가 Pre-IPO로서 기준에 따라 FAIL임.",
         "source_url": "https://www.yna.co.kr/view/AKR20260331003900091"
       },
       {
         "criterion_name": "no_exit",
         "status": "PASS",
-        "reason": "인수, 합병, 상장 완료 이력 없이 현재 운영 중임. 다만 일부 자료에서는 SK텔레콤 AI 반도체 자회사와 합병했으나, 이는 합병 완료이며 기존 리벨리온 기업 자체의 인수/소멸로 보기 어려움.",
+        "reason": "피인수, 합병, 상장 이력이 없으며 오히려 2024년 SK텔레콤 AI 반도체 자회사와 합병을 완료했지만 이는 사업 기반 강화를 위한 합병으로, 인수·소멸로 보기 어려워 미완료 상태로 판단됨.",
         "source_url": "https://namu.wiki/w/%EB%A6%AC%EB%B2%A8%EB%A6%AC%EC%98%A8(%ED%95%9C%EA%B5%AD%20%EA%B8%B0%EC%97%85)"
       },
       {
         "criterion_name": "info_sufficiency",
         "status": "PASS",
-        "reason": "공식 홈페이지와 다수의 기사(연합뉴스, 한국경제, 나무위키 등)에서 충분한 정보가 확인됨.",
+        "reason": "공식 홈페이지 및 2건 이상의 기사 출처가 존재하며 상세한 기업 및 제품 정보가 충분함.",
         "source_url": "https://kr.rebellions.ai/newsroom/ai%EB%B0%98%EB%8F%84%EC%B2%B4-%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85-%EB%A6%AC%EB%B2%A8%EB%A6%AC-1650%EC%96%B5%EC%9B%90-%EA%B7%9C%EB%AA%A8-%EC%8B%9C%EB%A6%AC%EC%A6%88b-%ED%88%AC%EC%9E%90-%EC%9C%A0"
       }
     ],
-    "evaluation_product": "NPU 설계 및 AI 칩, 컴파일러 등 소프트웨어 개발하는 팹리스 스타트업으로, SK텔레콤의 사피온코리아와 합병 완료. 데이터센터와 클라우드 사업자 대상 AI 인프라에 초점을 맞춤.",
+    "evaluation_product": "AI 칩과 컴파일러 등 소프트웨어를 설계 및 개발하는 팹리스 스타트업으로, AI 추론에 특화된 NPU를 설계하며, 2026년 3월 정부 선정 국민성장펀드 직접 투자 1호 기업으로 6,400억원 프리IPO 투자 유치, 기업가치 3.4조원 인정.",
     "selection_status": "FAIL",
     "uncertain": false,
     "failed_criterion": "funding_stage",
-    "exclusion_reason": "최근 투자 라운드가 Pre-IPO 단계이며 누적 투자 1조 3,000억원으로 Series D 이상에 해당함.",
+    "exclusion_reason": "최근 라운드가 Pre-IPO로서 기준에 따라 FAIL임.",
     "sources": [
       {
         "title": "AI반도체 스타트업 리벨리온, 1,650억원 규모 시리즈B 투자 유치 완료 - Rebellions",

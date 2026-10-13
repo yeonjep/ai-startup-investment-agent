@@ -333,6 +333,12 @@ def _market_findings(
         quotes = " ".join(
             str(e.get("quote") or "") for e in evidence_by_topic[finding.topic] if e["evidence_id"] in valid_ids
         )
+        if finding.topic == "market_size":
+            stored = _market_size_storage(item.get("value"), item.get("unit"))
+            item["value"] = stored["value"]
+            item["unit"] = stored["unit"]
+            if stored["validation"]:
+                item["validation"] = stored["validation"]
         numeric_topic = finding.topic in {"market_size", "market_growth"}
         if numeric_topic and finding.value is not None:
             if not _number_in_text(finding.value, quotes):
@@ -352,6 +358,24 @@ def _market_findings(
         )
         findings[finding.topic] = item
     return findings, None
+
+
+_MONEY_UNIT = re.compile(r"usd|krw|달러|원|\$|₩|€|£|million|billion|trillion", re.IGNORECASE)
+_RATE_UNIT = re.compile(r"%|％|cagr|퍼센트", re.IGNORECASE)
+
+
+def _market_size_storage(value: Any, unit: Any) -> dict[str, Any]:
+    """market_size accepts currency amounts only. Rates and missing evidence stay 미확인."""
+    unit_text = str(unit or "")
+    value_text = "" if value in (None, "") else str(value)
+    if (
+        not value_text
+        or _RATE_UNIT.search(unit_text)
+        or _RATE_UNIT.search(value_text)
+        or not _MONEY_UNIT.search(unit_text)
+    ):
+        return {"value": None, "unit": None, "validation": "미확인"}
+    return {"value": value, "unit": unit, "validation": None}
 
 
 def _is_funding_amount(text: str) -> bool:
@@ -609,6 +633,19 @@ def _resolve_conflicting_values(evidence: list[Evidence]) -> tuple[Evidence | No
     )
 
 
+def _extract_market_span(quote: str) -> tuple[str, str]:
+    """Pull market scope and forecast period from the cited chunk. Leave period empty if absent."""
+    text = quote or ""
+    period_match = re.search(r"((?:19|20)\d{2})\s*[-~–—]\s*((?:19|20)\d{2})", text)
+    period = f"{period_match.group(1)}–{period_match.group(2)}" if period_match else ""
+    scope_match = re.search(
+        r"((?:글로벌|세계|국내|한국|아시아|북미|유럽|미국|중국)?\s*[가-힣A-Za-z0-9]{0,24}시장)",
+        text,
+    )
+    scope = re.sub(r"\s+", " ", scope_match.group(1)).strip() if scope_match else ""
+    return scope, period
+
+
 def _reference_figures(
     findings: dict[str, dict[str, Any]],
     evidence: list[Evidence],
@@ -624,16 +661,17 @@ def _reference_figures(
         linked = [by_id[item_id] for item_id in finding.get("evidence_ids") or [] if item_id in by_id]
         source = next((item for item in linked if item.get("source_type") == "rag"), None)
         source = source or (linked[0] if linked else None)
-        scope = str(finding.get("scope") or "")
-        years = list(dict.fromkeys(re.findall(r"(?:19|20)\d{2}", scope)))
+        quote = " ".join(str(item.get("quote") or "") for item in linked)
+        market_scope, period = _extract_market_span(quote)
         figures.append(
             {
                 "metric": topic,
                 "value": finding.get("value"),
                 "unit": finding.get("unit"),
-                "market_scope": scope,
-                "region": next((word for word in regions if word in scope), ""),
-                "period": "–".join(years),
+                "market_scope": market_scope,
+                "region": next((word for word in regions if word in market_scope), ""),
+                "period": period,
+                "note": "참고(범위 상이)",
                 "doc_id": (source or {}).get("doc_id"),
                 "page": (source or {}).get("page"),
                 "evidence_ids": list(finding.get("evidence_ids") or []),
@@ -717,14 +755,39 @@ def _score_deterministic_metric(
     )
 
 
+def _claim_status(text: str) -> str:
+    """verified only for a completed measurement. 미공개·없음·미확인 and plans are not verification."""
+    if re.search(r"미공개|없음|미확인|불명확|공개되지", text):
+        return "undisclosed"
+    if re.search(r"계획|예정", text):
+        return "planned"
+    if re.search(r"실측|제3자|독립\s*(?:검증|평가|측정)|동일\s*조건", text):
+        return "verified"
+    return "undisclosed"
+
+
+def _evidence_status(evidence: list[Evidence], evidence_ids: list[str], pattern: str) -> str:
+    selected = {item_id for item_id in evidence_ids}
+    statuses = [
+        _claim_status(f"{item.get('quote') or ''} {item.get('scope') or ''} {item.get('value') or ''}")
+        for item in evidence
+        if item.get("evidence_id") in selected
+        and re.search(pattern, f"{item.get('quote') or ''} {item.get('scope') or ''} {item.get('value') or ''}")
+    ]
+    if "verified" in statuses:
+        return "verified"
+    if "planned" in statuses:
+        return "planned"
+    return "undisclosed"
+
+
 def _has_measured_third_party(evidence: list[Evidence], evidence_ids: list[str]) -> bool:
     selected = {item_id for item_id in evidence_ids}
-    text = " ".join(
-        f"{item.get('quote') or ''} {item.get('scope') or ''} {item.get('value') or ''}"
+    return any(
+        _claim_status(f"{item.get('quote') or ''} {item.get('scope') or ''} {item.get('value') or ''}") == "verified"
         for item in evidence
         if item.get("evidence_id") in selected
     )
-    return bool(re.search(r"실측|제3자|독립\s*(?:검증|평가|측정)|벤치마크|동일\s*조건", text))
 
 
 def _score_qualitative_metrics(
@@ -805,6 +868,10 @@ def _score_qualitative_metrics(
         score = item.score
         reason = item.reason
         verified = _has_measured_third_party(evidence, valid_ids)
+        verification_status = "verified" if verified else _evidence_status(
+            evidence, valid_ids, r"실측|제3자|독립|벤치마크|검증|측정"
+        )
+        sdk_status = _evidence_status(evidence, valid_ids, r"SDK|소프트웨어|개발도구")
         if metric in {"technical_originality", "competitive_difference", "risk_mitigation"} and not verified:
             score = min(score, 3)
             reason = re.sub(r"(?<!제3자 )입증|(?<!제3자 )검증", "주장", reason)
@@ -812,13 +879,17 @@ def _score_qualitative_metrics(
                 reason += " 회사 측 주장만 확인되어 실측·제3자 근거가 없으면 3점을 넘기지 않음."
         elif re.search(r"입증|검증", reason) and not verified:
             reason = re.sub(r"입증|검증", "주장", reason)
-        results[metric] = _observed_score(
+        reason += f" 성능 근거 상태는 {verification_status}이다. SDK 상태는 {sdk_status}이다."
+        entry = _observed_score(
             metric,
             raw_values[metric],
             score,
             reason,
             valid_ids,
         )
+        entry["verification_status"] = verification_status
+        entry["sdk_status"] = sdk_status
+        results[metric] = entry
         returned.add(metric)
     for metric in payload:
         if metric not in returned:

@@ -115,6 +115,32 @@ def _name(record: dict[str, Any]) -> str:
     return record["company_profile"].get("name", "기업")
 
 
+def _shared_status_line(records: list[dict[str, Any]]) -> str:
+    for record in records:
+        for entry in (record.get("scores") or {}).values():
+            verification = (entry or {}).get("verification_status")
+            sdk = (entry or {}).get("sdk_status")
+            if verification or sdk:
+                return f"성능 근거 상태는 {verification or 'undisclosed'}이다. SDK 상태는 {sdk or 'undisclosed'}이다."
+    return ""
+
+
+def _name_keys(raw: Any) -> set[str]:
+    text = str(raw or "").strip()
+    if not text:
+        return set()
+    keys = {text.casefold()}
+    bare = re.sub(r"\s*\([^)]*\)", "", text).strip()
+    if bare:
+        keys.add(bare.casefold())
+    keys.update(part.strip().casefold() for part in re.findall(r"\(([^)]+)\)", text) if part.strip())
+    return keys
+
+
+def _same_company(left: Any, right: Any) -> bool:
+    return bool(_name_keys(left) & _name_keys(right))
+
+
 def _fmt_raw(value: Any) -> str:
     """ScoreEntry.raw_value(스칼라·dict·list)를 표에 넣을 짧은 문자열로 바꾼다."""
     if isinstance(value, dict):
@@ -610,14 +636,66 @@ def _limitations(state: dict[str, Any], rtype: str) -> str:
     return text
 
 
+def _canonical_amount(value: Any, unit: Any) -> tuple[float, str] | None:
+    match = re.search(r"-?\d+(?:,\d{3})*(?:\.\d+)?", "" if value is None else str(value))
+    if not match:
+        return None
+    number = float(match.group(0).replace(",", ""))
+    unit_text = str(unit or "").replace(" ", "")
+    if "억" in unit_text and "원" in unit_text:
+        return number * 100_000_000, "KRW"
+    if unit_text.upper() == "KRW" or unit_text == "원":
+        return number, "KRW"
+    if "%" in unit_text or unit_text == "％":
+        return number, "%"
+    if "달러" in unit_text or unit_text.upper() == "USD":
+        return number, "USD"
+    if unit_text:
+        return number, unit_text.upper()
+    return None
+
+
+def _quantitative_conflicts(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Compare amounts only after unit, scope, and base date match. Sentences are not conflicts."""
+    found: list[dict[str, Any]] = []
+    for record in records:
+        buckets: dict[tuple[str, str, str, str], list[dict[str, Any]]] = {}
+        for item in record.get("evidence") or []:
+            parsed = _canonical_amount(item.get("value"), item.get("unit"))
+            if parsed is None:
+                continue
+            number, unit = parsed
+            key = (
+                str(item.get("metric") or ""),
+                unit,
+                str(item.get("scope") or "").strip(),
+                str(item.get("date") or "")[:10],
+            )
+            buckets.setdefault(key, []).append({**item, "_number": number})
+        for key, items in buckets.items():
+            numbers = {item["_number"] for item in items}
+            if len(numbers) < 2:
+                continue
+            metric = key[0]
+            reason = str(((record.get("scores") or {}).get(metric) or {}).get("reason") or "")
+            if "채택" not in reason and "미확인" not in reason:
+                reason = "기준이 같아 값이 충돌하며, 어느 값을 채택할지 공개 근거가 없어 미확인"
+            found.append({"record": record, "metric": metric, "items": items, "reason": reason})
+    return found
+
+
 def _conflict_lines(records: list[dict[str, Any]]) -> list[str]:
     lines = []
-    for record in records:
-        for metric, entry in (record.get("scores") or {}).items():
-            reason = str((entry or {}).get("reason") or "")
-            if "출처 충돌" in reason or "상충 근거" in reason:
-                label = METRIC_INFO.get(metric, ("", metric))[1]
-                lines.append(f"{_name(record)} {label} — {reason}")
+    for conflict in _quantitative_conflicts(records):
+        sides = []
+        for item in conflict["items"]:
+            amount = f"{item.get('value')}{item.get('unit') or ''}"
+            source = item.get("source") or item.get("title") or "출처 미확인"
+            sides.append(f"{amount} ({source}, {item.get('date') or '기준일 미확인'})")
+        label = METRIC_INFO.get(conflict["metric"], ("", conflict["metric"]))[1]
+        lines.append(
+            f"{_name(conflict['record'])} {label}: {' vs '.join(sides)}. {conflict['reason']}"
+        )
     return lines
 
 
@@ -638,21 +716,57 @@ def _regulatory_items(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return matches
 
 
-def _regulation_text(records: list[dict[str, Any]], narrative: str, catalog: "Catalog") -> str:
-    matches = _regulatory_items(records)
-    text = _clean_narrative(narrative or "")
-    if not matches or _FUNDING_TEXT.search(text):
-        if not matches:
-            return "공개 근거 미확인"
-        text = ""
-    if text in {"", "확인되지 않음", "공개 근거 미확인"} or not re.search(r"\[(?:E)?\d+\]", text):
-        item = matches[0]
-        snippet = _clip(re.sub(r"\s+", " ", str(item.get("quote") or "")), 80)
-        tags = catalog.tag([str(found.get("evidence_id") or "") for found in matches[:2]])
-        if not snippet:
-            return "공개 근거 미확인"
-        return f"{snippet} {tags}".strip()
+_COMPANY_RISK = re.compile(r"수출\s*통제|수출통제|수출\s*규제|공급망|정부\s*규제|규제\s*위험")
+_INDUSTRY_POLICY = re.compile(r"이니셔티브|정책\s*방향|지원\s*정책|지원정책")
+
+
+def _company_regulation_items(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    company_items = []
+    for item in _regulatory_items(records):
+        blob = " ".join(str(item.get(key) or "") for key in ("quote", "scope", "title"))
+        if _INDUSTRY_POLICY.search(blob) and not _COMPANY_RISK.search(blob):
+            continue
+        if _COMPANY_RISK.search(blob):
+            company_items.append(item)
+    return company_items
+
+
+def _complete_regulation_summary(quotes: list[str]) -> str:
+    """One or two finished sentences. A clipped quote is not a regulation line."""
+    response = create_llm(temperature=0).invoke(
+        [
+            (
+                "system",
+                "기업의 규제 위험만 한국어 1~2문장으로 요약한다. 문장을 중간에 자르지 말고, "
+                "조사로 끝내지 않는다. 산업 지원정책·이니셔티브는 기업 규제 위험이 아니다. "
+                "인용 원문을 그대로 붙이지 않는다.",
+            ),
+            ("human", "\n".join(quotes)),
+        ]
+    )
+    text = str(getattr(response, "content", response) or "").strip()
+    if not text or "…" in text or text.endswith("...") or re.search(r"(?:을|를|은|는|이|가|와|과|의)$", text):
+        return ""
     return text
+
+
+def _regulation_text(records: list[dict[str, Any]], narrative: str, catalog: "Catalog") -> str:
+    del narrative
+    matches = _company_regulation_items(records)
+    if not matches:
+        return "공개 근거 미확인"
+    quotes = [re.sub(r"\s+", " ", str(item.get("quote") or "")).strip() for item in matches[:3]]
+    quotes = [quote for quote in quotes if quote]
+    if not quotes:
+        return "공개 근거 미확인"
+    try:
+        summary = _complete_regulation_summary(quotes)
+    except Exception:  # noqa: BLE001 - 요약 실패 시 잘린 원문 대신 미확인을 적는다
+        summary = ""
+    if not summary:
+        return "공개 근거 미확인"
+    tags = catalog.tag([str(item.get("evidence_id") or "") for item in matches[:2]])
+    return f"{summary} {tags}".strip()
 
 
 def _reference_figure_lines(records: list[dict[str, Any]], catalog: "Catalog") -> str:
@@ -662,7 +776,7 @@ def _reference_figure_lines(records: list[dict[str, Any]], catalog: "Catalog") -
             label = "시장 규모" if figure.get("metric") == "market_size" else "성장률"
             scope = figure.get("market_scope") or "범위 미기재"
             region = figure.get("region") or "지역 미기재"
-            period = figure.get("period") or "기간 미기재"
+            period = figure.get("period") or ""
             tag = catalog.tag(figure.get("evidence_ids") or [])
             where = ""
             if figure.get("doc_id"):
@@ -671,8 +785,8 @@ def _reference_figure_lines(records: list[dict[str, Any]], catalog: "Catalog") -
                     where += f" p.{figure['page']}"
             lines.append(
                 f"- {label}: {figure.get('value')} {figure.get('unit') or ''}".rstrip()
-                + f" (시장 범위 {scope}, 지역 {region}, 기준 {period}{where}) {tag}".rstrip()
-                + " — 참고 수치(시장 범위 상이, 채점 미반영)"
+                + f" (시장 범위 {scope}, 지역 {region}{', 기준 ' + period if period else ''}{where}) {tag}".rstrip()
+                + f" — {figure.get('note') or '참고(범위 상이)'}"
             )
     return "\n".join(lines)
 
@@ -761,6 +875,11 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
         head = (f"평가 후보 {len(evaluated)}개 **전원 보류** · 최고 총점 {best:.2f}/100 · 평가 기준일 {as_of}"
                 if best is not None else f"평가 후보 {len(evaluated)}개 전원 보류 · 평가 기준일 {as_of}")
 
+    status_line = _shared_status_line(focus)
+    if status_line:
+        sec.team_tech = f"{sec.team_tech} {status_line}".strip()
+        sec.risk_tech = f"{sec.risk_tech} {status_line}".strip()
+
     parts = [
         f"# SUMMARY\n\n{head}\n\n{sec.summary}\n\n## 1. 기업 및 사업 개요\n\n{sec.overview}",
         (
@@ -774,9 +893,14 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
     reference_lines = _reference_figure_lines(focus, catalog)
     if reference_lines:
         market += "\n\n" + reference_lines
+    aliases: set[str] = set()
+    for record in focus:
+        profile = record.get("company_profile") or {}
+        for raw in (profile.get("name"), profile.get("english_name"), profile.get("alias"), _name(record)):
+            aliases |= _name_keys(raw)
     comps = [
-        c for r in focus for c in r.get("competitor_analysis", {}).get("competitors", [])
-        if str(c.get("name", "")).strip() != _name(r)
+        c for record in focus for c in record.get("competitor_analysis", {}).get("competitors", [])
+        if not (_name_keys(c.get("name")) & aliases)
     ]
     if comps:
         market += "\n\n**경쟁사 비교**\n\n" + _table(["경쟁사", "국가", "비교"], [[c.get("name"), c.get("country"), _cell(c.get("comparison"), 60)] for c in comps[:5]])

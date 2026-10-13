@@ -1,6 +1,6 @@
 {
-  "passed": false,
-  "loop_count": 1,
+  "passed": true,
+  "loop_count": 0,
   "checks": [
     {
       "item": "groundedness",
@@ -22,12 +22,12 @@
     },
     {
       "item": "bias_control",
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "수치 충돌이 보고서에 표기되지 않음"
+        "단일 출처 편중이 70% 이하이고 수치 충돌을 표기함"
       ],
-      "target_section": "본문",
-      "reason": "수치 충돌이 보고서에 표기되지 않음"
+      "target_section": "",
+      "reason": "단일 출처 편중이 70% 이하이고 수치 충돌을 표기함"
     },
     {
       "item": "perspective_coverage",

@@ -96,9 +96,16 @@ def _has_later_index(state: dict[str, Any]) -> bool:
 def choose_routes(state: dict[str, Any]) -> tuple[list[str], str]:
     """Pick the next workers from the current state. Empty means END."""
     if int(state.get("step_count") or 0) >= _step_cap(state):
+        quality = state.get("quality_result")
+        if quality:
+            if quality.get("passed"):
+                return [], "step 상한 도달, 품질 평가 통과 후 종료"
+            if int(state.get("quality_retry") or 0) < MAX_QUALITY_RETRIES:
+                return ["report_agent"], "step 상한 이후 품질 미달로 보고서 수정"
+            return [], "step 상한 도달, 품질 재작성 상한 후 종료"
         if not state.get("final_report"):
-            return ["report_agent"], "step 상한 도달, 보고서 작성 후 종료"
-        return [], "step 상한 도달, 종료"
+            return ["report_agent"], "step 상한 도달, 보고서 작성 후 품질 평가"
+        return ["quality_agent"], "step 상한 도달, 품질 평가"
 
     quality = state.get("quality_result")
     if quality:

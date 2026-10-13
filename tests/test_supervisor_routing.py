@@ -159,8 +159,16 @@ class SupervisorRouteTests(unittest.TestCase):
             final_report="있음",
             step_count=80,
             max_step_count=80,
+            quality_result=None,
         )
-        self.assertEqual(choose_routes(finished)[0], [])
+        self.assertEqual(choose_routes(finished)[0], ["quality_agent"])
+        passed = _open_candidate(
+            final_report="있음",
+            step_count=80,
+            max_step_count=80,
+            quality_result={"passed": True, "checks": {}},
+        )
+        self.assertEqual(choose_routes(passed)[0], [])
         self.assertEqual(route_from_supervisor({"next_routes": []}), "end")
 
     def test_non_refreshable_missing_is_explicitly_accepted(self):

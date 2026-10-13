@@ -1,6 +1,7 @@
 # 기본 실행(real)은 실제 에이전트로 보고서를 생성한다. 나머지 시나리오는 그래프 분기 검증용 stub 후보를 사용한다.
 
 import argparse
+import json
 import uuid
 from pathlib import Path
 from typing import Any, Literal
@@ -38,10 +39,19 @@ DEMO_SCENARIOS = {
 }
 
 
-def main(scenario: Scenario = "real") -> dict[str, Any]:
+def main(
+    scenario: Scenario = "real",
+    from_state: str | None = None,
+    from_node: str | None = None,
+) -> dict[str, Any]:
     configure_runtime()
     trace_id = uuid.uuid4().hex
     initial_state: InvestmentState = {"domain": "AI 반도체", "trace_id": trace_id}
+    if from_state:
+        loaded = json.loads(Path(from_state).read_text(encoding="utf-8"))
+        loaded["trace_id"] = loaded.get("trace_id") or trace_id
+        trace_id = str(loaded["trace_id"])
+        initial_state = loaded
     max_candidates = validate_max_candidates()
     graph = build_graph()
     report_basename = REPORT_BASENAME if scenario == "real" else f"stub-{scenario}"
@@ -63,29 +73,116 @@ def main(scenario: Scenario = "real") -> dict[str, Any]:
 
     result: dict[str, Any] = dict(initial_state)
     node_visits: list[str] = []
+    if from_state and from_node:
+        result, node_visits = _run_from_node(result, graph_config, from_node)
+        _save_last_state(result)
+        _print_run(scenario, trace_id, node_visits, result, report_basename, None)
+        return result
+
     with collect_runs() as traced:
-        for update in graph.stream(
-            initial_state,
-            config=graph_config,
-            stream_mode="updates",
-        ):
-            for node_name, node_update in update.items():
-                if node_name == "supervisor":
-                    routes = node_update.get("next_routes") or []
-                    node_visits.append(
-                        f"supervisor[{','.join(routes) or 'END'}: "
-                        f"{node_update.get('route_reason')}]"
-                    )
-                else:
-                    node_visits.append(node_name)
-                if "evaluated" in node_update:
-                    result["evaluated"] = [
-                        *result.get("evaluated", []),
-                        *node_update["evaluated"],
-                    ]
-                result.update({key: value for key, value in node_update.items() if key != "evaluated"})
+        try:
+            for update in graph.stream(
+                initial_state,
+                config=graph_config,
+                stream_mode="updates",
+            ):
+                for node_name, node_update in update.items():
+                    if node_name == "supervisor":
+                        routes = node_update.get("next_routes") or []
+                        node_visits.append(
+                            f"supervisor[{','.join(routes) or 'END'}: "
+                            f"{node_update.get('route_reason')}]"
+                        )
+                    else:
+                        node_visits.append(node_name)
+                    if "evaluated" in node_update:
+                        result["evaluated"] = [
+                            *result.get("evaluated", []),
+                            *node_update["evaluated"],
+                        ]
+                    result.update({key: value for key, value in node_update.items() if key != "evaluated"})
+                    _save_last_state(result)
+        except Exception:
+            _save_last_state(result)
+            print(f"Stopped after: {' -> '.join(node_visits)}")
+            raise
 
     run_url = _langsmith_url(traced.traced_runs)
+    _save_last_state(result)
+    _print_run(scenario, trace_id, node_visits, result, report_basename, run_url)
+    return result
+
+
+def _run_from_node(state: dict[str, Any], config: dict[str, Any], start: str) -> tuple[dict[str, Any], list[str]]:
+    """Replay from a saved node through Quality. Earlier search nodes are not called."""
+    from agents.quality import quality_agent
+    from agents.report import report_agent
+    from agents.stubs import decision_agent, evaluator_agent
+
+    pipeline = (
+        ("evaluator_agent", evaluator_agent),
+        ("decision_agent", decision_agent),
+        ("report_agent", report_agent),
+        ("quality_agent", quality_agent),
+    )
+    aliases = {
+        "evaluator": "evaluator_agent",
+        "decision": "decision_agent",
+        "report": "report_agent",
+        "quality": "quality_agent",
+    }
+    start_name = aliases.get(start, start)
+    names = [name for name, _ in pipeline]
+    if start_name not in names:
+        raise ValueError(f"resume node must be one of: {', '.join(names)}")
+    if start_name == "evaluator_agent":
+        company = (state.get("current_startup") or {}).get("name")
+        if company:
+            state["evaluated"] = [
+                record
+                for record in state.get("evaluated") or []
+                if (record.get("company_profile") or {}).get("name") != company
+            ]
+        state["scores"] = {}
+        state["decision"] = None
+        state["final_report"] = ""
+        state["quality_result"] = None
+    elif start_name == "decision_agent":
+        state["decision"] = None
+        state["final_report"] = ""
+        state["quality_result"] = None
+    elif start_name == "report_agent":
+        state["final_report"] = ""
+        state["quality_result"] = None
+    else:
+        state["quality_result"] = None
+    visits: list[str] = []
+    for name, fn in pipeline[names.index(start_name):]:
+        update = fn(state, config)
+        visits.append(name)
+        if "evaluated" in update:
+            state["evaluated"] = [*state.get("evaluated", []), *update["evaluated"]]
+        state.update({key: value for key, value in update.items() if key != "evaluated"})
+        _save_last_state(state)
+    return state, visits
+
+
+def _save_last_state(result: dict[str, Any]) -> None:
+    path = PROJECT_ROOT / "outputs" / "last_state.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    skip = {"node_visits", "report_path", "langsmith_url", "route_log"}
+    payload = {key: value for key, value in result.items() if key not in skip}
+    path.write_text(json.dumps(payload, ensure_ascii=False, default=str), encoding="utf-8")
+
+
+def _print_run(
+    scenario: str,
+    trace_id: str,
+    node_visits: list[str],
+    result: dict[str, Any],
+    report_basename: str,
+    run_url: str | None,
+) -> None:
     log_path = PROJECT_ROOT / "outputs" / "logs" / f"{trace_id}.jsonl"
     print(f"Scenario: {scenario}")
     print(f"Trace ID: {trace_id}")
@@ -95,12 +192,12 @@ def main(scenario: Scenario = "real") -> dict[str, Any]:
     print(f"Report PDF: {PROJECT_ROOT / 'outputs' / (report_basename + '.pdf')}")
     print(f"LangSmith run: {run_url or 'unavailable'}")
     print(f"Route log: {log_path}")
+    print(f"Saved state: {PROJECT_ROOT / 'outputs' / 'last_state.json'}")
     result["node_visits"] = node_visits
     result["trace_id"] = trace_id
     result["langsmith_url"] = run_url
     result["route_log"] = str(log_path)
     result["report_path"] = str(PROJECT_ROOT / "outputs" / f"{report_basename}.pdf")
-    return result
 
 
 def _langsmith_url(traced_runs: list[Any]) -> str | None:
@@ -129,4 +226,7 @@ if __name__ == "__main__":
         default="real",
         help="real = 실제 후보 탐색·평가·보고서 생성. 나머지는 분기 검증용 stub 후보.",
     )
-    main(parser.parse_args().scenario)
+    parser.add_argument("--from-state", default=None, help="outputs/last_state.json 같은 저장 State")
+    parser.add_argument("--from-node", default=None, help="evaluator면 검색 없이 Evaluator→Decision→Report→Quality")
+    args = parser.parse_args()
+    main(args.scenario, from_state=args.from_state, from_node=args.from_node)

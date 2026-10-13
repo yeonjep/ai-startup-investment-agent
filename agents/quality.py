@@ -99,11 +99,22 @@ def _groundedness_code(report: str, state: dict[str, Any]) -> dict[str, Any]:
             if not QUANTITY.search(sentence) or "출처 충돌" in sentence or "상충 근거" in sentence:
                 continue
             sentence_cited = bool(re.search(r"\[\d+\]", sentence)) or paragraph_cited
-            if sentence_cited:
-                continue
-            reasons.append(sentence.strip()[:120])
-            section = paragraph_section
-            break
+            if not sentence_cited:
+                reasons.append(sentence.strip()[:120])
+                section = paragraph_section
+                break
+            mismatch = _citation_mismatch(sentence, evaluated, references)
+            if mismatch:
+                reasons.append(mismatch)
+                section = paragraph_section
+                break
+    for row in _table_rows(body):
+        if not QUANTITY.search(row):
+            continue
+        mismatch = _citation_mismatch(row, evaluated, references)
+        if mismatch:
+            reasons.append(mismatch)
+            section = "Scorecard"
     if reasons:
         return _check("groundedness", False, reasons[:3], section)
     return _check("groundedness", True, ["수치·사실 문장이 REFERENCE 인용과 연결됨"], "")
@@ -228,16 +239,92 @@ def _section_at(report: str, snippet: str) -> str:
 
 
 def _has_unmarked_conflict(report: str, state: dict[str, Any]) -> bool:
-    for record in state.get("evaluated") or []:
-        grouped: dict[tuple[str, str], set[str]] = {}
-        for item in record.get("evidence") or []:
-            if item.get("value") is None or not item.get("metric"):
-                continue
-            key = (str(item.get("metric")), str(item.get("unit")))
-            grouped.setdefault(key, set()).add(str(item.get("value")))
-        if any(len(values) > 1 for values in grouped.values()):
-            return "출처 충돌" not in report and "상충" not in report
+    from agents.report import _quantitative_conflicts
+
+    conflicts = _quantitative_conflicts(list(state.get("evaluated") or []))
+    if not conflicts:
+        return False
+    if "출처 충돌" not in report and "상충" not in report:
+        return True
+    for conflict in conflicts:
+        for item in conflict["items"]:
+            if str(item.get("value")) not in report:
+                return True
     return False
+
+
+_MEASURE = re.compile(
+    r"(\d[\d,]*(?:\.\d+)?)\s*(%|％|억원|억\s*원|조원|조\s*원|달러|원|건|명|배)",
+    re.IGNORECASE,
+)
+_MARKET_SCOPE = re.compile(r"[가-힣A-Za-z0-9]{2,24}시장")
+
+
+def _scaled_measure(number: float, unit: str) -> tuple[float, str]:
+    text = str(unit or "").replace(" ", "")
+    if "억" in text and "원" in text:
+        return number * 100_000_000, "KRW"
+    if text.upper() == "KRW" or text == "원":
+        return number, "KRW"
+    if text in {"%", "％"}:
+        return number, "%"
+    if "달러" in text or text.upper() == "USD":
+        return number, "USD"
+    if "명" in text:
+        return number, "명"
+    return number, text
+
+
+def _measured(text: str) -> list[tuple[float, str]]:
+    found = []
+    for match in _MEASURE.finditer(text or ""):
+        number = float(match.group(1).replace(",", ""))
+        found.append(_scaled_measure(number, match.group(2)))
+    return found
+
+
+def _evidence_measures(evidence: list[dict[str, Any]]) -> list[tuple[float, str, str]]:
+    from agents.report import _canonical_amount
+
+    measures = []
+    for item in evidence:
+        blob = f"{item.get('quote') or ''} {item.get('scope') or ''}"
+        parsed = _canonical_amount(item.get("value"), item.get("unit"))
+        if parsed is not None:
+            measures.append((parsed[0], parsed[1], blob))
+        for number, unit in _measured(blob):
+            measures.append((number, unit, blob))
+        for number, unit in _measured(f"{item.get('value') or ''} {item.get('unit') or ''}"):
+            measures.append((number, unit, blob))
+    return measures
+
+
+def _citation_mismatch(text: str, evaluated: list[dict[str, Any]], references: str) -> str:
+    evidence = [item for record in evaluated for item in (record.get("evidence") or [])]
+    if not evidence:
+        return ""
+    measures = _evidence_measures(evidence)
+    for number, unit in _measured(text):
+        same = [item for item in measures if abs(item[0] - number) <= 1e-6 and item[1] == unit]
+        if not same:
+            return f"인용 값 {number:g}{unit}이 근거 값·단위와 다름"
+    scopes = _MARKET_SCOPE.findall(text)
+    if scopes:
+        blob = " ".join(f"{item.get('quote') or ''} {item.get('scope') or ''}" for item in evidence)
+        missing = [scope for scope in scopes if scope not in blob]
+        if missing and blob.strip():
+            return f"시장 범위 {missing[0]}이 인용 근거와 다름"
+    _ = references
+    return ""
+
+
+def _table_rows(body: str) -> list[str]:
+    rows = []
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("|") and not stripped.startswith("|---") and "원값" not in stripped and "지표" not in stripped:
+            rows.append(stripped)
+    return rows
 
 
 def _reference_identities(references: str) -> dict[str, str]:
