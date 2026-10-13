@@ -141,7 +141,7 @@ def _market_query(state: InvestmentState, topic: str, attempt: int) -> str:
     focus = {
         "market_size": "TAM 시장 규모 금액 기준연도 지역 제품 범위",
         "market_growth": "CAGR 성장률 예측기간 기준연도 지역 제품 범위",
-        "demand_risk": "주요 수요처 고객군 도입 요인 시장 위험 규제 위험",
+        "demand_risk": "주요 수요처 고객군 도입 요인 수출 통제 공급망 정부 지원 정부 규제 정책 방향 시장 위험",
     }[topic]
     refinements = (
         "기관 보고서와 원문 통계를 우선",
@@ -298,7 +298,8 @@ def _market_findings(
                     "Return one finding per supplied topic. Write summary in Korean. For market_size, keep the numeric "
                     "value exactly as written in the evidence and its original currency/scale unit. For market_growth, return CAGR "
                     "as a percentage number. For demand_risk, summarize concrete target customers, "
-                    "demand drivers, and market/regulatory risks; value may be text. Include scope "
+                    "demand drivers, export controls, supply-chain constraints, and government support "
+                    "or regulation; value may be text. Include scope "
                     "(region, base year/forecast period, product definition). Cite only exact supplied "
                     "evidence_ids. If figures have incompatible scope or unresolved conflict, set "
                     "conflict=true and do not choose or combine a figure. Do not infer missing facts.",
@@ -541,6 +542,106 @@ def _revenue_stage_score(value: Any) -> int | None:
     return None
 
 
+def _is_sns_evidence(item: dict[str, Any]) -> bool:
+    blob = " ".join(str(item.get(key) or "") for key in ("url", "source", "title")).lower()
+    return any(token in blob for token in ("linkedin.", "facebook.", "instagram.", "twitter.", "x.com", "threads.net"))
+
+
+def _date_sort_key(value: Any) -> str:
+    numbers = re.findall(r"\d+", str(value or ""))
+    if not numbers or len(numbers[0]) != 4:
+        return ""
+    year = int(numbers[0])
+    month = int(numbers[1]) if len(numbers) > 1 else 0
+    day = int(numbers[2]) if len(numbers) > 2 else 0
+    return f"{year:04d}-{month:02d}-{day:02d}"
+
+
+def _human_amount(value: Any, unit: Any) -> str:
+    number = _number(value)
+    unit_text = str(unit or "").strip()
+    if number is None:
+        return f"{value} {unit_text}".strip()
+    upper = unit_text.upper()
+    if upper == "KRW" or unit_text in {"원", "억원", "조원"}:
+        if unit_text == "억원":
+            return f"{number:g}억 원"
+        if number >= 1_000_000_000_000:
+            return f"{number / 1_000_000_000_000:g}조 원"
+        if number >= 100_000_000:
+            return f"{number / 100_000_000:g}억 원"
+        return f"{number:g}원"
+    if upper == "USD" or "달러" in unit_text:
+        if number >= 1_000_000_000:
+            return f"{number / 1_000_000_000:g}십억 달러"
+        return f"{number:g}달러"
+    if unit_text:
+        return f"{number:g}{unit_text}"
+    return f"{number:g}"
+
+
+def _resolve_conflicting_values(evidence: list[Evidence]) -> tuple[Evidence | None, str | None]:
+    """Keep every conflicting observation, then adopt the latest official announcement."""
+    valued = [item for item in evidence if item.get("value") is not None]
+    distinct = {(str(item.get("value")), str(item.get("unit"))) for item in valued}
+    if len(distinct) <= 1:
+        return (valued[0] if valued else None), None
+    listed = ", ".join(
+        f"{_human_amount(item.get('value'), item.get('unit'))}"
+        + f" ({item.get('source') or '출처 미확인'}, {item.get('date') or '날짜 미확인'})"
+        for item in valued
+    )
+    official = [item for item in valued if not _is_sns_evidence(item)]
+    dated = [item for item in (official or valued) if _date_sort_key(item.get("date"))]
+    if not dated:
+        return None, f"출처 충돌({listed})이 해소되지 않아 결측 처리"
+    dated.sort(key=lambda item: _date_sort_key(item.get("date")), reverse=True)
+    chosen = dated[0]
+    chosen_key = (str(chosen.get("value")), str(chosen.get("unit")))
+    if any(
+        _date_sort_key(item.get("date")) == _date_sort_key(chosen.get("date"))
+        and (str(item.get("value")), str(item.get("unit"))) != chosen_key
+        for item in dated[1:]
+    ):
+        return None, f"출처 충돌({listed})이 해소되지 않아 결측 처리"
+    return chosen, (
+        f"출처 충돌({listed}). 최신 공식 발표({chosen.get('date')}, {chosen.get('source')}) 값을 채택"
+    )
+
+
+def _reference_figures(
+    findings: dict[str, dict[str, Any]],
+    evidence: list[Evidence],
+) -> list[dict[str, Any]]:
+    """Keep out-of-scope market figures for display without using them as TAM or CAGR."""
+    by_id = {item["evidence_id"]: item for item in evidence}
+    regions = ("글로벌", "세계", "국내", "한국", "아시아", "북미", "유럽", "미국", "중국")
+    figures: list[dict[str, Any]] = []
+    for topic in ("market_size", "market_growth"):
+        finding = findings.get(topic) or {}
+        if "타깃 시장" not in str(finding.get("validation") or "") or finding.get("value") is None:
+            continue
+        linked = [by_id[item_id] for item_id in finding.get("evidence_ids") or [] if item_id in by_id]
+        source = next((item for item in linked if item.get("source_type") == "rag"), None)
+        source = source or (linked[0] if linked else None)
+        scope = str(finding.get("scope") or "")
+        years = list(dict.fromkeys(re.findall(r"(?:19|20)\d{2}", scope)))
+        figures.append(
+            {
+                "metric": topic,
+                "value": finding.get("value"),
+                "unit": finding.get("unit"),
+                "market_scope": scope,
+                "region": next((word for word in regions if word in scope), ""),
+                "period": "–".join(years),
+                "doc_id": (source or {}).get("doc_id"),
+                "page": (source or {}).get("page"),
+                "evidence_ids": list(finding.get("evidence_ids") or []),
+            }
+        )
+    return figures
+
+
 def _score_deterministic_metric(
     metric: str,
     company_type: Any,
@@ -548,20 +649,25 @@ def _score_deterministic_metric(
     finding: dict[str, Any] | None,
 ) -> ScoreEntry:
     evidence_ids = [item["evidence_id"] for item in evidence]
+    adoption_note = None
     if finding and finding.get("conflict"):
         return _missing_score(metric, "범위가 다른 수치 또는 상충 근거가 해소되지 않음")
     if finding and finding.get("validation"):
         return _missing_score(metric, str(finding["validation"]))
     if not finding:
-        observed_values = {
-            (str(item.get("value")), str(item.get("unit")))
-            for item in evidence
-            if item.get("value") is not None
-        }
-        if len(observed_values) > 1:
-            return _missing_score(metric, "서로 다른 관측값이 있어 하나의 값으로 확정할 수 없음")
-    raw_value = finding.get("value") if finding else (evidence[0].get("value") if evidence else None)
-    unit = finding.get("unit") if finding else (evidence[0].get("unit") if evidence else None)
+        chosen, adoption_note = _resolve_conflicting_values(evidence)
+        if adoption_note and chosen is None:
+            return _missing_score(metric, adoption_note)
+        if chosen is not None:
+            raw_value = chosen.get("value")
+            unit = chosen.get("unit")
+            evidence_ids = [chosen["evidence_id"]]
+        else:
+            raw_value = None
+            unit = None
+    else:
+        raw_value = finding.get("value")
+        unit = finding.get("unit")
     if not evidence_ids:
         return _missing_score(metric)
 
@@ -599,13 +705,26 @@ def _score_deterministic_metric(
 
     if score is None:
         return _missing_score(metric, "근거는 있으나 설계 기준에 맞는 값·단위·범주를 확정할 수 없음")
+    reason = f"설계된 정량·범주 구간을 코드로 적용하여 {score}점 산출"
+    if adoption_note:
+        reason = f"{reason}. {adoption_note}"
     return _observed_score(
         metric,
         normalized,
         score,
-        f"설계된 정량·범주 구간을 코드로 적용하여 {score}점 산출",
+        reason,
         evidence_ids,
     )
+
+
+def _has_measured_third_party(evidence: list[Evidence], evidence_ids: list[str]) -> bool:
+    selected = {item_id for item_id in evidence_ids}
+    text = " ".join(
+        f"{item.get('quote') or ''} {item.get('scope') or ''} {item.get('value') or ''}"
+        for item in evidence
+        if item.get("evidence_id") in selected
+    )
+    return bool(re.search(r"실측|제3자|독립\s*(?:검증|평가|측정)|벤치마크|동일\s*조건", text))
 
 
 def _score_qualitative_metrics(
@@ -649,13 +768,18 @@ def _score_qualitative_metrics(
                     "team_experience: commercialization/customer-site lead experience=5, related "
                     "experience=3, confirmed no related experience=1; demand_clarity: concrete target "
                     "and demand evidence=5, target only=3, confirmed unclear=1; technical_originality: "
-                    "proprietary method plus comparable validated effect=5, claim only=3, confirmed no "
-                    "difference=1; competitive_difference: same-condition advantage proven=5, claim "
-                    "only=3, confirmed none=1; entry_barrier: all three type-specific IP/product-data/"
+                    "proprietary method plus a same-condition measured comparison or third-party "
+                    "verification=5, company claim/target/press-release figure only=3 and never 5, "
+                    "confirmed no difference=1; competitive_difference: same-condition measured "
+                    "advantage or third-party verification=5, company claim only=3 and never 5, "
+                    "confirmed none=1; entry_barrier: all three type-specific IP/product-data/"
                     "integration-partnership categories=5, one or two=3, confirmed none=1; "
-                    "risk_mitigation: major risks mitigated=5, partially mitigated=3, fatal unresolved "
+                    "risk_mitigation: major risks mitigated with measured or third-party evidence=5, "
+                    "company claim or partial mitigation only=3 and never 5, fatal unresolved "
                     "risk=1. Missing information is not negative evidence. Do not invent facts. "
-                    "Write every reason in Korean, one or two sentences.",
+                    "Use the Korean words 입증 or 검증 only when the cited evidence itself is a "
+                    "same-condition measurement or third-party verification. Company claims stay claims. "
+                    "Write every reason in Korean, one or two sentences, from the same evidence.",
                 ),
                 (
                     "human",
@@ -678,11 +802,21 @@ def _score_qualitative_metrics(
         if not valid_ids:
             results[metric] = _missing_score(metric, "정성 점수가 실제 Evidence와 연결되지 않음")
             continue
+        score = item.score
+        reason = item.reason
+        verified = _has_measured_third_party(evidence, valid_ids)
+        if metric in {"technical_originality", "competitive_difference", "risk_mitigation"} and not verified:
+            score = min(score, 3)
+            reason = re.sub(r"(?<!제3자 )입증|(?<!제3자 )검증", "주장", reason)
+            if "회사 측 주장" not in reason:
+                reason += " 회사 측 주장만 확인되어 실측·제3자 근거가 없으면 3점을 넘기지 않음."
+        elif re.search(r"입증|검증", reason) and not verified:
+            reason = re.sub(r"입증|검증", "주장", reason)
         results[metric] = _observed_score(
             metric,
             raw_values[metric],
-            item.score,
-            item.reason,
+            score,
+            reason,
             valid_ids,
         )
         returned.add(metric)
@@ -765,8 +899,20 @@ def initialize_state(
         "quality_result": state.get("quality_result"),
         "quality_retry": state.get("quality_retry", 0),
         "quality_feedback": state.get("quality_feedback", ""),
-        "trace_id": state.get("trace_id") or uuid.uuid4().hex,
-        "node_status": state.get("node_status") or {},
+        "trace_id": configurable.get("trace_id") or state.get("trace_id") or uuid.uuid4().hex,
+        "step_count": int(state.get("step_count") or 0),
+        "node_status": state.get("node_status") or {
+            "initialize_state": "done",
+            "supervisor": "pending",
+            "startup_agent": "pending",
+            "technology_agent": "pending",
+            "market_agent": "pending",
+            "competitor_agent": "pending",
+            "evaluator_agent": "pending",
+            "decision_agent": "pending",
+            "report_agent": "pending",
+            "quality_agent": "pending",
+        },
         "last_error": state.get("last_error"),
         "next_routes": state.get("next_routes") or [],
         "route_reason": state.get("route_reason", ""),
@@ -906,6 +1052,7 @@ def market_agent(
             "target_market_scope": _market_scope(state),
             "topics": topic_results,
             "findings": findings,
+            "reference_figures": _reference_figures(findings, market_evidence),
             "insufficient_topics": insufficient_topics,
             "missing_metrics": missing_metrics,
             "analysis_error": analysis_error,

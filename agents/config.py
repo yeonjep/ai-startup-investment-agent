@@ -13,6 +13,7 @@ MAX_SELECTION_RETRIES = 1
 MAX_RAG_RETRIES = 2
 MAX_EVIDENCE_RETRIES = 1
 MAX_QUALITY_RETRIES = 1
+MAX_STEP_COUNT = 80
 
 SCORE_WEIGHTS = {
 	"team": 25,
@@ -38,6 +39,17 @@ def get_as_of_date() -> str:
 		return date.fromisoformat(value).isoformat()
 	except ValueError as error:
 		raise ValueError("AS_OF_DATE must use YYYY-MM-DD format") from error
+
+
+def get_max_step_count() -> int:
+	raw_value = os.getenv("MAX_STEP_COUNT", str(MAX_STEP_COUNT))
+	try:
+		value = int(raw_value)
+	except ValueError as error:
+		raise ValueError("MAX_STEP_COUNT must be a positive integer") from error
+	if value < 1:
+		raise ValueError("MAX_STEP_COUNT must be a positive integer")
+	return value
 
 
 def validate_max_candidates(value: object = None) -> int:

@@ -255,6 +255,7 @@ def collect_profile_evidence(company_name: str, search_docs: list[dict[str, Any]
         f"기업명: {company_name}\n"
         "검색 결과만 근거로 창업자·핵심 인력 경력, 기술 인력 수, 누적 투자액, 고객·PoC·계약 수, 매출 단계, 주요 위험을 추출하세요.\n"
         "- 검색 결과에 없는 지표는 만들지 않는다. 협력 발표를 유료 계약으로 해석하지 않고, 같은 고객·프로젝트는 한 번만 센다.\n"
+        "- 같은 지표(누적 투자액, 라운드 등)가 출처마다 다르면 각 출처의 값과 날짜를 별도 항목으로 모두 반환한다. 하나만 고르지 않는다.\n"
         "- 모든 지표에는 검색 결과의 원문 quote와 source_url이 있어야 한다.\n\n"
         f"검색 결과:\n{format_search_docs(search_docs)}"
     )

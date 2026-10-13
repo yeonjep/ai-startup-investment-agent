@@ -1,0 +1,32 @@
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "startup_agent", "reason": "후보 탐색", "ts": "2026-10-13T06:48:07.742942+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "startup_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:48:25.038537+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "startup_agent", "reason": "선정 제외 후 다음 후보", "ts": "2026-10-13T06:48:25.040996+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "startup_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:48:32.310627+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "startup_agent", "reason": "선정 제외 후 다음 후보", "ts": "2026-10-13T06:48:32.312413+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "startup_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:48:36.850068+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "startup_agent", "reason": "선정 REVIEW 보완", "ts": "2026-10-13T06:48:36.852080+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "startup_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:48:45.564975+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "technology_agent,market_agent,competitor_agent", "reason": "선정 통과 후보의 부족한 분석 배정: technology_agent, market_agent, competitor_agent", "ts": "2026-10-13T06:48:45.567025+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "technology_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:48:52.536906+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "competitor_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:49:04.019443+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "market_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:49:22.718236+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "evaluator_agent", "reason": "분석 결과 수집 완료, 채점", "ts": "2026-10-13T06:49:22.720965+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "evaluator_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:49:28.882111+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "technology_agent,market_agent", "reason": "결측 영역 추가 분석: tech, market", "ts": "2026-10-13T06:49:28.884405+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "technology_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:49:37.065912+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "market_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:49:40.405950+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "evaluator_agent", "reason": "분석 결과 수집 완료, 채점", "ts": "2026-10-13T06:49:40.408761+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "evaluator_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:49:47.118880+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "decision_agent", "reason": "근거 보완 상한 도달, 결측을 유지하고 판정", "ts": "2026-10-13T06:49:47.121222+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "decision_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:49:47.123594+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "startup_agent", "reason": "보류 후 다음 후보", "ts": "2026-10-13T06:49:47.125364+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "startup_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:49:54.230836+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "report_agent", "reason": "평가 가능한 후보 없음", "ts": "2026-10-13T06:49:54.232127+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "report_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:50:09.140390+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "quality_agent", "reason": "보고서 작성 후 품질 평가", "ts": "2026-10-13T06:50:09.142529+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "quality_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:50:09.983675+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "report_agent", "reason": "품질 미달로 보고서 수정", "ts": "2026-10-13T06:50:09.985489+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "report_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:50:21.052973+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "quality_agent", "reason": "보고서 작성 후 품질 평가", "ts": "2026-10-13T06:50:21.056197+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "quality_agent", "decision": "done", "reason": "completed", "ts": "2026-10-13T06:50:21.871272+00:00"}
+{"trace_id": "b3ec877a7887492ab3c04405d335c6a6", "node": "supervisor", "decision": "END", "reason": "품질 재작성 상한 도달", "ts": "2026-10-13T06:50:21.873723+00:00"}

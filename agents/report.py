@@ -5,6 +5,7 @@ import json
 import re
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel
@@ -46,6 +47,8 @@ class ReportSections(BaseModel):
     summary: str
     overview: str
     team_tech: str
+    stakeholders: str
+    domain_application: str
     market_competition: str
     risk_market: str
     risk_tech: str
@@ -97,8 +100,9 @@ def report_type(state: dict[str, Any]) -> str:
 
 
 def _cell(value: Any, limit: int | None = None) -> str:
-    text = "-" if value in (None, "") else str(value).replace("|", "/").replace("\n", " ")
-    return text[: limit - 1] + "…" if limit and len(text) > limit else text
+    """Keep the full cell text so the PDF wraps it instead of cutting it off."""
+    _ = limit
+    return "-" if value in (None, "") else str(value).replace("|", "/").replace("\n", " ")
 
 
 def _table(header: list[str], rows: list[list[Any]]) -> str:
@@ -157,11 +161,12 @@ def _report_market_analysis(record: dict[str, Any]) -> dict[str, Any]:
     ]
     return {
         "summary": (
-            "Evaluator 검증을 통과한 목표 시장 지표만 서술한다."
+            "채점을 통과한 목표 시장 지표만 서술한다."
             if findings
-            else "검증을 통과한 목표 시장 정량 지표가 확인되지 않음."
+            else "채점을 통과한 목표 시장 정량 지표가 확인되지 않음."
         ),
         "findings": findings,
+        "reference_figures": list(analysis.get("reference_figures") or []),
         "insufficient_topics": missing,
     }
 
@@ -209,65 +214,152 @@ def _year(date: str | None) -> str | None:
     return match.group(1) if match else None
 
 
-def _reference_link(url: str | None) -> str | None:
-    """Keep references clickable without printing renderer-breaking long URLs."""
-    return f"[원문 링크]({url})" if url else None
+_DOMAIN_RE = re.compile(r"^(?:[a-z0-9-]+\.)+[a-z]{2,}$", re.IGNORECASE)
+_SNS_TOKENS = ("linkedin.", "facebook.", "instagram.", "twitter.", "x.com", "threads.net")
+
+
+def _is_sns_item(item: dict[str, Any]) -> bool:
+    blob = " ".join(str(item.get(key) or "") for key in ("url", "source", "title")).lower()
+    return any(token in blob for token in _SNS_TOKENS)
+
+
+def _clean_title_and_outlet(item: dict[str, Any]) -> tuple[str, str]:
+    raw = str(item.get("title") or "제목 미확인").strip()
+    outlet = None
+    article = re.search(r"기사본문\s*-\s*([^<]+)", raw)
+    if article:
+        outlet = re.split(r"[(\[]", article.group(1).strip())[0].strip()
+    body = re.split(r"\s+<\s+", raw, maxsplit=1)[0]
+    body = re.sub(r"\s*[|/]\s*\d+\s*comments?\b.*$", "", body, flags=re.IGNORECASE).strip()
+    body = re.sub(r"\s*[|/]\s*[^|/]{1,40}\s*[|/]\s*\d+\s*comments?\b.*$", "", body, flags=re.IGNORECASE).strip()
+    tail = re.search(r"\s+[-|/]\s+([^</|]{2,40})$", body)
+    if tail:
+        candidate = tail.group(1).strip()
+        if outlet is None or candidate.replace(" ", "") in outlet.replace(" ", ""):
+            outlet = outlet or candidate
+            body = body[: tail.start()].strip()
+    source = str(item.get("source") or "").strip()
+    if not outlet:
+        outlet = source if source and not _DOMAIN_RE.match(source) else (source or "사이트명 미확인")
+    return outlet, (body.strip(" -|/") or "제목 미확인")
+
+
+def _normalize_url(url: str | None) -> str:
+    if not url:
+        return ""
+    parsed = urlparse(str(url))
+    host = parsed.netloc.lower().removeprefix("www.")
+    path = parsed.path.rstrip("/")
+    return f"{host}{path}" if host else ""
+
+
+def _normalize_title(title: str | None) -> str:
+    _, clean = _clean_title_and_outlet({"title": title or "", "source": ""})
+    compact = re.sub(r"\s+", "", clean).lower()
+    return compact if len(compact) >= 8 else ""
+
+
+def _identity_keys(item: dict[str, Any]) -> set[tuple[str, str]]:
+    keys: set[tuple[str, str]] = set()
+    if item.get("doc_id"):
+        keys.add(("doc", str(item["doc_id"])))
+    url = _normalize_url(item.get("url"))
+    if url:
+        keys.add(("url", url))
+    title = _normalize_title(item.get("title"))
+    if title:
+        keys.add(("title", title))
+    if not keys:
+        keys.add(("item", str(item.get("evidence_id") or id(item))))
+    return keys
+
+
+def _merge_references(cited: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Merge the same document by doc_id, normalized URL, or cleaned title."""
+    groups: list[dict[str, Any]] = []
+    for item in cited:
+        keys = _identity_keys(item)
+        hits = [group for group in groups if group["keys"] & keys]
+        if not hits:
+            groups.append({"keys": set(keys), "item": item, "pages": [item["page"]] if item.get("page") else []})
+            continue
+        primary = hits[0]
+        primary["keys"] |= keys
+        if item.get("page") and item["page"] not in primary["pages"]:
+            primary["pages"].append(item["page"])
+        for extra in hits[1:]:
+            primary["keys"] |= extra["keys"]
+            for page in extra["pages"]:
+                if page not in primary["pages"]:
+                    primary["pages"].append(page)
+            groups.remove(extra)
+    return groups
 
 
 def _format_references(cited: list[dict[str, Any]]) -> list[str]:
-    """cited: 인용 순서대로의 Evidence. 같은 문서(RAG)·같은 URL(웹)은 한 항목으로 합친다."""
-    groups: dict[tuple, dict[str, Any]] = {}
-    for item in cited:
-        key = ("rag", item["doc_id"]) if item["source_type"] == "rag" else ("web", item.get("url") or item.get("title"))
-        group = groups.setdefault(key, {"item": item, "pages": []})
-        if item.get("page") and item["page"] not in group["pages"]:
-            group["pages"].append(item["page"])
-    return [_reference_line(group["item"], sorted(group["pages"])) for group in groups.values()]
+    """cited: 인용 순서대로의 Evidence. 같은 문서는 한 항목으로 합친다."""
+    return [
+        _reference_line(group["item"], sorted(group["pages"]))
+        for group in _merge_references(cited)
+    ]
 
 
 def _reference_line(item: dict[str, Any], pages: list[int]) -> str:
-    source, url = item.get("source"), item.get("url")
-    title = _cell(item.get("title"), 90)
+    """Print the real URL as text. Page numbers stay in the body, not here."""
+    _ = pages
+    outlet, title = _clean_title_and_outlet(item)
+    url = str(item.get("url") or "").strip()
     if item["source_type"] == "rag":
+        source = item.get("source") or "발행기관 미확인"
         year = _year(item.get("date"))
-        head = f"{source or '발행기관 미확인'}({year})" if year else f"{source or '발행기관 미확인'}"
-        tail = _reference_link(url) if url else f"문서 ID {item['doc_id']}, 조회일 {item.get('accessed_at') or '미확인'}"
-        page_text = f", 인용 PDF 페이지 {', '.join(str(p) for p in pages)}" if pages else ""
-        return f"{head}. *{title}*. {tail}{page_text}."
+        head = f"{source}({year})" if year else source
+        if url:
+            return f"{head}. *{title}*. {url}."
+        if item.get("doc_id"):
+            return f"{head}. *{title}*. 문서 ID {item['doc_id']}."
+        return f"{head}. *{title}*."
     date = item.get("date")
-    head = f"{source or '작성자 미확인'}({date})" if date else f"{source or '작성자 미확인'}(날짜 미확인, 조회일 {item.get('accessed_at') or '미확인'})"
-    return f"{head}. *{title}*. {source or '사이트명 미확인'}, {_reference_link(url)}." if url else f"{head}. *{title}*."
+    head = f"{outlet}({date})" if date else f"{outlet}(날짜 미확인, 조회일 {item.get('accessed_at') or '미확인'})"
+    if url:
+        return f"{head}. *{title}*. {outlet}, {url}."
+    return f"{head}. *{title}*."
 
 
 def _finalize_citations(markdown_text: str, catalog: Catalog) -> str:
-    """[E#] 표기를 인용 순서의 번호로 바꾸고, 실제 인용한 출처만 REFERENCE로 만든다."""
-    cited: list[dict[str, Any]] = []
-    numbers: dict[str, int] = {}
-    ref_keys: dict[tuple, int] = {}
+    """[E#] 표기를 인용 순서의 번호로 바꾸고, 같은 문서는 REFERENCE에서 한 항목으로 합친다."""
+    ordered = [
+        item
+        for tag in re.findall(r"\[(E\d+)\]", markdown_text)
+        if (item := catalog.get(tag)) is not None
+    ]
+    groups = _merge_references(ordered)
 
-    def key_of(item: dict[str, Any]) -> tuple:
-        return ("rag", item["doc_id"]) if item["source_type"] == "rag" else ("web", item.get("url") or item.get("title"))
+    def number_of(item: dict[str, Any]) -> int | None:
+        keys = _identity_keys(item)
+        for index, group in enumerate(groups, start=1):
+            if group["keys"] & keys:
+                return index
+        return None
 
     def replace(match: re.Match) -> str:
         tag = match.group(0)[1:-1]
         item = catalog.get(tag)
         if item is None:
             return f"[INVALID:{tag}]"
-        cited.append(item)
-        ref_keys.setdefault(key_of(item), len(ref_keys) + 1)
-        return f"[{ref_keys[key_of(item)]}]"
+        number = number_of(item)
+        return f"[{number}]" if number else f"[INVALID:{tag}]"
 
     body = re.sub(r"\[E\d+\]", replace, markdown_text)
-    for item in cited:  # 인용한 웹 출처만 페이지 메타데이터에서 발행일 보완
+    for group in groups:
+        item = group["item"]
         if item["source_type"] == "web" and not item.get("date") and item.get("url"):
             item["date"] = fetch_published_date(item["url"])
-    # 연속된 인용은 중복을 없애고 번호순으로 정렬한다: [3][1][3] -> [1][3]
     body = re.sub(
         r"(?:\[\d+\])+",
         lambda m: "".join(f"[{n}]" for n in sorted({int(x) for x in re.findall(r"\d+", m.group(0))})),
         body,
     )
-    lines = _format_references(cited)
+    lines = [_reference_line(group["item"], sorted(group["pages"])) for group in groups]
     reference = "\n".join(f"{i}. {line}" for i, line in enumerate(lines, start=1)) or "인용한 외부 자료 없음."
     return (
         f"{body}\n\n"
@@ -335,6 +427,8 @@ def _fallback_sections(rtype: str, records: list[dict[str, Any]]) -> ReportSecti
         summary=f"{_name(main)} 등 {len(records)}개 기업을 평가했다." if rtype == "all_hold" else f"{_name(main)}을(를) 평가했다.",
         overview=str(main["company_profile"].get("evaluation_product", unknown)),
         team_tech=str(main.get("tech_summary", {}).get("summary", unknown)),
+        stakeholders="고객·파트너·투자자·정부 과제에 대한 공개 근거가 없으면 공개 근거 미확인.",
+        domain_application="적용 워크로드와 현장 적용에 대한 공개 근거가 없으면 공개 근거 미확인.",
         market_competition=f"{_report_market_analysis(main).get('summary', unknown)} "
         f"{main.get('competitor_analysis', {}).get('summary', '')}",
         risk_market=unknown, risk_tech=unknown, risk_regulation=unknown, risk_competition=unknown,
@@ -353,8 +447,8 @@ def _write_sections(rtype: str, records: list[dict[str, Any]], catalog: Catalog,
     )
     if feedback:
         human += (
-            "\n\n품질 평가에서 아래 항목이 미달이었다. 투자/보류 판정과 점수는 그대로 두고, "
-            "지적된 문장만 고쳐라.\n"
+            "\n\n품질 평가에서 아래 섹션만 미달이었다. 표시된 섹션의 문장만 고치고, "
+            "다른 절의 사실과 점수·판정은 유지하라. 규제 절에는 투자·실적을 넣지 마라.\n"
             f"{feedback}\n"
         )
     try:
@@ -398,9 +492,21 @@ def _cite_numeric_sentences(
     return "".join(parts)
 
 
+def _clip(text: str, limit: int) -> str:
+    compact = re.sub(r"\s+", " ", text).strip()
+    if len(compact) <= limit:
+        return compact
+    cut = compact[:limit]
+    pivot = max(cut.rfind(" "), cut.rfind("."), cut.rfind(","))
+    if pivot >= limit // 2:
+        cut = cut[:pivot]
+    return cut.rstrip(" ,./")
+
+
 def _clean_narrative(text: str) -> str:
-    """Remove occasional unmatched braces from structured LLM text fields."""
-    return re.sub(r"\s*\}(?=\s*$)", "", text.strip())
+    """Remove leftover braces and bare domain labels from narrative fields."""
+    text = re.sub(r"\s*\}(?=\s*$)", "", text.strip())
+    return re.sub(r"\s*\((?:https?://)?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}[^)]*\)", "", text, flags=re.IGNORECASE)
 
 
 # ---------------------------------------------------------------- 표(코드)
@@ -416,8 +522,9 @@ def _scorecard(record: dict[str, Any], catalog: Catalog, reason_limit: int) -> s
         reason = entry["reason"]
         if reason.startswith("설계된 정량·범주 구간을 코드로 적용"):
             reason = "정량·범주 구간 규칙 적용"
-        reason = _cell(reason, reason_limit)
-        rows.append([group, label, _cell(_fmt_raw(entry["raw_value"]), 28), score, f"{reason} {catalog.tag(entry['evidence_ids'])}".strip()])
+        _ = reason_limit
+        reason = _clip(reason, 60)
+        rows.append([group, label, _clip(_fmt_raw(entry["raw_value"]), 30), score, f"{reason} {catalog.tag(entry['evidence_ids'])}".strip()])
     return _table(["항목", "지표", "원값", "점수", "판단 근거"], rows)
 
 
@@ -467,7 +574,7 @@ def _comparison_table(records: list[dict[str, Any]]) -> str:
 
 def _missing_text(record: dict[str, Any]) -> str:
     names = [METRIC_INFO.get(m, ("", m))[1] for m in record.get("missing_evidence", [])]
-    text = f"결측 {len(names)}개({', '.join(names)})는 3점이 **{NEUTRAL}**로 계산되었으며 근거 있는 3점과 구분한다." if names else "결측 지표 없음."
+    text = f"결측 {len(names)}개({', '.join(names)})는 3점이 **{NEUTRAL}**으로 계산되었으며 근거 있는 3점과 구분한다." if names else "결측 지표 없음."
     if record.get("selection_uncertain"):
         criteria = record["company_profile"].get("uncertain_criteria") or ["미확인"]
         text += f" 선정 기준 REVIEW가 해소되지 않아(불확실 기준: {', '.join(criteria)}) 최종 판정은 보류다."
@@ -491,12 +598,106 @@ def _limitations(state: dict[str, Any], rtype: str) -> str:
             "투자 판정 없이 후보가 소진되거나 평가 상한에 도달했으며, "
             "검색 순서·후보 상한에 따라 일부 기업이 평가되지 않았을 수 있다.\n"
         )
-    return (
+    text = (
         progress
         + "- 정량 구간은 공식 VC 표준이 아닌 프로젝트 초기 설계값이며, 누적 투자액은 조달 이력의 대리 지표(현재 자금 여력 아님)다.\n"
         "- Valuation·지분율이 비공개이므로 ROI는 산출하지 않았고, 기대 성장 여력은 시장·사업화 단계로 정성 평가했다.\n"
         "- 서로 다른 기업 유형의 원수치는 직접 비교하지 않는다."
     )
+    conflicts = _conflict_lines(state.get("evaluated") or [])
+    if conflicts:
+        text += "\n- 출처 충돌: " + " ".join(conflicts)
+    return text
+
+
+def _conflict_lines(records: list[dict[str, Any]]) -> list[str]:
+    lines = []
+    for record in records:
+        for metric, entry in (record.get("scores") or {}).items():
+            reason = str((entry or {}).get("reason") or "")
+            if "출처 충돌" in reason or "상충 근거" in reason:
+                label = METRIC_INFO.get(metric, ("", metric))[1]
+                lines.append(f"{_name(record)} {label} — {reason}")
+    return lines
+
+
+_REGULATORY = re.compile(r"수출\s*통제|수출통제|수출\s*규제|공급망|정부\s*규제|규제\s*위험|이니셔티브|정책\s*방향")
+_FUNDING_TEXT = re.compile(r"투자\s*유치|투자유치|시리즈|매출|실적")
+
+
+def _regulatory_items(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    matches = []
+    for record in records:
+        for item in record.get("evidence") or []:
+            if item.get("metric") not in {None, "", "demand_risk", "risk_mitigation"}:
+                continue
+            blob = " ".join(str(item.get(key) or "") for key in ("quote", "scope", "title"))
+            if not _REGULATORY.search(blob) or _FUNDING_TEXT.search(blob):
+                continue
+            matches.append(item)
+    return matches
+
+
+def _regulation_text(records: list[dict[str, Any]], narrative: str, catalog: "Catalog") -> str:
+    matches = _regulatory_items(records)
+    text = _clean_narrative(narrative or "")
+    if not matches or _FUNDING_TEXT.search(text):
+        if not matches:
+            return "공개 근거 미확인"
+        text = ""
+    if text in {"", "확인되지 않음", "공개 근거 미확인"} or not re.search(r"\[(?:E)?\d+\]", text):
+        item = matches[0]
+        snippet = _clip(re.sub(r"\s+", " ", str(item.get("quote") or "")), 80)
+        tags = catalog.tag([str(found.get("evidence_id") or "") for found in matches[:2]])
+        if not snippet:
+            return "공개 근거 미확인"
+        return f"{snippet} {tags}".strip()
+    return text
+
+
+def _reference_figure_lines(records: list[dict[str, Any]], catalog: "Catalog") -> str:
+    lines = []
+    for record in records:
+        for figure in (record.get("market_analysis") or {}).get("reference_figures") or []:
+            label = "시장 규모" if figure.get("metric") == "market_size" else "성장률"
+            scope = figure.get("market_scope") or "범위 미기재"
+            region = figure.get("region") or "지역 미기재"
+            period = figure.get("period") or "기간 미기재"
+            tag = catalog.tag(figure.get("evidence_ids") or [])
+            where = ""
+            if figure.get("doc_id"):
+                where = f", 문서 {figure['doc_id']}"
+                if figure.get("page"):
+                    where += f" p.{figure['page']}"
+            lines.append(
+                f"- {label}: {figure.get('value')} {figure.get('unit') or ''}".rstrip()
+                + f" (시장 범위 {scope}, 지역 {region}, 기준 {period}{where}) {tag}".rstrip()
+                + " — 참고 수치(시장 범위 상이, 채점 미반영)"
+            )
+    return "\n".join(lines)
+
+
+def _citation_items(record: dict[str, Any]) -> list[dict[str, Any]]:
+    cited_ids = {
+        evidence_id
+        for entry in record.get("scores", {}).values()
+        if entry.get("status") == "observed"
+        for evidence_id in entry.get("evidence_ids", [])
+    }
+    for figure in (record.get("market_analysis") or {}).get("reference_figures") or []:
+        cited_ids.update(figure.get("evidence_ids") or [])
+    items = []
+    for item in record.get("evidence") or []:
+        evidence_id = item.get("evidence_id")
+        blob = " ".join(str(item.get(key) or "") for key in ("quote", "scope", "title"))
+        if evidence_id in cited_ids or item.get("metric") == "demand_risk" or _REGULATORY.search(blob):
+            items.append(item)
+    press_metrics = {item.get("metric") for item in items if not _is_sns_item(item)}
+    return [
+        item
+        for item in items
+        if not (_is_sns_item(item) and item.get("metric") in press_metrics)
+    ]
 
 
 def _hold_summary(records: list[dict[str, Any]], reason_limit: int) -> str:
@@ -516,29 +717,15 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
         focus, holds = [main], [r for r in evaluated if r is not main]
     else:
         focus, holds = evaluated, []
-    citation_records = []
-    for record in focus:
-        cited_ids = {
-            evidence_id
-            for entry in record.get("scores", {}).values()
-            if entry.get("status") == "observed"
-            for evidence_id in entry.get("evidence_ids", [])
-        }
-        citation_records.append(
-            {
-                "evidence": [
-                    item
-                    for item in record.get("evidence", [])
-                    if item.get("evidence_id") in cited_ids
-                ]
-            }
-        )
+    citation_records = [{"evidence": _citation_items(record)} for record in focus]
     catalog = Catalog(citation_records)
     sec = _write_sections(rtype, focus, catalog, scale, as_of, str(state.get("quality_feedback") or ""))
     for field_name in (
         "summary",
         "overview",
         "team_tech",
+        "stakeholders",
+        "domain_application",
         "market_competition",
         "risk_market",
         "risk_tech",
@@ -552,6 +739,12 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
     sec.overview = _cite_numeric_sentences(sec.overview, catalog, ("profile",))
     sec.team_tech = _cite_numeric_sentences(
         sec.team_tech, catalog, ("profile", "tech")
+    )
+    sec.stakeholders = _cite_numeric_sentences(
+        sec.stakeholders, catalog, ("profile", "market", "competitor")
+    )
+    sec.domain_application = _cite_numeric_sentences(
+        sec.domain_application, catalog, ("tech", "market")
     )
     sec.market_competition = _cite_numeric_sentences(
         sec.market_competition,
@@ -568,14 +761,19 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
         head = (f"평가 후보 {len(evaluated)}개 **전원 보류** · 최고 총점 {best:.2f}/100 · 평가 기준일 {as_of}"
                 if best is not None else f"평가 후보 {len(evaluated)}개 전원 보류 · 평가 기준일 {as_of}")
 
-    page_break = '<div class="page-break"></div>'
     parts = [
         f"# SUMMARY\n\n{head}\n\n{sec.summary}\n\n## 1. 기업 및 사업 개요\n\n{sec.overview}",
-        page_break,
-        f"## 2. 팀·기술 및 제품 경쟁력\n\n{sec.team_tech}",
-        page_break,
+        (
+            "## 2. 팀·기술 및 제품 경쟁력\n\n"
+            f"### 기술 성숙도\n\n{sec.team_tech}\n\n"
+            f"### 이해관계자\n\n{sec.stakeholders}\n\n"
+            f"### 도메인 적용\n\n{sec.domain_application}"
+        ),
     ]
     market = f"## 3. 시장성 및 경쟁 환경\n\n{sec.market_competition}\n\n**시장 지표**\n\n{_market_table(focus, catalog)}"
+    reference_lines = _reference_figure_lines(focus, catalog)
+    if reference_lines:
+        market += "\n\n" + reference_lines
     comps = [
         c for r in focus for c in r.get("competitor_analysis", {}).get("competitors", [])
         if str(c.get("name", "")).strip() != _name(r)
@@ -583,7 +781,6 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
     if comps:
         market += "\n\n**경쟁사 비교**\n\n" + _table(["경쟁사", "국가", "비교"], [[c.get("name"), c.get("country"), _cell(c.get("comparison"), 60)] for c in comps[:5]])
     parts.append(market)
-    parts.append(page_break)
 
     if rtype == "invest":
         group_score_chart(main, chart_dir / "group_scores.png")
@@ -596,11 +793,10 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
     if holds:
         body4 += f"\n\n### 앞서 평가한 보류 후보\n\n{_hold_summary(holds, reason_limit)}"
     parts.append(f"## 4. 투자 판단 및 주요 리스크\n\n{body4}")
-    parts.append(page_break)
     risks = (
         f"### 주요 리스크\n\n- **시장**: {sec.risk_market}\n"
         f"- **기술**: {sec.risk_tech}\n"
-        f"- **규제**: {sec.risk_regulation}\n"
+        f"- **규제**: {_regulation_text(focus, sec.risk_regulation, catalog)}\n"
         f"- **경쟁**: {sec.risk_competition}\n\n"
         f"### 평가 범위와 한계\n\n{_limitations(state, rtype)}"
     )

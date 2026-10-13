@@ -61,9 +61,12 @@ class SufficiencyVote(TypedDict):
     reason: str
 
 
-class QualityCheck(TypedDict):
+class QualityCheck(TypedDict, total=False):
+    item: str
     passed: bool
     reason: str
+    reasons: list[str]
+    target_section: str
 
 
 class QualityResult(TypedDict):
@@ -102,7 +105,8 @@ class InvestmentState(TypedDict, total=False):
     quality_retry: int
     quality_feedback: str
     trace_id: str
-    node_status: dict[str, str]
+    step_count: int
+    node_status: Annotated[dict[str, str], merge_dicts]
     last_error: str | None
     next_routes: list[str]
     route_reason: str

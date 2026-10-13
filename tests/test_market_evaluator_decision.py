@@ -261,7 +261,7 @@ class AgentImplementationTests(unittest.TestCase):
 
         self.assertEqual(len(result["scores"]), 13)
         self.assertEqual(result["missing_evidence"], [])
-        self.assertAlmostEqual(result["total_score"], 100.0)
+        self.assertAlmostEqual(result["total_score"], 98.0)
 
         decision_state = {**state, **result, "uncertain": False}
         decision = decision_agent(decision_state, {})

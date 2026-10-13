@@ -1,0 +1,42 @@
+{
+  "passed": false,
+  "loop_count": 1,
+  "checks": [
+    {
+      "item": "groundedness",
+      "passed": true,
+      "reasons": [
+        "수치·사실 문장이 REFERENCE 인용과 연결됨"
+      ],
+      "target_section": "",
+      "reason": "수치·사실 문장이 REFERENCE 인용과 연결됨"
+    },
+    {
+      "item": "neutrality",
+      "passed": true,
+      "reasons": [
+        "근거 없는 우열·과장이 없음"
+      ],
+      "target_section": "",
+      "reason": "근거 없는 우열·과장이 없음"
+    },
+    {
+      "item": "bias_control",
+      "passed": false,
+      "reasons": [
+        "수치 충돌이 보고서에 표기되지 않음"
+      ],
+      "target_section": "본문",
+      "reason": "수치 충돌이 보고서에 표기되지 않음"
+    },
+    {
+      "item": "perspective_coverage",
+      "passed": true,
+      "reasons": [
+        "기술 성숙도·시장성·이해관계자·도메인 적용 소제목이 있음"
+      ],
+      "target_section": "",
+      "reason": "기술 성숙도·시장성·이해관계자·도메인 적용 소제목이 있음"
+    }
+  ]
+}

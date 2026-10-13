@@ -55,7 +55,7 @@ def make_evidence(
         "doc_id": None,
         "page": None,
         "chunk_id": None,
-        "quote": str(quote).strip(),
+        "quote": str(quote).strip()[:500],
         "scope": scope or None,
     }
 

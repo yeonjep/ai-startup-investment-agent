@@ -1,12 +1,14 @@
-# Candidate gate -> parallel analysis -> evaluation/decision -> report/quality.
-# Supervisor is the mandatory evidence gate and coordinates report rework.
+# Hub-and-spoke: every worker returns to supervisor, which chooses the next one.
 
-from typing import Literal, Sequence
+import inspect
+from collections.abc import Sequence
+from typing import Any, Callable
 
+from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from agents.config import (
-    MAX_CANDIDATES,
     MAX_CANDIDATE_POOL,
     MAX_EVIDENCE_RETRIES,
     MAX_QUALITY_RETRIES,
@@ -14,6 +16,7 @@ from agents.config import (
 )
 from agents.quality import quality_agent
 from agents.report import report_agent
+from agents.route_log import append_route_log
 from agents.state import InvestmentState
 from agents.stubs import (
     competitor_agent,
@@ -21,147 +24,100 @@ from agents.stubs import (
     evaluator_agent,
     initialize_state,
     market_agent,
-    next_candidate,
     startup_agent,
     technology_agent,
 )
-from agents.supervisor import supervisor
+from agents.supervisor import ANALYSIS_NODES, supervisor
 
-ANALYSIS_NODES = (
+WORKERS = (
+    "startup_agent",
     "technology_agent",
     "market_agent",
     "competitor_agent",
-)
-SUPERVISOR_DESTINATIONS = (
-    "technology_agent",
-    "market_agent",
-    "competitor_agent",
+    "evaluator_agent",
     "decision_agent",
     "report_agent",
+    "quality_agent",
 )
+WORKER_FUNCTIONS = {
+    "startup_agent": startup_agent,
+    "technology_agent": technology_agent,
+    "market_agent": market_agent,
+    "competitor_agent": competitor_agent,
+    "evaluator_agent": evaluator_agent,
+    "decision_agent": decision_agent,
+    "report_agent": report_agent,
+    "quality_agent": quality_agent,
+}
 
 
-def route_after_startup(
-    state: InvestmentState,
-) -> str | Sequence[str]:
-    candidates = list(state.get("candidates") or [])
-    index = int(state.get("current_idx") or 0)
-    if not candidates or index >= len(candidates):
-        return "report_agent"
-    status = state.get("selection_status")
-    if status == "REVIEW" and not state.get("current_startup"):
-        return "startup_agent"
-    if status == "FAIL":
-        return "next_candidate"
-    if status in {"PASS", "REVIEW"} and state.get("current_startup"):
-        return list(ANALYSIS_NODES)
-    return "report_agent"
+def _accepts_config(fn: Callable[..., Any]) -> bool:
+    return "config" in inspect.signature(fn).parameters
 
 
-def route_after_evaluator(
-    state: InvestmentState,
-) -> Literal["supervisor"]:
-    del state
-    return "supervisor"
+def _track(name: str, fn: Callable[..., Any]) -> Callable[..., dict[str, Any]]:
+    """Record running/done/failed without storing the route log in State."""
 
+    def wrapped(state: InvestmentState, config: RunnableConfig | None = None) -> dict[str, Any]:
+        try:
+            result = fn(state, config) if _accepts_config(fn) else fn(state)
+        except Exception as exc:  # noqa: BLE001 - failure is recorded, then supervisor stops the loop
+            append_route_log(state.get("trace_id"), name, "failed", str(exc))
+            return {
+                "node_status": {name: "failed"},
+                "last_error": f"{name}: {exc}",
+            }
+        if not isinstance(result, dict):
+            result = {}
+        result["node_status"] = {**(result.get("node_status") or {}), name: "done"}
+        append_route_log(state.get("trace_id"), name, "done", "completed")
+        return result
 
-def route_after_decision(
-    state: InvestmentState,
-) -> Literal["next_candidate", "report_agent"]:
-    if state.get("decision") == "투자":
-        return "report_agent"
-    next_index = int(state.get("current_idx") or 0) + 1
-    has_next = next_index < len(state.get("candidates") or [])
-    below_limit = len(state.get("evaluated") or []) < int(
-        state.get("max_candidates") or MAX_CANDIDATES
-    )
-    return "next_candidate" if has_next and below_limit else "report_agent"
-
-
-def route_after_quality(
-    state: InvestmentState,
-) -> Literal["supervisor", "end"]:
-    quality = state.get("quality_result") or {}
-    if quality.get("passed"):
-        return "end"
-    if int(state.get("quality_retry") or 0) < MAX_QUALITY_RETRIES:
-        return "supervisor"
-    return "end"
+    wrapped.__name__ = name
+    return wrapped
 
 
 def route_from_supervisor(state: InvestmentState) -> str | Sequence[str]:
-    routes = [
-        route
-        for route in state.get("next_routes") or []
-        if route in SUPERVISOR_DESTINATIONS
-    ]
-    return routes or "report_agent"
+    routes = [route for route in state.get("next_routes") or [] if route in WORKERS]
+    if not routes:
+        return "end"
+    if len(routes) == 1:
+        return routes[0]
+    return routes
 
 
-def build_graph():
+def build_graph(checkpointer: Any = None):
     builder = StateGraph(InvestmentState)
     builder.add_node("initialize_state", initialize_state)
     builder.add_node("supervisor", supervisor)
-    builder.add_node("startup_agent", startup_agent)
-    builder.add_node("technology_agent", technology_agent)
-    builder.add_node("market_agent", market_agent)
-    builder.add_node("competitor_agent", competitor_agent)
-    builder.add_node("evaluator_agent", evaluator_agent)
-    builder.add_node("decision_agent", decision_agent)
-    builder.add_node("next_candidate", next_candidate)
-    builder.add_node("report_agent", report_agent)
-    builder.add_node("quality_agent", quality_agent)
+    for name, fn in WORKER_FUNCTIONS.items():
+        builder.add_node(name, _track(name, fn))
 
     builder.add_edge(START, "initialize_state")
-    builder.add_edge("initialize_state", "startup_agent")
-    builder.add_conditional_edges(
-        "startup_agent",
-        route_after_startup,
-        [
-            "startup_agent",
-            "technology_agent",
-            "market_agent",
-            "competitor_agent",
-            "next_candidate",
-            "report_agent",
-        ],
-    )
-    for node_name in ANALYSIS_NODES:
-        builder.add_edge(node_name, "evaluator_agent")
-    builder.add_conditional_edges(
-        "evaluator_agent",
-        route_after_evaluator,
-        {"supervisor": "supervisor"},
-    )
-    builder.add_conditional_edges(
-        "decision_agent",
-        route_after_decision,
-        {
-            "next_candidate": "next_candidate",
-            "report_agent": "report_agent",
-        },
-    )
-    builder.add_edge("next_candidate", "startup_agent")
-    builder.add_edge("report_agent", "quality_agent")
-    builder.add_conditional_edges(
-        "quality_agent",
-        route_after_quality,
-        {
-            "supervisor": "supervisor",
-            "end": END,
-        },
-    )
+    builder.add_edge("initialize_state", "supervisor")
+    for name in WORKERS:
+        builder.add_edge(name, "supervisor")
     builder.add_conditional_edges(
         "supervisor",
         route_from_supervisor,
-        list(SUPERVISOR_DESTINATIONS),
+        {name: name for name in WORKERS} | {"end": END},
     )
-    return builder.compile()
+    return builder.compile(checkpointer=MemorySaver() if checkpointer is None else checkpointer)
+
+
+def worker_successors(graph) -> dict[str, set[str]]:
+    """Compiled edge targets for each worker. Hub-and-spoke means only supervisor."""
+    successors = {name: set() for name in WORKERS}
+    for edge in graph.get_graph().edges:
+        source = getattr(edge, "source", None)
+        target = getattr(edge, "target", None)
+        if source in successors and target:
+            successors[source].add(target)
+    return successors
 
 
 def recursion_limit() -> int:
-    # Emergency engine guard only. Business termination is controlled by the
-    # candidate, selection, evidence, and quality retry budgets.
-    per_candidate = 8 + MAX_SELECTION_RETRIES + (3 * MAX_EVIDENCE_RETRIES)
-    quality_steps = 4 * (1 + MAX_QUALITY_RETRIES)
+    # Engine guard. Business stop is the step cap plus candidate and retry budgets.
+    per_candidate = 24 + MAX_SELECTION_RETRIES + (6 * MAX_EVIDENCE_RETRIES)
+    quality_steps = 6 * (1 + MAX_QUALITY_RETRIES)
     return MAX_CANDIDATE_POOL * per_candidate + quality_steps + 20

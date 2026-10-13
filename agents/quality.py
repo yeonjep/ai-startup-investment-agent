@@ -1,6 +1,6 @@
-# Report quality gate: Groundedness and source concentration in code, neutrality by LLM.
-# Perspective coverage is intentionally absent. See docs/DESIGN.md E-1.
+# Quality gate: four guide checks. Citation, source mix, and headings are code; neutrality and contradictions are an LLM judge.
 
+import json
 import re
 from collections import Counter
 from pathlib import Path
@@ -12,9 +12,7 @@ from pydantic import BaseModel, Field
 
 from agents.common import create_llm
 from agents.config import LLM_JUDGE_MODEL
-from agents.report import REPORT_BASENAME
 from agents.state import InvestmentState
-from tools.pdf_export import render_markdown_pdf
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = PROJECT_ROOT / "outputs"
@@ -22,178 +20,224 @@ QUANTITY = re.compile(
     r"\d[\d,]*(?:\.\d+)?\s*(?:%|％|억|조|만|달러|원|건|명|배|TOPS|nm)",
     re.IGNORECASE,
 )
-SUPERIORITY = re.compile(r"세계\s*최고|압도적|독보적|확실히\s*우수|경쟁사를\s*완전히")
+PERSPECTIVES = ("기술 성숙도", "시장성", "이해관계자", "도메인 적용")
+CHECK_NAMES = ("groundedness", "neutrality", "bias_control", "perspective_coverage")
 
 
-class NeutralityJudgement(BaseModel):
-    passed: bool = Field(description="근거 없는 기술 우열 단정이 없으면 true")
-    reason: str
+class QualityJudgement(BaseModel):
+    neutrality_passed: bool = Field(description="근거 없는 우열·과장이 없으면 true")
+    neutrality_reasons: list[str] = Field(default_factory=list)
+    neutrality_section: str = Field(default="", description="고칠 절 제목. 통과면 빈 문자열")
+    contradiction_passed: bool = Field(description="같은 보고서 안에서 서로 부정하는 사실이 없으면 true")
+    contradiction_reasons: list[str] = Field(default_factory=list)
+    contradiction_section: str = Field(default="", description="모순이 있는 절 제목")
 
 
 def check_groundedness(report: str, state: dict[str, Any]) -> tuple[bool, str]:
-    evaluated = list(state.get("evaluated") or [])
-    if not evaluated:
-        if "평가 대상 없음" in report or "선정 기준에서 제외" in report:
-            return True, "평가 기록이 없는 보고서는 선정 결과만 적는다"
-        return False, "평가 기록 없이 투자 평가 문장을 적음"
-    if "[INVALID:E" in report:
-        return False, "근거 카탈로그에 없는 인용 태그가 포함됨"
-
-    body, _, references = report.partition("# REFERENCE")
-    reference_identities = _reference_identities(references)
-    evidence = [
-        item
-        for record in evaluated
-        for item in record.get("evidence") or []
-    ]
-    allowed = _allowed_numbers(state)
-    failures: list[str] = []
-    for sentence in re.split(r"\n+|(?<=[.!?。])\s+", body):
-        citation_numbers = re.findall(r"\[(\d+)\]", sentence)
-        cited_identities = {
-            reference_identities[number]
-            for number in citation_numbers
-            if number in reference_identities
-        }
-        cited_evidence = [
-            item
-            for item in evidence
-            if _evidence_identities(item) & cited_identities
-        ]
-        for match in QUANTITY.finditer(sentence):
-            token = match.group(0)
-            number = re.match(r"\d[\d,]*(?:\.\d+)?", token)
-            number_text = number.group(0).replace(",", "") if number else token
-            if number_text in allowed:
-                continue
-            if citation_numbers and any(
-                number_text in _evidence_numbers(item)
-                for item in cited_evidence
-            ):
-                continue
-            failures.append(sentence.strip()[:120])
-            break
-    if failures:
-        return False, "출처와 연결되지 않은 수치: " + " / ".join(failures[:3])
-    return True, "수치 문장이 근거 또는 채점 결과와 연결됨"
+    item = _groundedness_code(report, state)
+    return item["passed"], item["reason"]
 
 
-def check_bias(report: str) -> tuple[bool, str]:
-    body, _, references = report.partition("# REFERENCE")
-    marks = re.findall(r"\[(\d+)\]", body)
-    if len(marks) < 3:
-        return True, "인용이 3개 미만"
-    identities = _reference_identities(references)
-    counts = Counter(identities.get(mark, f"unknown:{mark}") for mark in marks)
-    total = sum(counts.values())
-    source, count = counts.most_common(1)[0]
-    if total and count / total > 0.7:
-        return False, f"{source} 비중이 {count}/{total}로 70%를 넘음"
-    return True, "단일 출처 편중이 70% 이하"
+def check_bias(report: str, state: dict[str, Any] | None = None) -> tuple[bool, str]:
+    item = _bias_code(report, state)
+    return item["passed"], item["reason"]
 
 
-def judge_neutrality(report: str) -> tuple[bool, str]:
-    body = report.split("# REFERENCE")[0]
-    obvious = SUPERIORITY.search(body)
-    if obvious:
-        return False, f"근거 없는 우열 표현: {obvious.group(0)}"
-    try:
-        llm = create_llm(LLM_JUDGE_MODEL, temperature=0).with_structured_output(NeutralityJudgement)
-        result = llm.invoke(
-            [
-                (
-                    "system",
-                    "투자/보류 판정 문장은 허용한다. Evidence에 없는 기술 우열 단정만 실패로 본다. "
-                    "점수와 결측 서술은 우열 단정이 아니다.",
-                ),
-                ("human", body[:6000]),
-            ]
-        )
-    except Exception as exc:  # noqa: BLE001 - 판정 실패는 품질 실패로 남기고 루프 상한으로 끝낸다
-        return False, f"중립성 판정 오류: {type(exc).__name__}: {exc}"
-    if result is None:
-        return False, "중립성 판정 결과 없음"
-    return bool(result.passed), result.reason
+def check_perspectives(report: str) -> tuple[bool, str]:
+    item = _perspective_code(report)
+    return item["passed"], item["reason"]
 
 
 def quality_agent(state: InvestmentState, config: RunnableConfig | None = None) -> dict[str, Any]:
     report = str(state.get("final_report") or "")
-    grounded_ok, grounded_reason = check_groundedness(report, state)
-    neutral_ok, neutral_reason = judge_neutrality(report)
-    bias_ok, bias_reason = check_bias(report)
+    grounded = _groundedness_code(report, state)
+    judged = _judge(report)
+    if not judged["contradiction_passed"]:
+        grounded = _merge_groundedness(grounded, judged)
+    checks = {
+        "groundedness": grounded,
+        "neutrality": _check(
+            "neutrality",
+            judged["neutrality_passed"],
+            judged["neutrality_reasons"] or ["중립성 판정 결과 없음"],
+            judged["neutrality_section"] or "본문",
+        ),
+        "bias_control": _bias_code(report, state),
+        "perspective_coverage": _perspective_code(report),
+    }
+    if judged["neutrality_passed"]:
+        checks["neutrality"] = _check("neutrality", True, ["근거 없는 우열·과장이 없음"], "")
     result = {
-        "passed": grounded_ok and neutral_ok and bias_ok,
-        "checks": {
-            "groundedness": {"passed": grounded_ok, "reason": grounded_reason},
-            "neutrality": {"passed": neutral_ok, "reason": neutral_reason},
-            "bias": {"passed": bias_ok, "reason": bias_reason},
-        },
+        "passed": all(checks[name]["passed"] for name in CHECK_NAMES),
+        "checks": checks,
     }
-    if result["passed"] or int(state.get("quality_retry") or 0) < 1:
-        return {"quality_result": result, "last_error": None if neutral_ok or "오류" not in neutral_reason else neutral_reason}
-
-    note = "\n".join(
-        f"- {name}: {check['reason']}"
-        for name, check in result["checks"].items()
-        if not check["passed"]
-    )
-    text = report.rstrip() + "\n\n## 품질 평가\n\n재작성 후에도 아래 항목이 미달이다.\n\n" + note + "\n"
-    basename = (config or {}).get("configurable", {}).get("report_basename", REPORT_BASENAME)
-    _write_report_files(text, basename)
-    return {"quality_result": result, "final_report": text}
+    _save_quality(result, state, config)
+    return {"quality_result": result, "last_error": None}
 
 
-def _allowed_numbers(state: dict[str, Any]) -> set[str]:
-    allowed = {str(state.get("as_of_date") or ""), str(len(state.get("candidates") or [])), str(len(state.get("evaluated") or []))}
+def _groundedness_code(report: str, state: dict[str, Any]) -> dict[str, Any]:
+    evaluated = list(state.get("evaluated") or [])
+    if not evaluated:
+        if "평가 대상 없음" in report or "선정 기준에서 제외" in report:
+            return _check("groundedness", True, ["평가 기록이 없는 보고서는 선정 결과만 적는다"], "")
+        return _check("groundedness", False, ["평가 기록 없이 투자 평가 문장을 적음"], "SUMMARY")
+    if "[INVALID:E" in report:
+        return _check("groundedness", False, ["근거 카탈로그에 없는 인용 태그가 포함됨"], _section_at(report, "[INVALID:"))
+
+    body, _, references = report.partition("# REFERENCE")
+    reference_numbers = set(_reference_identities(references))
+    reasons: list[str] = []
+    section = "본문"
+    for paragraph, paragraph_section in _prose_paragraphs(body):
+        cited = set(re.findall(r"\[(\d+)\]", paragraph))
+        missing = sorted(cited - reference_numbers)
+        if missing:
+            reasons.append("REFERENCE에 없는 인용 번호: " + ", ".join(missing))
+            section = paragraph_section
+        paragraph_cited = bool(re.search(r"\[\d+\]\s*[.!?。]?\s*$", paragraph.strip()))
+        for sentence in re.split(r"(?<=[.!?。])\s+", paragraph):
+            if not QUANTITY.search(sentence) or "출처 충돌" in sentence or "상충 근거" in sentence:
+                continue
+            sentence_cited = bool(re.search(r"\[\d+\]", sentence)) or paragraph_cited
+            if sentence_cited:
+                continue
+            reasons.append(sentence.strip()[:120])
+            section = paragraph_section
+            break
+    if reasons:
+        return _check("groundedness", False, reasons[:3], section)
+    return _check("groundedness", True, ["수치·사실 문장이 REFERENCE 인용과 연결됨"], "")
+
+
+def _bias_code(report: str, state: dict[str, Any] | None) -> dict[str, Any]:
+    body, _, references = report.partition("# REFERENCE")
+    reasons: list[str] = []
+    marks = re.findall(r"\[(\d+)\]", body)
+    if len(marks) >= 3:
+        identities = _reference_identities(references)
+        counts = Counter(identities.get(mark, f"unknown:{mark}") for mark in marks)
+        total = sum(counts.values())
+        source, count = counts.most_common(1)[0]
+        if total and count / total > 0.7:
+            reasons.append(f"단일 출처 비중 {count}/{total}이 70%를 넘음 ({source})")
+    if state and _has_unmarked_conflict(report, state):
+        reasons.append("수치 충돌이 보고서에 표기되지 않음")
+    if reasons:
+        return _check("bias_control", False, reasons, "본문")
+    return _check("bias_control", True, ["단일 출처 편중이 70% 이하이고 수치 충돌을 표기함"], "")
+
+
+def _perspective_code(report: str) -> dict[str, Any]:
+    if "평가 대상 없음" in report:
+        return _check("perspective_coverage", True, ["평가 대상이 없어 관점 소제목을 요구하지 않음"], "")
+    body = report.split("# REFERENCE")[0]
+    missing = [name for name in PERSPECTIVES if name not in body]
+    if missing:
+        section = "팀·기술 및 제품 경쟁력" if any(name != "시장성" for name in missing) else "시장성 및 경쟁 환경"
+        return _check("perspective_coverage", False, ["관점 소제목 누락: " + ", ".join(missing)], section)
+    return _check("perspective_coverage", True, ["기술 성숙도·시장성·이해관계자·도메인 적용 소제목이 있음"], "")
+
+
+def _judge(report: str) -> dict[str, Any]:
+    body = report.split("# REFERENCE")[0][:6000]
+    empty = {
+        "neutrality_passed": False,
+        "neutrality_reasons": ["중립성 판정 결과 없음"],
+        "neutrality_section": "본문",
+        "contradiction_passed": True,
+        "contradiction_reasons": [],
+        "contradiction_section": "",
+    }
+    try:
+        llm = create_llm(LLM_JUDGE_MODEL, temperature=0).with_structured_output(QualityJudgement)
+        result = llm.invoke(
+            [
+                (
+                    "system",
+                    "투자 보고서 품질을 두 가지만 판정한다. "
+                    "neutrality: '견고하다', '획기적', '압도적', '차별화된다'처럼 근거 없이 우열이나 과장을 단정하면 실패다. "
+                    "투자/보류 판정 문장과 점수표 규칙은 실패가 아니다. "
+                    "contradiction: 같은 보고서가 한 사실을 긍정하고 다른 문장에서 그 사실을 부정하면 groundedness 위반이다. "
+                    "예: SDK를 보유한다고 하면서 SW 스택이 미확인이라고 하는 경우. "
+                    "실패 시 reasons에 짧은 한국어 사유를 적고, section에는 고칠 절 제목만 적는다.",
+                ),
+                ("human", body),
+            ]
+        )
+    except Exception as exc:  # noqa: BLE001 - 판정 실패는 품질 실패로 남기고 루프 상한으로 끝낸다
+        empty["neutrality_reasons"] = [f"중립성 판정 오류: {type(exc).__name__}: {exc}"]
+        return empty
+    if result is None:
+        return empty
+    return {
+        "neutrality_passed": bool(result.neutrality_passed),
+        "neutrality_reasons": list(result.neutrality_reasons or []),
+        "neutrality_section": result.neutrality_section or "본문",
+        "contradiction_passed": bool(result.contradiction_passed),
+        "contradiction_reasons": list(result.contradiction_reasons or []),
+        "contradiction_section": result.contradiction_section or "본문",
+    }
+
+
+def _merge_groundedness(code_item: dict[str, Any], judged: dict[str, Any]) -> dict[str, Any]:
+    reasons = [] if code_item["passed"] else list(code_item.get("reasons") or [])
+    reasons.extend(judged["contradiction_reasons"] or ["보고서 안에 서로 모순되는 사실이 있음"])
+    section = judged["contradiction_section"] or code_item.get("target_section") or "본문"
+    return _check("groundedness", False, reasons[:4], section)
+
+
+def _check(item: str, passed: bool, reasons: list[str], section: str) -> dict[str, Any]:
+    cleaned = [reason for reason in reasons if reason]
+    return {
+        "item": item,
+        "passed": passed,
+        "reasons": cleaned,
+        "target_section": "" if passed else section,
+        "reason": "; ".join(cleaned),
+    }
+
+
+def _prose_paragraphs(body: str) -> list[tuple[str, str]]:
+    section = "SUMMARY"
+    paragraphs: list[tuple[str, str]] = []
+    for block in re.split(r"\n\s*\n", body):
+        lines: list[str] = []
+        block_section = section
+        for line in block.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                section = stripped.lstrip("#").strip()
+                block_section = section
+                continue
+            if not stripped or stripped.startswith("|") or stripped.startswith("![") or stripped.startswith("<"):
+                continue
+            lines.append(stripped)
+        if lines:
+            paragraphs.append((" ".join(lines), block_section))
+    return paragraphs
+
+
+def _section_at(report: str, snippet: str) -> str:
+    current = "SUMMARY"
+    for line in report.splitlines():
+        if snippet[:40] in line:
+            return current
+        if line.startswith("#"):
+            current = line.lstrip("#").strip()
+    return current
+
+
+def _has_unmarked_conflict(report: str, state: dict[str, Any]) -> bool:
     for record in state.get("evaluated") or []:
-        total = record.get("total_score")
-        if isinstance(total, (int, float)):
-            allowed.update({f"{total:.2f}", f"{total:.1f}", f"{total:g}"})
-        allowed.add(str(len(record.get("missing_evidence") or [])))
-        for entry in (record.get("scores") or {}).values():
-            score = entry.get("score")
-            if isinstance(score, (int, float)):
-                allowed.add(f"{score:g}")
-            raw = entry.get("raw_value")
-            if raw not in (None, ""):
-                allowed.add(str(raw))
-                allowed.update(
-                    token.replace(",", "")
-                    for token in re.findall(r"\d[\d,]*(?:\.\d+)?", str(raw))
-                )
-    return {item for item in allowed if item}
-
-
-def _evidence_identities(item: dict[str, Any]) -> set[str]:
-    identities: set[str] = set()
-    if item.get("source_type") == "rag" and item.get("doc_id"):
-        identities.add(f"doc:{item['doc_id']}")
-    if item.get("url"):
-        host = urlparse(str(item["url"])).netloc.lower().removeprefix("www.")
-        identities.add(f"host:{host}")
-    return identities
-
-
-def _evidence_numbers(item: dict[str, Any]) -> set[str]:
-    text = " ".join(
-        str(item.get(key) or "")
-        for key in ("value", "unit", "quote", "scope")
-    )
-    numbers = {
-        token.replace(",", "")
-        for token in re.findall(r"\d[\d,]*(?:\.\d+)?", text)
-    }
-    value = item.get("value")
-    unit = str(item.get("unit") or "").upper()
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
-        if unit == "KRW":
-            numbers.add(f"{value / 1e8:g}")
-        elif unit == "USD":
-            if value >= 1e9:
-                numbers.add(f"{value / 1e9:g}")
-            if value >= 1e6:
-                numbers.add(f"{value / 1e6:g}")
-    return numbers
+        grouped: dict[tuple[str, str], set[str]] = {}
+        for item in record.get("evidence") or []:
+            if item.get("value") is None or not item.get("metric"):
+                continue
+            key = (str(item.get("metric")), str(item.get("unit")))
+            grouped.setdefault(key, set()).add(str(item.get("value")))
+        if any(len(values) > 1 for values in grouped.values()):
+            return "출처 충돌" not in report and "상충" not in report
+    return False
 
 
 def _reference_identities(references: str) -> dict[str, str]:
@@ -215,7 +259,39 @@ def _reference_identities(references: str) -> dict[str, str]:
     return identities
 
 
-def _write_report_files(markdown_text: str, basename: str) -> None:
+def _save_quality(result: dict[str, Any], state: dict[str, Any], config: RunnableConfig | None) -> None:
+    payload = {
+        "passed": result["passed"],
+        "loop_count": int(state.get("quality_retry") or 0),
+        "checks": [result["checks"][name] for name in CHECK_NAMES],
+    }
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUTPUT_DIR / f"{basename}.md").write_text(markdown_text, encoding="utf-8")
-    render_markdown_pdf(markdown_text, OUTPUT_DIR / f"{basename}.pdf")
+    (OUTPUT_DIR / "quality_eval.json").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"[quality] passed={payload['passed']} loop={payload['loop_count']}")
+    for check in payload["checks"]:
+        if not check["passed"]:
+            print(f"[quality] {check['item']} section={check['target_section']} {check['reason']}")
+    _trace_quality(payload)
+    _ = config
+
+
+def _trace_quality(payload: dict[str, Any]) -> None:
+    try:
+        from langsmith.run_helpers import get_current_run_tree
+    except Exception:
+        return
+    run = get_current_run_tree()
+    if run is None:
+        return
+    try:
+        run.add_metadata({"quality_eval": payload})
+    except Exception:
+        metadata = dict(getattr(run, "metadata", None) or {})
+        metadata["quality_eval"] = payload
+        try:
+            run.metadata = metadata
+        except Exception:
+            return

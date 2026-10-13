@@ -1,16 +1,14 @@
 import unittest
 
 from agents.graph import (
-    ANALYSIS_NODES,
-    route_after_decision,
-    route_after_evaluator,
-    route_after_quality,
-    route_after_startup,
+    WORKERS,
+    build_graph,
     route_from_supervisor,
+    worker_successors,
 )
 from agents.quality import check_bias, check_groundedness
 from agents.state import merge_dicts
-from agents.supervisor import choose_routes, pending_refresh_areas, supervisor
+from agents.supervisor import ANALYSIS_NODES, choose_routes, pending_refresh_areas, supervisor
 
 
 def _open_candidate(**extra):
@@ -44,15 +42,32 @@ def _open_candidate(**extra):
 
 
 class SupervisorRouteTests(unittest.TestCase):
-    def test_pass_candidate_fans_out_to_three_analysis_workers(self):
-        routes = route_after_startup(_open_candidate())
-        self.assertEqual(routes, list(ANALYSIS_NODES))
+    def test_compiled_workers_return_only_to_supervisor(self):
+        graph = build_graph()
+        successors = worker_successors(graph)
+        self.assertEqual(set(successors), set(WORKERS))
+        for name, targets in successors.items():
+            self.assertEqual(targets, {"supervisor"}, name)
+        node_ids = {getattr(node, "id", str(node)) for node in graph.get_graph().nodes}
+        self.assertNotIn("next_candidate", node_ids)
 
-    def test_fail_goes_to_next_candidate(self):
-        route = route_after_startup(
-            _open_candidate(selection_status="FAIL", current_startup=None)
+    def test_pass_candidate_fans_out_to_three_analysis_workers(self):
+        routes, reason = choose_routes(_open_candidate(sufficiency_votes={}))
+        self.assertEqual(routes, list(ANALYSIS_NODES))
+        self.assertIn("부족한 분석", reason)
+
+    def test_fail_advances_to_startup_through_supervisor(self):
+        state = _open_candidate(
+            selection_status="FAIL",
+            current_startup=None,
+            candidates=[{"name": "에이"}, {"name": "비"}],
         )
-        self.assertEqual(route, "next_candidate")
+        routes, reason = choose_routes(state)
+        self.assertEqual(routes, ["startup_agent"])
+        self.assertIn("다음 후보", reason)
+        update = supervisor(state)
+        self.assertEqual(update["current_idx"], 1)
+        self.assertEqual(update["next_routes"], ["startup_agent"])
 
     def test_review_retries_once_then_enters_parallel_analysis(self):
         retry = _open_candidate(
@@ -60,27 +75,29 @@ class SupervisorRouteTests(unittest.TestCase):
             current_startup=None,
             selection_retry=1,
         )
-        self.assertEqual(route_after_startup(retry), "startup_agent")
+        self.assertEqual(choose_routes(retry)[0], ["startup_agent"])
+        self.assertNotIn("current_idx", supervisor(retry))
         resolved = _open_candidate(
             selection_status="REVIEW",
             current_startup={"name": "에이"},
             selection_retry=1,
             uncertain=True,
+            sufficiency_votes={},
         )
-        self.assertEqual(route_after_startup(resolved), list(ANALYSIS_NODES))
+        self.assertEqual(choose_routes(resolved)[0], list(ANALYSIS_NODES))
 
     def test_empty_candidates_go_directly_to_report(self):
-        route = route_after_startup(
+        routes, reason = choose_routes(
             _open_candidate(candidates=[], current_startup=None, selection_status=None)
         )
-        self.assertEqual(route, "report_agent")
+        self.assertEqual(routes, ["report_agent"])
+        self.assertIn("후보", reason)
 
-    def test_evaluator_always_delegates_to_evidence_supervisor(self):
+    def test_scored_missing_evidence_requests_rework(self):
         state = _open_candidate(
             scores={"technical_originality": {"status": "missing"}},
             missing_evidence=["technical_originality", "market_tam"],
         )
-        self.assertEqual(route_after_evaluator(state), "supervisor")
         routes, reason = choose_routes(state)
         self.assertEqual(routes, ["technology_agent", "market_agent"])
         self.assertIn("tech, market", reason)
@@ -90,6 +107,10 @@ class SupervisorRouteTests(unittest.TestCase):
             dispatched["next_routes"],
             ["technology_agent", "market_agent"],
         )
+        self.assertEqual(route_from_supervisor(dispatched), [
+            "technology_agent",
+            "market_agent",
+        ])
         self.assertEqual(dispatched["refresh_areas"], ["tech", "market"])
         self.assertEqual(dispatched["evidence_retry"], 1)
         self.assertEqual(dispatched["scores"], {})
@@ -100,10 +121,19 @@ class SupervisorRouteTests(unittest.TestCase):
             missing_evidence=["technical_originality"],
             evidence_retry=1,
         )
-        self.assertEqual(route_after_evaluator(state), "supervisor")
         self.assertEqual(choose_routes(state)[0], ["decision_agent"])
         update = supervisor(state)
         self.assertEqual(update["evidence_gate_status"], "insufficient_accepted")
+        self.assertEqual(route_from_supervisor(update), "decision_agent")
+
+    def test_sufficient_scores_go_to_decision(self):
+        state = _open_candidate(
+            scores={"team_experience": {"status": "observed"}},
+            missing_evidence=[],
+        )
+        routes, reason = choose_routes(state)
+        self.assertEqual(routes, ["decision_agent"])
+        self.assertIn("근거 충분성 확인 완료", reason)
 
     def test_insufficient_vote_triggers_reanalysis_without_missing_metric(self):
         state = _open_candidate(
@@ -116,13 +146,22 @@ class SupervisorRouteTests(unittest.TestCase):
         )
         self.assertEqual(choose_routes(state)[0], ["market_agent"])
 
-    def test_step_count_never_forces_incomplete_report(self):
+    def test_step_cap_forces_report_then_end(self):
         state = _open_candidate(
             scores={"team_experience": {"status": "observed"}},
-            step_count=120,
+            step_count=80,
+            max_step_count=80,
         )
-        self.assertEqual(choose_routes(state)[0], ["decision_agent"])
-        self.assertEqual(supervisor(state)["evidence_gate_status"], "sufficient")
+        routes, reason = choose_routes(state)
+        self.assertEqual(routes, ["report_agent"])
+        self.assertIn("step 상한", reason)
+        finished = _open_candidate(
+            final_report="있음",
+            step_count=80,
+            max_step_count=80,
+        )
+        self.assertEqual(choose_routes(finished)[0], [])
+        self.assertEqual(route_from_supervisor({"next_routes": []}), "end")
 
     def test_non_refreshable_missing_is_explicitly_accepted(self):
         state = _open_candidate(
@@ -144,13 +183,14 @@ class SupervisorRouteTests(unittest.TestCase):
             candidates=[{"name": "에이"}, {"name": "비"}],
             evaluated=[{"decision": "보류"}],
         )
-        self.assertEqual(route_after_decision(hold), "next_candidate")
+        self.assertEqual(choose_routes(hold)[0], ["startup_agent"])
+        self.assertEqual(supervisor(hold)["current_idx"], 1)
         invest = _open_candidate(
             scores={"team_experience": {"score": 5}},
             decision="투자",
             evaluated=[{"decision": "투자"}],
         )
-        self.assertEqual(route_after_decision(invest), "report_agent")
+        self.assertEqual(choose_routes(invest)[0], ["report_agent"])
 
     def test_quality_failure_rewrites_once_then_stops(self):
         failed = _open_candidate(
@@ -160,12 +200,14 @@ class SupervisorRouteTests(unittest.TestCase):
             final_report="# SUMMARY\n\n판정 투자\n",
             quality_result={"passed": False, "checks": {"groundedness": {"passed": False, "reason": "수치 없음"}}},
         )
-        self.assertEqual(route_after_quality(failed), "supervisor")
+        routes, reason = choose_routes(failed)
+        self.assertEqual(routes, ["report_agent"])
+        self.assertIn("품질 미달", reason)
         update = supervisor(failed)
         self.assertEqual(update["quality_retry"], 1)
         self.assertEqual(update["final_report"], "")
         self.assertIn("groundedness", update["quality_feedback"])
-        self.assertEqual(route_from_supervisor(update), ["report_agent"])
+        self.assertEqual(route_from_supervisor(update), "report_agent")
 
         again = _open_candidate(
             scores={"team_experience": {"score": 5}},
@@ -175,7 +217,8 @@ class SupervisorRouteTests(unittest.TestCase):
             quality_result={"passed": False, "checks": {}},
             quality_retry=1,
         )
-        self.assertEqual(route_after_quality(again), "end")
+        self.assertEqual(choose_routes(again)[0], [])
+        self.assertEqual(route_from_supervisor(supervisor(again)), "end")
 
     def test_pending_areas_follow_tech_market_competitor_order(self):
         areas = pending_refresh_areas(
@@ -207,13 +250,17 @@ class QualityRuleTests(unittest.TestCase):
                 }
             ]
         }
-        ok, _reason = check_groundedness("# SUMMARY\n\n누적 투자 550억원 [1]\n\n총점 72.50\n", state)
+        cited = (
+            "# SUMMARY\n\n누적 투자 550억원 [1]\n\n총점 72.50\n\n"
+            "# REFERENCE\n\n1. 기관(2026). *자료*. https://example.com/a.\n"
+        )
+        ok, _reason = check_groundedness(cited, state)
         self.assertTrue(ok)
         failed, reason = check_groundedness("# SUMMARY\n\n시장 규모 999억 달러.\n", state)
         self.assertFalse(failed)
         self.assertIn("999", reason)
 
-    def test_groundedness_rejects_wrong_number_even_with_citation(self):
+    def test_groundedness_rejects_citation_missing_from_reference(self):
         state = {
             "evaluated": [
                 {
@@ -234,12 +281,12 @@ class QualityRuleTests(unittest.TestCase):
             ]
         }
         report = (
-            "# SUMMARY\n\n시장 규모 999억원 [1]\n\n# REFERENCE\n\n"
+            "# SUMMARY\n\n시장 규모 999억원 [9]\n\n# REFERENCE\n\n"
             "1. 기관(2026-01-01). *자료*. 기관, https://market.example/report.\n"
         )
         ok, reason = check_groundedness(report, state)
         self.assertFalse(ok)
-        self.assertIn("999", reason)
+        self.assertIn("9", reason)
 
     def test_groundedness_rejects_invalid_catalog_tag(self):
         state = {
