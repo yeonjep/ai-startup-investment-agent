@@ -2,7 +2,7 @@ import unittest
 
 from agents.competitor import _normalized_competitor_country
 from agents.report import _compact
-from agents.stubs import _scope_matches_target_market
+from agents.stubs import _is_funding_amount, _scope_matches_target_market
 
 
 class OutputConsistencyTests(unittest.TestCase):
@@ -25,6 +25,14 @@ class OutputConsistencyTests(unittest.TestCase):
                 state,
                 "글로벌, 2024-2030년, AI 추론 가속기 시장",
             )
+        )
+
+    def test_funding_amount_is_not_market_size(self):
+        self.assertTrue(
+            _is_funding_amount("2026년까지 5억 달러 규모 투자 유치를 계획한다.")
+        )
+        self.assertFalse(
+            _is_funding_amount("글로벌 AI 반도체 시장 규모는 500억 달러다.")
         )
 
     def test_known_korean_competitor_country_is_corrected(self):

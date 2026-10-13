@@ -114,13 +114,11 @@ def _scope_matches_target_market(state: InvestmentState, finding_scope: Any) -> 
     """
     scope = str(finding_scope or "").lower()
     startup = state.get("current_startup") or {}
+    # A component mentioned in the product description (for example HBM3 memory
+    # used by a chip) is not automatically the startup's target market.
     target = " ".join(
         str(value or "")
-        for value in (
-            _market_scope(state),
-            startup.get("evaluation_product"),
-            startup.get("description"),
-        )
+        for value in (_market_scope(state), startup.get("target_market"))
     ).lower()
     proxy_markets = (
         ("hbm", "high bandwidth memory", "고대역폭 메모리"),
@@ -339,6 +337,8 @@ def _market_findings(
             if not _number_in_text(finding.value, quotes):
                 item["conflict"] = True  # 인용 원문에 없는 수치는 채택하지 않는다
                 item["validation"] = "수치가 인용 원문에 없음"
+            elif finding.topic == "market_size" and _is_funding_amount(quotes):
+                item["validation"] = "투자 유치·자금 조달액은 시장 규모가 아님"
             elif not finding.scope or (finding.topic == "market_size" and not finding.unit):
                 item["validation"] = "시장 범위·기준연도·단위 미확인"
             elif not _scope_matches_target_market(state, finding.scope):
@@ -351,6 +351,24 @@ def _market_findings(
         )
         findings[finding.topic] = item
     return findings, None
+
+
+def _is_funding_amount(text: str) -> bool:
+    lowered = text.lower()
+    funding_terms = (
+        "투자 유치",
+        "투자유치",
+        "자금 조달",
+        "자금조달",
+        "funding",
+        "fundraise",
+        "raised",
+        "investment round",
+    )
+    market_terms = ("시장 규모", "시장규모", "market size", "tam", "sam", "som")
+    return any(term in lowered for term in funding_terms) and not any(
+        term in lowered for term in market_terms
+    )
 
 
 def _number_in_text(value: Any, text: str) -> bool:

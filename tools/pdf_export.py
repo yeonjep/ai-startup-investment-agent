@@ -15,16 +15,17 @@ MARGIN_Y = 62
 CSS = """
 @font-face { font-family: nanum; src: url(NanumGothic-Regular.ttf); }
 @font-face { font-family: nanum; font-weight: bold; src: url(NanumGothic-Bold.ttf); }
-body { font-family: nanum; font-size: 10pt; line-height: 1.75; }
+body { font-family: nanum; font-size: 10.5pt; line-height: 1.85; }
 h1 { font-size: 15pt; margin: 14pt 0 6pt 0; }
 h2 { font-size: 12.5pt; margin: 14pt 0 5pt 0; }
 h3 { font-size: 11pt; margin: 10pt 0 4pt 0; }
 p { margin: 5pt 0; }
 li { margin: 2pt 0; }
 img { width: 92%; }
-table { border-collapse: collapse; width: 100%; font-size: 8.5pt; }
+table { border-collapse: collapse; width: 100%; font-size: 8.8pt; }
 th, td { border: 0.5pt solid #666666; padding: 3pt 5pt; }
 th { font-weight: bold; }
+.page-break { break-before: page; page-break-before: always; }
 """
 
 

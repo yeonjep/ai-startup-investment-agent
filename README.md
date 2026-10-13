@@ -9,6 +9,21 @@
 - Objective : AI 반도체 스타트업의 **팀, 시장성, 제품/기술력, 경쟁 우위, 실적, 자금조달·리스크**를 기준으로 투자 적합성을 분석하고 투자 평가 보고서(PDF)를 자동 생성
 - Method : Supervisor 패턴의 LangGraph Multi-Agent, Agentic RAG(Hybrid 검색 + 관련성 평가 + 재검색 + 웹 보완), 근거(Evidence) 기반 13개 지표 채점, 코드 규칙에 의한 투자/보류 판정, 보고서 품질 평가
 
+### Pattern 및 선정 이유
+
+- **Pattern: Supervisor**
+- 이 그래프에서 실행마다 달라지는 것은 워커 목록이 아니라, 현재 근거의 충분성에 따라 **다음에 호출하거나 재호출할 워커**다. 따라서 작업 목록을 만들고 Worker를 동적으로 병렬 생성하는 Orchestrator-Workers보다 중앙 Supervisor가 적합하다.
+- Technology·Market·Competitor는 자기 영역의 충분성을 State에 투표하고 Supervisor로만 돌아온다. 투자 점수와 판정은 기존 코드 규칙을 유지하며, 충분성 투표가 점수를 바꾸지 않는다.
+
+### 동적 처리 — 고정 순서와의 차이
+
+이전 그래프는 `Technology → Market → Competitor → Evaluator`를 항상 같은 순서로 실행했다. 현재 그래프는 모든 워커가 Supervisor로 복귀하고, Supervisor가 `route_reason`과 재시도 예산을 보고 다음 노드 하나를 고른다.
+
+- 시장 topic이 부족하면 Competitor로 넘어가지 않고 Market을 다시 호출한다.
+- 채점 후 결측 영역이 기술이면 Technology, 시장이면 Market, 경쟁이면 Competitor만 다시 배정한다.
+- 보고서 품질이 미달이면 Report를 한 번 재작성한 뒤 Quality를 다시 실행한다.
+- 따라서 실행 경로와 노드 호출 횟수는 후보의 선정 결과·근거 충분성·결측·품질 결과에 따라 달라진다.
+
 ## Problem & Approach
 
 - **문제**: AI 반도체 스타트업 투자 검토는 기술 검증·시장성·경쟁력 정보가 홈페이지·기사·산업 보고서에 흩어져 있어 수작업 조사가 오래 걸리고, 평가자마다 점수 기준이 달라집니다.
@@ -171,7 +186,7 @@ uv run python -m rag.ingest
 uv run python app.py
 ```
 
-- 결과: `outputs/RAG-Output_울산캠퍼스-4반_박연제+이정인+정예지.pdf` (+ 같은 이름의 `.md`)
+- 결과: `outputs/RAG-Output_울산캠퍼스-4반_박연제+이정인+정예지+박태준.pdf` (+ 같은 이름의 `.md`)
 - 평가 수 상한은 환경 변수 `MAX_CANDIDATES`(1~10, 기본 5), 기준일은 `AS_OF_DATE`(YYYY-MM-DD)로 조정합니다.
 - 최초 실행 시 임베딩 모델(Qwen3-Embedding-0.6B)이 다운로드됩니다.
 - 웹 검색과 LLM 응답은 실행마다 달라질 수 있어 후보·점수가 매번 같지는 않습니다.
@@ -221,3 +236,8 @@ uv run python app.py
   - 결측 영역은 Supervisor가 해당 워커만 다시 배정한 뒤 재채점한다
   - Decision Agent: 투자/보류 규칙 판정(총점·결측 수·선정 불확실성), 후보별 평가 스냅샷 저장
   - 채점·판정 규칙 단위 테스트
+
+- **박태준 : Supervisor 품질 평가 및 실행 추적**
+  - 보고서 Groundedness·중립성·편향 통제 평가 기준 검토
+  - Supervisor 동적 라우팅과 결측 재배정 흐름 검증
+  - LangSmith Tracing 캡처 및 제출 결과 점검

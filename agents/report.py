@@ -16,7 +16,7 @@ from tools.web_meta import fetch_published_date
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = PROJECT_ROOT / "outputs"
-REPORT_BASENAME = "RAG-Output_울산캠퍼스-4반_박연제+이정인+정예지"
+REPORT_BASENAME = "RAG-Output_울산캠퍼스-4반_박연제+이정인+정예지+박태준"
 MAX_PAGES = 10
 MAX_REGENERATIONS = 2
 # 재생성 회차별 서술 분량 배율 (최초, 재생성 1회, 재생성 2회)
@@ -118,6 +118,15 @@ class Catalog:
                 return f"[{self.by_evidence_id[evidence_id]}]"
         return ""
 
+    def category_tags(self, *categories: str, limit: int = 4) -> str:
+        tags: list[str] = []
+        for index, item in enumerate(self.items, start=1):
+            if item.get("category") in categories:
+                tags.append(f"[E{index}]")
+            if len(tags) >= limit:
+                break
+        return "".join(tags)
+
     def prompt_lines(self) -> str:
         lines = []
         for index, item in enumerate(self.items, start=1):
@@ -200,7 +209,11 @@ def _finalize_citations(markdown_text: str, catalog: Catalog) -> str:
     )
     lines = _format_references(cited)
     reference = "\n".join(f"{i}. {line}" for i, line in enumerate(lines, start=1)) or "인용한 외부 자료 없음."
-    return f"{body}\n\n# REFERENCE\n\n{reference}\n"
+    return (
+        f"{body}\n\n"
+        '<div class="page-break"></div>\n\n'
+        f"# REFERENCE\n\n{reference}\n"
+    )
 
 
 # ---------------------------------------------------------------- 서술(LLM)
@@ -292,6 +305,23 @@ def _write_sections(rtype: str, records: list[dict[str, Any]], catalog: Catalog,
     except Exception as error:  # noqa: BLE001 - 보고서는 서술 실패 시에도 생성되어야 한다
         print(f"[report] LLM narrative failed, using fallback: {error}")
     return _fallback_sections(rtype, records)
+
+
+def _cite_numeric_sentences(text: str, tags: str) -> str:
+    """Attach relevant Evidence tags to uncited quantitative narrative sentences."""
+    if not tags:
+        return text
+    parts = re.split(r"(?<=[.!?。])(\s+)", text)
+    for index in range(0, len(parts), 2):
+        sentence = parts[index]
+        if re.search(r"\d", sentence) and not re.search(r"\[E\d+\]", sentence):
+            parts[index] = sentence.rstrip() + tags
+    return "".join(parts)
+
+
+def _clean_narrative(text: str) -> str:
+    """Remove occasional unmatched braces from structured LLM text fields."""
+    return re.sub(r"\s*\}(?=\s*$)", "", text.strip())
 
 
 # ---------------------------------------------------------------- 표(코드)
@@ -397,6 +427,24 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
         focus, holds = evaluated, []
     catalog = Catalog(focus)
     sec = _write_sections(rtype, focus, catalog, scale, as_of, str(state.get("quality_feedback") or ""))
+    for field_name in (
+        "summary",
+        "overview",
+        "team_tech",
+        "market_competition",
+        "risk_market",
+        "risk_tech",
+        "risk_regulation",
+        "risk_competition",
+    ):
+        setattr(sec, field_name, _clean_narrative(getattr(sec, field_name)))
+    sec.summary = _cite_numeric_sentences(sec.summary, catalog.category_tags("profile", "tech", "market"))
+    sec.overview = _cite_numeric_sentences(sec.overview, catalog.category_tags("profile"))
+    sec.team_tech = _cite_numeric_sentences(sec.team_tech, catalog.category_tags("profile", "tech"))
+    sec.market_competition = _cite_numeric_sentences(
+        sec.market_competition,
+        catalog.category_tags("market", "competitor"),
+    )
 
     if rtype == "invest":
         p = main["company_profile"]
@@ -407,8 +455,13 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
         head = (f"평가 후보 {len(evaluated)}개 **전원 보류** · 최고 총점 {best:.2f}/100 · 평가 기준일 {as_of}"
                 if best is not None else f"평가 후보 {len(evaluated)}개 전원 보류 · 평가 기준일 {as_of}")
 
-    parts = [f"# SUMMARY\n\n{head}\n\n{sec.summary}", f"## 1. 기업 및 사업 개요\n\n{sec.overview}",
-             f"## 2. 팀·기술 및 제품 경쟁력\n\n{sec.team_tech}"]
+    page_break = '<div class="page-break"></div>'
+    parts = [
+        f"# SUMMARY\n\n{head}\n\n{sec.summary}\n\n## 1. 기업 및 사업 개요\n\n{sec.overview}",
+        page_break,
+        f"## 2. 팀·기술 및 제품 경쟁력\n\n{sec.team_tech}",
+        page_break,
+    ]
     market = f"## 3. 시장성 및 경쟁 환경\n\n{sec.market_competition}\n\n**시장 지표**\n\n{_market_table(focus, catalog)}"
     comps = [
         c for r in focus for c in r.get("competitor_analysis", {}).get("competitors", [])
@@ -417,6 +470,7 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
     if comps:
         market += "\n\n**경쟁사 비교**\n\n" + _table(["경쟁사", "국가", "비교"], [[c.get("name"), c.get("country"), _cell(c.get("comparison"), 60)] for c in comps[:5]])
     parts.append(market)
+    parts.append(page_break)
 
     if rtype == "invest":
         group_score_chart(main, chart_dir / "group_scores.png")
@@ -426,12 +480,18 @@ def _assemble(state: dict[str, Any], rtype: str, level: int, chart_dir: Path) ->
         total_score_chart(evaluated, chart_dir / "total_scores.png")
         body4 = (f"### 후보 비교\n\n![후보별 총점 비교](total_scores.png)\n\n{_comparison_table(evaluated)}\n\n" +
                  "\n".join(f"- **{_name(r)}**: {_missing_text(r)}" for r in evaluated))
-    body4 += (f"\n\n### 주요 리스크\n\n- **시장**: {sec.risk_market}\n- **기술**: {sec.risk_tech}\n"
-              f"- **규제**: {sec.risk_regulation}\n- **경쟁**: {sec.risk_competition}")
     if holds:
         body4 += f"\n\n### 앞서 평가한 보류 후보\n\n{_hold_summary(holds, reason_limit)}"
-    body4 += f"\n\n### 한계\n\n{_limitations(state)}"
     parts.append(f"## 4. 투자 판단 및 주요 리스크\n\n{body4}")
+    parts.append(page_break)
+    risks = (
+        f"### 주요 리스크\n\n- **시장**: {sec.risk_market}\n"
+        f"- **기술**: {sec.risk_tech}\n"
+        f"- **규제**: {sec.risk_regulation}\n"
+        f"- **경쟁**: {sec.risk_competition}\n\n"
+        f"### 평가 범위와 한계\n\n{_limitations(state)}"
+    )
+    parts.append(risks)
     return _finalize_citations("\n\n".join(parts), catalog)
 
 
